@@ -23,10 +23,11 @@ from app.models.inventory import StockItem
 from app.models.issuing import Issue, IssueStatus
 from app.models.library import BookCopy
 from app.models.procurement import Payment, PurchaseOrder
-from app.models.request import Request, RequestStatus
-from app.models.user import User
+from app.models.request import Request, RequestStatus, RequestType
+from app.models.user import Role, User
 from app.models.writeoff import WriteOff, WriteOffStatus
 from app.schemas.reports import (
+    ActionItem,
     ActivityRow,
     OutstandingIssueRow,
     PendingRequestRow,
@@ -44,6 +45,43 @@ LOW_STOCK_THRESHOLD = 5
 TERMINAL_STATUSES = frozenset(
     {RequestStatus.CATALOGUED, RequestStatus.IN_STORE, RequestStatus.REJECTED}
 )
+
+#: Work each school/central role is expected to handle.
+#:
+#: Maps a role to the ``(status, request type or None, action label)`` triples
+#: that role should be prompted about on the dashboard. A ``None`` request
+#: type matches either flow. ``REQUESTING_STAFF`` is handled separately because
+#: verification is restricted to the user who raised the request.
+ROLE_REQUEST_ACTIONS: dict[Role, list[tuple[RequestStatus, RequestType | None, str]]] = {
+    Role.ACADEMIC_MASTER: [
+        (RequestStatus.PENDING_ACADEMIC, RequestType.BOOK, "Approve or reject"),
+        (RequestStatus.PENDING_APPROVAL, RequestType.OTHER, "Approve or reject"),
+    ],
+    Role.HEAD_MASTER: [
+        (RequestStatus.PENDING_HEAD_MASTER, RequestType.BOOK, "Approve or reject"),
+        (RequestStatus.PENDING_APPROVAL, RequestType.OTHER, "Approve or reject"),
+    ],
+    Role.LIBRARIAN: [
+        (RequestStatus.APPROVED, None, "Raise a requisition"),
+        (RequestStatus.SENT_TO_SCHOOL, RequestType.BOOK, "Catalogue the books"),
+        (RequestStatus.PAID, RequestType.OTHER, "Move goods to the store"),
+    ],
+    Role.BURSAR: [
+        (RequestStatus.PENDING_BURSAR, None, "Create a purchase order"),
+        (RequestStatus.VERIFIED, None, "Record the payment"),
+    ],
+    Role.MANAGER: [
+        (RequestStatus.PENDING_MANAGER, None, "Approve or reject the order"),
+    ],
+    Role.STOREKEEPER: [
+        (RequestStatus.PENDING_ORDER, None, "Place the order"),
+        (RequestStatus.ORDERED, None, "Receive the delivery"),
+        (RequestStatus.PAID, RequestType.BOOK, "Send the books to school"),
+    ],
+    Role.REQUESTING_STAFF: [
+        (RequestStatus.RECEIVED, None, "Check the items and verify delivery"),
+    ],
+}
 
 
 def _branch_clauses(user: User, column, branch_id: int | None) -> list:
@@ -274,3 +312,81 @@ def activity(
 
     logs = db.scalars(stmt).all()
     return [ActivityRow.model_validate(log) for log in logs]
+
+
+def my_actions(db: Session, user: User) -> list[ActionItem]:
+    """Return the pending tasks ``user`` can act on, based on their roles.
+
+    Each role is prompted only about the steps it owns in the request
+    workflows (for example a Bursar sees purchase orders and payments, a
+    Storekeeper sees orders and deliveries). Verification items are shown
+    only to the original requestor, and every result respects the user's
+    branch visibility.
+    """
+    roles = {assignment.role for assignment in user.assignments}
+    wanted: dict[tuple[RequestStatus, RequestType | None], str] = {}
+    for role in roles:
+        for req_status, req_type, action in ROLE_REQUEST_ACTIONS.get(role, ()):
+            wanted.setdefault((req_status, req_type), action)
+
+    items: list[ActionItem] = []
+    if wanted:
+        stmt = (
+            select(Request)
+            .where(Request.status.in_({status for status, _ in wanted}))
+            .order_by(Request.created_at, Request.id)
+        )
+        if not request_service.is_central(user):
+            stmt = stmt.where(
+                Request.branch_id.in_(request_service.user_branch_ids(user))
+            )
+        for request in db.scalars(stmt):
+            action = wanted.get((request.status, request.type)) or wanted.get(
+                (request.status, None)
+            )
+            if action is None:
+                continue
+            if (
+                request.status is RequestStatus.RECEIVED
+                and request.requestor_id != user.id
+            ):
+                continue
+            items.append(
+                ActionItem(
+                    kind="request",
+                    id=request.id,
+                    label=request.title or f"{request.type.value.title()} request",
+                    status=request.status.value,
+                    action=action,
+                    branch_id=request.branch_id,
+                    route="#/requests",
+                    created_at=request.created_at,
+                )
+            )
+
+    if Role.HEAD_MASTER in roles:
+        stmt = (
+            select(WriteOff)
+            .where(WriteOff.status == WriteOffStatus.PENDING)
+            .order_by(WriteOff.created_at, WriteOff.id)
+        )
+        if not request_service.is_central(user):
+            stmt = stmt.where(
+                WriteOff.branch_id.in_(request_service.user_branch_ids(user))
+            )
+        for writeoff in db.scalars(stmt):
+            items.append(
+                ActionItem(
+                    kind="writeoff",
+                    id=writeoff.id,
+                    label=f"Write-off of a {writeoff.reason.value.lower()} copy",
+                    status=writeoff.status.value,
+                    action="Approve or reject the write-off",
+                    branch_id=writeoff.branch_id,
+                    route="#/writeoffs",
+                    created_at=writeoff.created_at,
+                )
+            )
+
+    items.sort(key=lambda item: item.created_at)
+    return items

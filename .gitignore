@@ -20,6 +20,9 @@ htmlcov/
 *.sqlite
 *.sqlite3
 *.db
+backups/
+*.sql
+*.sql.gz
 # Local environment / secrets - never commit these
 .env
 .env.*

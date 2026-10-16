@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.core.permissions import get_current_user
 from app.models.user import User
 from app.schemas.reports import (
+    ActionItem,
     ActivityRow,
     OutstandingIssueRow,
     PendingRequestRow,
@@ -29,6 +30,15 @@ def get_overview(
 ) -> ReportsOverview:
     """Return a dashboard summary scoped to the user's branches."""
     return reports_service.overview(db, user, branch_id=branch_id)
+
+
+@router.get("/my-actions", response_model=list[ActionItem])
+def get_my_actions(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ActionItem]:
+    """List the pending tasks the current user can act on, by role."""
+    return reports_service.my_actions(db, user)
 
 
 @router.get("/pending-requests", response_model=list[PendingRequestRow])

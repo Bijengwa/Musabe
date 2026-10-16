@@ -157,6 +157,7 @@ def test_other_flow_end_to_end(
 
     steps = [
         (f"/requests/{request_id}/approve", h["head"], {}),
+        (f"/requests/{request_id}/requisition", h["librarian"], {}),
         (
             f"/requests/{request_id}/purchase-order",
             h["bursar"],
@@ -202,6 +203,7 @@ def test_disputed_flow(
 
     steps = [
         (f"/requests/{request_id}/approve", h["head"], {}),
+        (f"/requests/{request_id}/requisition", h["librarian"], {}),
         (
             f"/requests/{request_id}/purchase-order",
             h["bursar"],

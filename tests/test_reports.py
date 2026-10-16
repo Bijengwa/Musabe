@@ -14,6 +14,7 @@ from app.models.library import BookCopy, BookCopyStatus, BookTitle
 from app.models.procurement import Payment, PurchaseOrder, Supplier
 from app.models.request import Request, RequestStatus, RequestType
 from app.models.user import CENTRAL_ROLES, Role
+from app.models.writeoff import WriteOff, WriteOffReason
 
 
 def _make_branch(
@@ -310,3 +311,140 @@ def test_activity_report_scoped(
 
     scoped = client.get("/reports/activity", headers=headers["head"]).json()
     assert all(row["request_id"] == request.id for row in scoped)
+
+
+def _action_ids(
+    client: TestClient, headers: dict[str, str], key: str
+) -> set[int]:
+    """Return the request ids in the current user's action list."""
+    body = client.get("/reports/my-actions", headers=headers[key]).json()
+    return {item["id"] for item in body if item["kind"] == "request"}
+
+
+def test_my_actions_by_role(
+    client: TestClient, db_session: Session, make_user, auth_headers
+) -> None:
+    """Each role is prompted only about the workflow steps it owns."""
+    branch, headers = _cast(db_session, make_user, auth_headers)
+    staff_id = make_user(
+        email="requestor.primarya@example.com",
+        roles=[Role.REQUESTING_STAFF],
+        branch_ids=[branch.id],
+    ).id
+
+    r_approval = _make_request(
+        db_session, branch, staff_id, RequestStatus.PENDING_APPROVAL
+    )
+    r_academic = _make_request(
+        db_session,
+        branch,
+        staff_id,
+        RequestStatus.PENDING_ACADEMIC,
+        request_type=RequestType.BOOK,
+    )
+    r_head = _make_request(
+        db_session,
+        branch,
+        staff_id,
+        RequestStatus.PENDING_HEAD_MASTER,
+        request_type=RequestType.BOOK,
+    )
+    r_bursar = _make_request(
+        db_session, branch, staff_id, RequestStatus.PENDING_BURSAR
+    )
+    r_verified = _make_request(
+        db_session, branch, staff_id, RequestStatus.VERIFIED
+    )
+    r_ordered = _make_request(
+        db_session, branch, staff_id, RequestStatus.ORDERED
+    )
+
+    academic_ids = _action_ids(client, headers, "academic")
+    assert {r_academic.id, r_approval.id} <= academic_ids
+    assert r_bursar.id not in academic_ids
+
+    head_ids = _action_ids(client, headers, "head")
+    assert {r_head.id, r_approval.id} <= head_ids
+
+    bursar_ids = _action_ids(client, headers, "bursar")
+    assert {r_bursar.id, r_verified.id} <= bursar_ids
+
+    assert r_ordered.id in _action_ids(client, headers, "store")
+
+
+def test_my_actions_verification_is_requestor_only(
+    client: TestClient, db_session: Session, make_user, auth_headers
+) -> None:
+    """Only the original requestor is prompted to verify a RECEIVED request."""
+    branch, headers = _cast(db_session, make_user, auth_headers)
+    mine = make_user(
+        email="mine.primarya@example.com",
+        roles=[Role.REQUESTING_STAFF],
+        branch_ids=[branch.id],
+    )
+    theirs = make_user(
+        email="theirs.primarya@example.com",
+        roles=[Role.REQUESTING_STAFF],
+        branch_ids=[branch.id],
+    )
+    r_mine = _make_request(
+        db_session, branch, mine.id, RequestStatus.RECEIVED
+    )
+    r_theirs = _make_request(
+        db_session, branch, theirs.id, RequestStatus.RECEIVED
+    )
+
+    body = client.get(
+        "/reports/my-actions", headers=auth_headers(mine.email)
+    ).json()
+    ids = {item["id"] for item in body}
+    assert r_mine.id in ids
+    assert r_theirs.id not in ids
+
+
+def test_my_actions_scoped_to_branch(
+    client: TestClient, db_session: Session, make_user, auth_headers
+) -> None:
+    """School roles only see their own branch's actions."""
+    branch_a, headers_a = _cast(db_session, make_user, auth_headers, "Primary A")
+    branch_b, headers_b = _cast(db_session, make_user, auth_headers, "Primary B")
+    staff_a = make_user(
+        email="s.a@example.com", roles=[Role.REQUESTING_STAFF], branch_ids=[branch_a.id]
+    ).id
+    staff_b = make_user(
+        email="s.b@example.com", roles=[Role.REQUESTING_STAFF], branch_ids=[branch_b.id]
+    ).id
+    req_a = _make_request(db_session, branch_a, staff_a, RequestStatus.PENDING_APPROVAL)
+    req_b = _make_request(db_session, branch_b, staff_b, RequestStatus.PENDING_APPROVAL)
+
+    assert req_a.id in _action_ids(client, headers_a, "head")
+    assert req_b.id not in _action_ids(client, headers_a, "head")
+
+
+def test_my_actions_head_master_includes_writeoffs(
+    client: TestClient, db_session: Session, make_user, auth_headers
+) -> None:
+    """The Head Master is prompted about pending write-offs; others are not."""
+    branch, headers = _cast(db_session, make_user, auth_headers)
+    librarian_id = make_user(
+        email="reporter.primarya@example.com",
+        roles=[Role.LIBRARIAN],
+        branch_ids=[branch.id],
+    ).id
+    copy = _make_copy(db_session, branch, code="MUS-PA-2026-000099")
+    writeoff = WriteOff(
+        branch_id=branch.id,
+        book_copy_id=copy.id,
+        reported_by_id=librarian_id,
+        reason=WriteOffReason.LOST,
+    )
+    db_session.add(writeoff)
+    db_session.commit()
+    db_session.refresh(writeoff)
+
+    head_body = client.get("/reports/my-actions", headers=headers["head"]).json()
+    head_writeoffs = [i for i in head_body if i["kind"] == "writeoff"]
+    assert [i["id"] for i in head_writeoffs] == [writeoff.id]
+
+    bursar_body = client.get("/reports/my-actions", headers=headers["bursar"]).json()
+    assert all(i["kind"] != "writeoff" for i in bursar_body)

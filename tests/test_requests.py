@@ -207,10 +207,10 @@ def test_wrong_role_cannot_approve(
     assert response.status_code == 403
 
 
-def test_other_request_approved_by_head_master(
+def test_other_request_approved_by_academic_or_head_master(
     client: TestClient, db_session: Session, make_user, auth_headers
 ) -> None:
-    """An OTHER request is approved by the Head Master, not the Academic Master."""
+    """An OTHER request may be approved by the Academic Master or Head Master."""
     branch = _make_branch(db_session, "Primary A")
     make_user(
         email="staff.a@example.com",
@@ -231,16 +231,21 @@ def test_other_request_approved_by_head_master(
     academic = auth_headers("academic.a@example.com")
     head = auth_headers("head.a@example.com")
 
-    request_id = client.post(
+    first_id = client.post(
         "/requests", headers=staff, json={"type": "OTHER", "title": "Furniture"}
     ).json()["id"]
+    academic_approved = client.post(
+        f"/requests/{first_id}/approve", headers=academic
+    )
+    assert academic_approved.status_code == 200, academic_approved.text
+    assert academic_approved.json()["status"] == "APPROVED"
 
-    blocked = client.post(f"/requests/{request_id}/approve", headers=academic)
-    assert blocked.status_code == 403
-
-    approved = client.post(f"/requests/{request_id}/approve", headers=head)
-    assert approved.status_code == 200, approved.text
-    assert approved.json()["status"] == "PENDING_BURSAR"
+    second_id = client.post(
+        "/requests", headers=staff, json={"type": "OTHER", "title": "Stationery"}
+    ).json()["id"]
+    head_approved = client.post(f"/requests/{second_id}/approve", headers=head)
+    assert head_approved.status_code == 200, head_approved.text
+    assert head_approved.json()["status"] == "APPROVED"
 
 
 # --------------------------------------------------------------------------- #

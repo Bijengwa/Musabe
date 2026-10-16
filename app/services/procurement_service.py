@@ -26,7 +26,7 @@ from app.models.procurement import (
     Supplier,
     Verification,
 )
-from app.models.request import Request, RequestStatus, RequestType
+from app.models.request import Request, RequestStatus
 from app.models.user import Role, User
 from app.schemas.procurement import (
     DeliveryCreate,
@@ -122,23 +122,21 @@ def create_supplier(db: Session, data: SupplierCreate) -> Supplier:
 
 
 # --------------------------------------------------------------------------- #
-# Requisition (BOOK only)
+# Requisition (both flows)
 # --------------------------------------------------------------------------- #
 def create_requisition(
     db: Session, user: User, request_id: int, data: RequisitionCreate
 ) -> Request:
-    """Raise a requisition for a BOOK request, moving it to PENDING_BURSAR.
+    """Raise a requisition, moving an approved request to PENDING_BURSAR.
+
+    Used for BOOK requests after Head Master approval and for OTHER requests
+    after Academic Master or Head Master approval.
 
     Raises:
-        HTTPException: 400 if the request is not a BOOK request, 404 if it is
-            not visible, or 409/403 from the workflow engine.
+        HTTPException: 404 if the request is not visible, or 409/403 from the
+            workflow engine when the request is not awaiting a requisition.
     """
     request = request_service.get_request(db, user, request_id)
-    if request.type is not RequestType.BOOK:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Requisitions can only be raised for BOOK requests",
-        )
 
     new_status = _plan(user, request, WorkflowAction.REQUISITION)
     db.add(

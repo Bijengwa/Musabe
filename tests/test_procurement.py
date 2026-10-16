@@ -293,12 +293,20 @@ def test_full_other_flow_to_in_store(
     supplier_id = _register_supplier(client, headers["bursar"])
 
     request_id = _create(client, headers["staff"], "OTHER")
-    # Head Master approval forwards OTHER to the Bursar (not APPROVED).
+    # School approval moves OTHER to APPROVED, awaiting the librarian.
     _post(
         client,
         headers["head"],
         request_id,
         "approve",
+        expected="APPROVED",
+    )
+    _post(
+        client,
+        headers["librarian"],
+        request_id,
+        "requisition",
+        {},
         expected="PENDING_BURSAR",
     )
     _post(
@@ -341,16 +349,33 @@ def test_full_other_flow_to_in_store(
     assert stored.status == RequestStatus.IN_STORE
 
 
-def test_other_request_requisition_rejected(
+def test_other_request_requisition_requires_approval(
     client: TestClient, db_session: Session, make_user, auth_headers
 ) -> None:
-    """A requisition may only be raised for BOOK requests."""
+    """An OTHER requisition is only valid once the request is APPROVED."""
     _, headers = _cast(db_session, make_user, auth_headers)
     request_id = _create(client, headers["staff"], "OTHER")
     response = client.post(
         f"/requests/{request_id}/requisition", headers=headers["librarian"]
     )
-    assert response.status_code == 400
+    assert response.status_code == 409
+
+
+def test_other_request_requisition_by_librarian(
+    client: TestClient, db_session: Session, make_user, auth_headers
+) -> None:
+    """A Librarian forwards an approved OTHER request to the Bursar."""
+    _, headers = _cast(db_session, make_user, auth_headers)
+    request_id = _create(client, headers["staff"], "OTHER")
+    _post(client, headers["academic"], request_id, "approve", expected="APPROVED")
+    _post(
+        client,
+        headers["librarian"],
+        request_id,
+        "requisition",
+        {},
+        expected="PENDING_BURSAR",
+    )
 
 
 # --------------------------------------------------------------------------- #

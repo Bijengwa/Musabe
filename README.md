@@ -1,13 +1,36 @@
-# Musabe Schools Management System — Backend
+# Musabe Schools Management System
 
-A REST API for managing a group of schools: staff and branch administration,
-requests and approvals, procurement, the library and the store, issuing,
-write-offs, parent contributions, and management reports.
+A school-management system for a group of schools: staff and branch
+administration, requests and approvals, procurement, the library and the store,
+issuing, write-offs, parent contributions, and management reports.
 
-Built with **Python + FastAPI**, **SQLAlchemy 2**, **Alembic**, and
-**Pydantic v2**. The development database is SQLite; production targets
-PostgreSQL. All business rules live in services; routers only translate HTTP
-to service calls.
+The repository holds two parts that run together:
+
+- **Backend** — a REST API + the website server (`app/`, Python + FastAPI).
+- **Frontend** — a static, no-build web app (`frontend/`, HTML/CSS/JavaScript)
+  served by the backend at `/`.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+| ----- | ---------- |
+| Language (backend) | **Python 3.11+** (tested on 3.14) |
+| Web framework | **FastAPI** + **Uvicorn** |
+| Validation | **Pydantic v2** |
+| ORM | **SQLAlchemy 2.0** |
+| Migrations | **Alembic** |
+| Database | **PostgreSQL** (production) / **SQLite** (local dev, tests) |
+| Auth | **JWT** (PyJWT) + **bcrypt** password hashing |
+| Tests | **pytest** + **httpx** (TestClient) |
+| Frontend | **HTML + CSS + vanilla JavaScript** (no build step) |
+| Packaging / runtime | **Docker** + **Docker Compose** |
+
+Architecture is `router → service → model`: routers only translate HTTP,
+all business rules live in services, and every state change writes an
+`audit_logs` row. The single source of truth for workflow transitions is
+[`app/services/workflow.py`](app/services/workflow.py).
 
 ---
 
@@ -43,28 +66,54 @@ pays; a **Storekeeper** orders, receives, and dispatches; the original
 
 ## Getting started
 
-Requires **Python 3.11+** (developed on 3.14).
+### Option A — Docker Compose (recommended, PostgreSQL)
+
+The supported way to run the full system (PostgreSQL + API + website).
 
 ```bash
-git clone https://github.com/<your-username>/musabe-backend.git
-cd musabe-backend
+git clone https://github.com/Bijengwa/Musabe.git
+cd Musabe
 
-python3 -m venv .venv
-source .venv/bin/activate
+cp .env.example .env          # then edit POSTGRES_PASSWORD and JWT_SECRET_KEY
+
+docker compose up --build -d  # starts PostgreSQL and the web application
+docker compose run --rm backend python -m scripts.seed   # optional demo data
+```
+
+### Option B — Local Python with SQLite (no Docker, no PostgreSQL)
+
+Fastest way to run it on a laptop. Uses the bundled SQLite file.
+
+```bash
+git clone https://github.com/Bijengwa/Musabe.git
+cd Musabe
+
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env          # tweak values if needed
-python -m alembic upgrade head # create the database schema
-python -m scripts.seed         # create branches, demo staff, and a supplier
+# Point the app at SQLite
+echo "DATABASE_URL=sqlite+pysqlite:///./dev.db" >> .env
 
-python -m uvicorn app.main:app --reload
+python -m alembic upgrade head     # create the schema
+python -m scripts.seed             # load demo schools, staff and books
+
+uvicorn app.main:app --reload      # start the API + website
 ```
 
 Then open:
 
+- **Web application:** <http://127.0.0.1:8000/>
 - Interactive API docs (Swagger UI): <http://127.0.0.1:8000/docs>
 - Alternative docs (ReDoc): <http://127.0.0.1:8000/redoc>
 - Health check: <http://127.0.0.1:8000/health>
+
+The web application is a responsive HTML/CSS/JavaScript site served by the
+backend at `/`; no separate build step or dev server is required.
+
+With Docker, data is stored in the `pgdata` volume and survives restarts. To
+stop without losing data: `docker compose down` (add `-v` **only** if you
+intend to delete the database).
 
 > **Note:** run Alembic and scripts as modules (`python -m alembic ...`,
 > `python -m scripts.seed`) so package imports resolve correctly.
@@ -83,7 +132,7 @@ issuing, write-off, and contributions — asserting every step:
 python -m scripts.demo
 ```
 
-Expected output ends with `DEMO PASSED: 27 steps executed successfully.`
+Expected output ends with `DEMO PASSED: 28 steps executed successfully.`
 
 **2. Manual walkthrough against a running server.** See
 [`docs/DEMO.md`](docs/DEMO.md) for a click-by-click guide and sample accounts.
@@ -158,6 +207,7 @@ All endpoints except `/health` and `/auth/login` require a bearer token:
 | POST | `/write-offs/{id}/approve` | Approve/reject write-off | head master |
 | GET/POST | `/contributions` | List / record contributions | librarian (create) |
 | GET | `/reports/overview` | Dashboard summary | authenticated |
+| GET | `/reports/my-actions` | Pending tasks for the current user's roles | authenticated |
 | GET | `/reports/pending-requests` | Non-terminal requests | authenticated |
 | GET | `/reports/stock` | Stock levels (low-stock flag) | authenticated |
 | GET | `/reports/outstanding-issues` | Unreturned loans | authenticated |
@@ -183,9 +233,13 @@ PENDING_ACADEMIC → PENDING_HEAD_MASTER → APPROVED → PENDING_BURSAR
 **OTHER** (consumables and general items):
 
 ```
-PENDING_APPROVAL → PENDING_BURSAR → PENDING_MANAGER → PENDING_ORDER
-→ ORDERED → RECEIVED → VERIFIED → PAID → IN_STORE
+PENDING_APPROVAL → APPROVED → PENDING_BURSAR → PENDING_MANAGER
+→ PENDING_ORDER → ORDERED → RECEIVED → VERIFIED → PAID → IN_STORE
 ```
+
+An OTHER request is approved by the **Academic Master or Head Master**,
+after which a **Librarian** raises the requisition that forwards it to the
+Bursar — the same librarian hand-off BOOKs go through.
 
 A failed verification (`matched=false`) moves a request to `DISPUTED`;
 `REJECTED` is terminal for either flow. The single source of truth for these
@@ -196,19 +250,54 @@ transitions is [`app/services/workflow.py`](app/services/workflow.py).
 ## Project structure
 
 ```
-app/
-  main.py              FastAPI app + router registration
-  core/                config, database, security (hashing/JWT), permissions
-  models/              SQLAlchemy models (one concern per file)
-  schemas/             Pydantic request/response models
-  routers/             thin HTTP layer
-  services/            business logic (workflow, procurement, library,
-                       issuing, write-off, reports, audit, ...)
-  utils/codes.py       unique code generation (book copies, etc.)
-alembic/               migration environment + versioned migrations
-scripts/               seed.py (demo data), demo.py (automated walkthrough)
-tests/                 pytest suite (incl. end-to-end pipeline tests)
-docs/                  SPEC.md, DEMO.md
+Musabe/
+├── app/                       Backend application (Python / FastAPI)
+│   ├── main.py                FastAPI app + router registration, serves frontend/
+│   ├── core/                  config.py, database.py, security.py, permissions.py
+│   ├── models/                SQLAlchemy models (one concern per file)
+│   ├── schemas/               Pydantic request/response models
+│   ├── routers/               thin HTTP layer (one router per feature)
+│   ├── services/              business logic — the heart of the system
+│   │   ├── workflow.py        every request status transition (BOOK & OTHER)
+│   │   ├── request_service.py create/approve/reject requests, branch scoping
+│   │   ├── procurement_service.py  requisition → PO → order → receive → pay
+│   │   ├── inventory_service.py    stock levels + stock movements
+│   │   ├── issuing_service.py      lend/return book copies and stock
+│   │   ├── writeoff_service.py     lost/damaged copies + Head Master approval
+│   │   ├── reports_service.py      dashboard aggregations + "my actions"
+│   │   └── audit_service.py        writes every state change to audit_logs
+│   └── utils/codes.py        unique code generation (book copy codes, etc.)
+│
+├── frontend/                  Static web app (no build step) served at /
+│   ├── index.html             single-page shell (login + app views)
+│   ├── css/style.css          styling
+│   └── js/
+│       ├── api.js             fetch wrapper, token storage, session/roles
+│       ├── app.js             login, hash router, sidebar navigation
+│       ├── ui.js              DOM helpers, badges, tables, modals
+│       └── pages/             one module per screen
+│           ├── dashboard.js   overview + role-aware "Awaiting your action"
+│           ├── requests.js    request list + workflow action buttons
+│           ├── library.js     book titles, copies, catalogue
+│           ├── issuing.js     lend / return
+│           ├── inventory.js   stock levels and movements
+│           ├── writeoffs.js   lost/damaged reports + approval
+│           ├── contributions.js  parent contributions
+│           ├── suppliers.js   supplier directory
+│           └── admin.js       branches & staff administration
+│
+├── alembic/                   Migrations (env.py + versioned revisions)
+├── scripts/
+│   ├── seed.py                demo schools, staff, books and suppliers
+│   ├── demo.py                fully automated end-to-end walkthrough
+│   ├── backup_database.sh     dump the database
+│   └── restore_database.sh    restore from a dump
+├── tests/                     pytest suite (unit + end-to-end pipeline)
+├── docs/                      SPEC.md, DEMO.md, INSTALLATION.md, DATABASE_BACKUP.md
+├── compose.yaml               PostgreSQL + backend containers
+├── Dockerfile                 backend image
+├── requirements.txt           pinned Python dependencies
+└── alembic.ini                Alembic configuration
 ```
 
 ---
@@ -227,23 +316,34 @@ Migrations under `alembic/versions/` are committed to Git on purpose — anyone
 who clones the repo must be able to build the same schema. The local SQLite
 database file (`dev.db`) and `.env` are ignored.
 
-For PostgreSQL, set `DATABASE_URL` in `.env`, for example:
+PostgreSQL is the primary database. The connection URL is assembled from the
+`POSTGRES_*` variables in `.env`:
 
 ```
-DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/musabe
+POSTGRES_USER=musabe
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=musabe
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
 ```
+
+Setting an explicit `DATABASE_URL` overrides them (useful for tests or for a
+temporary SQLite database with `sqlite+pysqlite:///./dev.db`).
 
 ---
 
 ## Working with collaborators
 
-- **Backend** lives in this repository (models, migrations, and API).
-- **Frontend** should be a separate repository/app that talks to this API
-  using the OpenAPI schema at `/openapi.json` (or `/docs`). Generate typed
-  clients directly from that schema if you like.
+- **Backend** lives in `app/` (models, migrations, and API).
+- **Frontend** is the static website in `frontend/`, served by the backend at
+  `/` and talking to the same origin's API. It has no build step; edit the
+  HTML/CSS/JS and refresh. Generate typed clients from `/openapi.json` if you
+  prefer.
 - **Database schema ownership:** models and migrations are defined here, so
   schema changes should land here. Coordinate before editing the schema from
   elsewhere to avoid drift.
 
-See [`docs/DEMO.md`](docs/DEMO.md) for the manual demo, and the pushed
-`README` for how to invite collaborators on GitHub.
+See [`docs/DEMO.md`](docs/DEMO.md) for the manual demo,
+[`docs/INSTALLATION.md`](docs/INSTALLATION.md) for setup on a new Ubuntu
+machine, and [`docs/DATABASE_BACKUP.md`](docs/DATABASE_BACKUP.md) for backup
+and restore.

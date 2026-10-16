@@ -292,6 +292,16 @@ def _walk_other_flow(demo: Demo) -> None:
         "Head Master approves",
         c.post(f"/requests/{request_id}/approve", headers=h[HEAD], json={}),
     )
+    assert body["status"] == "APPROVED"
+
+    body = demo.step(
+        "Librarian raises a requisition",
+        c.post(
+            f"/requests/{request_id}/requisition",
+            headers=h[LIBRARIAN],
+            json={},
+        ),
+    )
     assert body["status"] == "PENDING_BURSAR"
 
     supplier_id = c.get("/suppliers", headers=h[BURSAR]).json()[0]["id"]

@@ -62,7 +62,7 @@ def create_requisition(
     user: User = Depends(require_roles(Role.LIBRARIAN)),
     db: Session = Depends(get_db),
 ) -> Request:
-    """Raise a requisition for a BOOK request (LIBRARIAN)."""
+    """Raise a requisition for an approved BOOK or OTHER request (LIBRARIAN)."""
     data = payload if payload is not None else RequisitionCreate()
     return procurement_service.create_requisition(db, user, request_id, data)
 

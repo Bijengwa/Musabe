@@ -34,7 +34,7 @@ class RequestStatus(str, enum.Enum):
 
     * ``PENDING_ACADEMIC``/``PENDING_HEAD_MASTER`` (BOOK flow)
     * ``PENDING_APPROVAL`` (OTHER flow)
-    * ``APPROVED`` (BOOK only, after Head Master approval)
+    * ``APPROVED`` (after school approval, before the librarian requisition)
 
     Procurement statuses (shared by both flows unless noted):
 

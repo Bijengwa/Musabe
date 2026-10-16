@@ -18,7 +18,8 @@ BOOK flow::
 
 OTHER flow::
 
-    PENDING_APPROVAL -approve-> PENDING_BURSAR
+    PENDING_APPROVAL -approve-> APPROVED
+    APPROVED -requisition-> PENDING_BURSAR
     PENDING_BURSAR -purchase_order-> PENDING_MANAGER
     PENDING_MANAGER -approve-> PENDING_ORDER -order-> ORDERED
     ORDERED -receive-> RECEIVED -verify_true-> VERIFIED
@@ -119,10 +120,13 @@ WORKFLOWS: dict[
     },
     RequestType.OTHER: {
         (_R.PENDING_APPROVAL, _A.APPROVE): _Transition(
-            _R.PENDING_BURSAR, {Role.HEAD_MASTER}
+            _R.APPROVED, {Role.HEAD_MASTER, Role.ACADEMIC_MASTER}
         ),
         (_R.PENDING_APPROVAL, _A.REJECT): _Transition(
-            _R.REJECTED, {Role.HEAD_MASTER}
+            _R.REJECTED, {Role.HEAD_MASTER, Role.ACADEMIC_MASTER}
+        ),
+        (_R.APPROVED, _A.REQUISITION): _Transition(
+            _R.PENDING_BURSAR, {Role.LIBRARIAN}
         ),
         (_R.PAID, _A.MOVE_TO_STORE): _Transition(
             _R.IN_STORE, {Role.LIBRARIAN}

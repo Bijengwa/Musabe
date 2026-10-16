@@ -48,6 +48,19 @@ class PendingRequestRow(BaseModel):
     created_at: datetime
 
 
+class ActionItem(BaseModel):
+    """One pending task the signed-in user can act on, based on their roles."""
+
+    kind: str
+    id: int
+    label: str
+    status: str
+    action: str
+    branch_id: int
+    route: str
+    created_at: datetime
+
+
 class StockReportRow(BaseModel):
     """A stock level with a low-stock flag."""
 
