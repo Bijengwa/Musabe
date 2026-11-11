@@ -1,32 +1,57 @@
-# Musabe Schools Management System
+# Musabe Schools System
 
-Version 1.0 foundation for Musabe Schools (Buhongwa, Mwanza).
+One system for Musabe English Medium School, Musabe Boys Secondary School and Musabe Girls Secondary School.
 
-One system for staff registration, buying workflows, library and store control across Central Administration and three schools:
+- `backend/` — Node.js + Express 5 + Knex + PostgreSQL (API on port 3001)
+- `frontend/` — React 19 + Vite (opens on port 5173, sends `/api` to the backend)
+- `docs/roadmap.md` — the plan · `docs/progress.md` — where we are
+- `musabe_schools_system.html` — clickable prototype of the full system
 
-- Nursery & Primary
-- Girls Secondary
-- Boys Secondary
+## First-time setup (Windows)
 
-**Authoritative documents**
+1. **Create the database** (PostgreSQL must be running). In pgAdmin or `psql`:
+   ```sql
+   CREATE DATABASE musabe_db;
+   ```
+2. **Backend**
+   ```powershell
+   cd backend
+   copy .env.example .env      # then open .env and put your PostgreSQL password in DATABASE_PASSWORD
+   npm install
+   npm run setup               # creates the tables and the first Super Admin
+   npm run dev
+   ```
+   Check http://localhost:3001/api/health shows `"database": "connected"`.
+3. **Frontend** (second terminal)
+   ```powershell
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Open http://localhost:5173
 
-- `docs/roadmap.md` — what to build and in what order
-- `docs/progress.md` — current status
-- `CLAUDE.md` — how to work (one step at a time)
+## First sign-in
+- Username: `superadmin`
+- Password: `Musabe@2026` (or what you set in `SUPERADMIN_PASSWORD` before `npm run setup`)
+- You must choose your own password straight away.
 
-The original proposal is the source of truth for roles, approval chains and flows.
+Then: **Staff accounts → New account** → create a School Admin for each school. The screen shows a temporary password once; give it to the person. They sign in, choose their own password, and create the staff of their school.
 
-## Structure (planned)
+## Useful commands (backend)
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the API and restart on file changes |
+| `npm run migrate` | Apply new database changes |
+| `npm run rollback` | Undo the last database change |
+| `npm run seed` | Add the 3 schools and the Super Admin if missing (safe to run again) |
 
-```
-Musabe/
-├── docs/           # Roadmap, progress, design notes
-├── node/           # API (Express 5, Knex, PostgreSQL, Redis) — not yet created
-├── web/            # React 19 + TypeScript + Vite — not yet created
-├── CLAUDE.md
-└── README.md
-```
-
-## Current focus
-
-Documentation only. Implementation of `node/` and `web/` comes after the docs are approved.
+## Where things are
+| What | File |
+|---|---|
+| Roles and who sees which page | `backend/src/auth/roles.js` |
+| Sign-in, sessions, page checks | `backend/src/auth/session.js` |
+| Staff accounts API | `backend/src/routes/users.js` |
+| Database tables | `backend/migrations/` |
+| Sidebar items | `frontend/src/nav.js` |
+| Sidebar + hamburger | `frontend/src/layout/Shell.jsx` |
+| Staff accounts screen | `frontend/src/pages/Staff.jsx` |

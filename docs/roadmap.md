@@ -1,187 +1,101 @@
-# Musabe Schools Management System — Roadmap
+# Musabe Schools System — Roadmap
 
-Status: authoritative roadmap for Version 1.0 (foundation).
-Progress: `docs/progress.md`
+Status: authoritative plan. Replaces the Oct 2026 "request → purchase order → storekeeper" plan.
+Progress: `docs/progress.md` · Clickable prototype: `musabe_schools_system.html`
 
-Order of authority:
+One system, one database, for the three schools in Buhongwa, Mwanza:
+Musabe English Medium School, Musabe Boys Secondary School, Musabe Girls Secondary School.
+Modules share the same schools, staff, students and sign-in.
 
-```
-docs/roadmap.md          what to build, in what order
-        ↓
-CLAUDE.md                how to work
-        ↓
-docs/progress.md         where we are
-```
-
-If this plan and the original proposal disagree, stop and ask.
+Stack: React 19 + Vite (`frontend/`), Node.js + Express 5 + Knex (`backend/`), PostgreSQL.
 
 ---
 
-## 0. Starting point
+## 1. Rules that do not change
 
-- Empty repository.
-- Proposal PDF is the source of truth for roles, approval chains, and the 9-stage library flow.
-- No code yet. Docs first.
+### Accounts (14 roles)
 
----
+| Group | Role | Sees |
+|---|---|---|
+| Administration | Super Admin | Everything. Creates admin accounts and School Admins |
+| | Director, Assistant Director | Everything, view only |
+| | Manager | Approves stock requests and write-offs |
+| | Finance Manager, Assistant | Prices, sends stock, all sales |
+| | Accountant, Assistant | Checks receipts, stock, damages |
+| Each school | School Admin | Creates the staff of own school; students; classes |
+| | Head Master | Whole school, academic + sales view |
+| | Academic Master | Exam sets, marks, results of own school |
+| | Subject Teacher (+ Class Teacher) | Own subjects and classes |
+| | Bursar | Takes payment, writes receipts |
+| | Librarian | Receives stock, gives items against receipts |
 
-## 1. Non-negotiable rules
+- Administration roles have no school. School roles have exactly one school (checked in the database).
+- Page access lives in ONE file: `backend/src/auth/roles.js` (`ACCESS`). The sidebar and every API check read from it.
+- The sidebar only hides. The server checks role + school on every request.
 
-### Roles (Version 1.0)
+### Sign-in and passwords
+- Username + password. Opaque session token in an HttpOnly cookie; the database stores only its SHA-256 hash.
+- New accounts and resets get a temporary password, shown once, handed over in person. The person must choose their own password at first sign-in.
+- "Forgot password" only records a request; the administrator gives a temporary password. No SMS/email passwords.
+- 5 wrong passwords lock the account for 15 minutes.
+- Switching an account off, or resetting its password, signs it out everywhere.
+- Every change is written to `audit_log`. Nobody can edit or delete the log.
 
-**Central Administration (shared)**
-| Role        | Responsibility                                      |
-|-------------|-----------------------------------------------------|
-| Admin       | Registers branches and all staff; assigns roles     |
-| Manager     | Final approval for purchases                        |
-| Bursar      | Turns Requisition into Purchase Order; makes payments |
-| Storekeeper | Orders from suppliers; receives deliveries; sends goods to schools |
-
-**Per school**
-| Role                  | Responsibility                                      |
-|-----------------------|-----------------------------------------------------|
-| Head Master / Headmistress | Approves school requests; final say on book write-offs |
-| Academic Master       | Reviews and filters requests from teachers (especially textbooks) |
-| Librarian             | Runs library + store; writes Purchase Requisitions; catalogues, issues, starts write-offs |
-| Requesting Staff      | Any authorised staff member who starts a request    |
-
-Heads of Department and Class Teachers are **not** in Version 1.0.  
-Students and Parents come in Version 1.1.
-
-### Authentication & sessions
-- Opaque session ID in HttpOnly cookie (`SameSite=Lax`, `Secure` in production).
-- Redis sessions; Postgres is authoritative for identity, role, status.
-- Frontend only trusts `GET /api/auth/me`.
-- Temporary passwords force change on next login.
-- Forgot-password notifies Admin/IT; no email/SMS delivery of passwords.
-- Session revocation on deactivate, password reset, role change.
-
-### UI
-- Role-based sidebar: only show what the current role can do.
-- Responsive (360 / 768 / desktop), light + dark.
-- Clean, professional, compact. No emoji icons.
+### Money rules
+- Receipt numbers per school run without gaps. **No role can cancel or edit a receipt.**
+- Library gives items only against a bursar's receipt.
 
 ---
 
-## 2. High-level phases
+## 2. Steps
 
-| Phase      | Focus                                      | Status   |
-|------------|--------------------------------------------|----------|
-| Docs       | Roadmap, progress, CLAUDE.md               | Current  |
-| M0         | Project skeleton (node/ + web/)            | Later    |
-| M1         | Auth (login, remember me, forgot password, forced change) | Later |
-| M2         | Dashboard shell + role-based sidebar       | Later    |
-| M3         | Admin: branch registration + staff registration + reset password + activity log | Later |
-| M4         | Library / Store core (requests → approvals → requisition → PO → receive → verify → issue → write-off) | Later |
-| M5         | Inventory, unique book codes, parent contributions (Primary) | Later |
-| M6         | Reports + audit trail                      | Later    |
-| V1.1       | Students, parents, link to library         | Future   |
+| Step | Focus | Status |
+|---|---|---|
+| 1a | Accounts: sign-in, forced password change, schools, staff accounts, audit log, role sidebar | **Done** |
+| 1b | Students: add, load from Excel, classes per school | Next |
+| 2 | Library & Sales | |
+| 3 | Academic Progress | |
+| 4 | Role dashboards, reports, settings | |
 
----
+### Step 1a — Accounts (done)
+- Tables: `schools`, `users`, `sessions`, `audit_log`.
+- Super Admin creates any account; School Admin creates Head Master, Academic Master, Subject Teacher, Bursar, Librarian for own school only.
+- Edit name/phone/username, reset password, switch on/off, password requests on Home.
+- Done when: Super Admin → School Admin → Bursar chain works, each signs in with a temporary password, changes it, and sees only their own sidebar.
 
-## 3. Detailed roadmap (Version 1.0)
+### Step 1b — Students
+- Tables: `classes` (per school, level, stream), `students` (reg. no., name, gender, class).
+- School Admin adds students one by one or uploads an Excel file (.xlsx): preview, show errors per row, then save.
+- Registration numbers made by the system: `MS/EM/2026/001`.
+- Done when: a School Admin loads a class list from Excel and the bursar can find a student by name or reg. no.
 
-Each step lists **Scope**, **Done when**, and **Not in this step**.
+### Step 2 — Library & Sales
+Flow: parent pays at the bursar → receipt → library gives items.
+1. Items & prices (boy / girl price), reorder level
+2. Send stock (Finance) → librarian confirms each line → stock goes up
+3. Sell + receipt (gap-free numbers, prints like the school receipt book)
+4. Give items → stock goes down
+5. Stock levels
+6. Damaged / lost: Librarian reports → Accountant verifies → Manager approves
+7. Stock requests: Librarian → Manager approves → Finance sends
+8. Excel export
+- Go live in one school first (English Medium), run beside the Excel book for 2 weeks.
 
-### Docs phase (current)
+### Step 3 — Academic Progress
+1. Subjects, topics per level; teacher ↔ class ↔ subject; class teacher
+2. Exam sets; papers with questions tied to topics
+3. Marks entry on screen and by Excel upload; "AB" for absent
+4. Results: averages, bands, topic scores, students to watch (rules in Settings)
+5. Support plans; question bank (NECTA + teachers)
 
-#### D1 — Core documentation
-- **Scope:** Create README.md, CLAUDE.md, docs/roadmap.md, docs/progress.md that capture the proposal’s roles, flows and Version 1.0 feature list.
-- **Done when:** Files exist on `main` and accurately reflect the proposal + the agreed starting order (login → dashboard → SuperAdmin staff registration → library flows).
-- **Not in this step:** Any code in `node/` or `web/`.
-
-### M0 — Project skeleton (after docs approved)
-- **Scope:** Create `node/` (Express 5, Knex, Postgres, Redis) and `web/` (React 19 + TS + Vite) with the same layout conventions used in PSP. Basic health endpoints and a placeholder login route.
-- **Done when:** Both packages install and start; empty database migrates cleanly.
-- **Not in this step:** Real auth logic or UI beyond a blank page.
-
-### M1 — Authentication
-- **Scope:**
-  - Login page (email + password)
-  - Remember me
-  - Forgot password (notifies Admin, temporary password + forced change)
-  - Forced password change on first login / after reset
-  - Session management (Redis + cookie)
-  - Login activity / audit log foundation
-- **Done when:** A seeded Admin can log in, be forced to change password, log out, and the session is correctly stored and revoked.
-- **Not in this step:** Staff registration UI, role-based sidebar content, library modules.
-
-### M2 — Dashboard shell + role-based sidebar
-- **Scope:** Authenticated layout with sidebar that shows only the items allowed for the current role. Placeholder pages for every future module.
-- **Done when:** After login the correct sidebar appears for Admin / Manager / Bursar / Storekeeper / Head Master / Academic Master / Librarian / Requesting Staff. Mobile drawer works.
-- **Not in this step:** Real content inside any module.
-
-### M3 — Admin: Branches & Staff
-- **Scope:**
-  - Register school branches (type: Primary / Secondary)
-  - Register staff (name, email, temporary password)
-  - Assign role + place (one branch, several branches, Central, or all)
-  - Reset password from profile
-  - Activate / deactivate
-  - View login activity
-- **Done when:** Admin can fully onboard a Librarian for Girls Secondary and that user can log in with the forced-change flow.
-- **Not in this step:** Any buying or library workflows.
-
-### M4 — Library / Store workflows (core)
-- **Scope:** Implement the full request-to-write-off chain described in the proposal, with the correct approval hand-offs:
-  1. Request (Requesting Staff)
-  2. School approval (Academic Master → Head Master)
-  3. Requisition (Librarian)
-  4. Central approval (Bursar → Manager)
-  5. Order & receive (Storekeeper)
-  6. Verify & pay (original requestor verifies → Bursar pays)
-  7. Catalogue (Librarian)
-  8. Issue & track (Librarian)
-  9. Write-off (Librarian → Head Master)
-- Books use the longer 13-step path; other items use the shorter 9-step path.
-- **Done when:** A textbook request can travel the full path and end as an issued book with a unique code, and a write-off can be approved by the Head Master.
-- **Not in this step:** Parent contributions, advanced reports, multi-school stock transfers beyond the basic send-to-school step.
-
-### M5 — Inventory & parent contributions
-- **Scope:** Unique codes for every book copy, stock levels by item, parent contributions (Primary only) as an additional stock-in path.
-- **Done when:** Stock reports show correct quantities and parent-contributed items are distinguishable.
-- **Not in this step:** Full analytics dashboard.
-
-### M6 — Reports & audit trail
-- **Scope:** Core reports for staff and management + complete audit trail of every request, approval, receipt and issue.
-- **Done when:** Management can see pending requests, stock levels and a filterable audit log.
-- **Not in this step:** Version 1.1 features (students, parents, academics, fees, transport).
+### Step 4 — Dashboards and reports
+- Each role's Home as in the prototype.
+- Reports with Excel export; Settings (warning rules, current exam set).
 
 ---
 
-## 4. Version 1.0 feature checklist (from proposal)
-
-- [ ] Branch and staff registration
-- [ ] Requisition and Purchase Order workflow
-- [ ] Multi-level approval (Academic Master → Head Master → Manager)
-- [ ] Receiving and verification (original requestor confirms)
-- [ ] Library and store inventory (unique book codes, stock levels)
-- [ ] Issuing and tracking
-- [ ] Write-off (Head Master approval)
-- [ ] Parent contributions (Primary)
-- [ ] Audit trail
-- [ ] Core reports
-
----
-
-## 5. Out of scope for Version 1.0
-
-- Students and Parents portals
-- Academics, fees, transport, announcements
-- Heads of Department / Class Teachers as distinct roles
-- Email / SMS password delivery
-- Online payment gateways
-- Multi-tenant SaaS (this is a single-organisation system for Musabe Schools)
-
----
-
-## 6. Benefits (from proposal — keep visible)
-
-| Benefit                 | Result                                              |
-|-------------------------|-----------------------------------------------------|
-| Clear accountability    | Every step has a named person and a record          |
-| Less loss and misuse    | Books and items traced from order to issue          |
-| Faster, open approvals  | Everyone can see where a request is waiting         |
-| Live stock view         | Management sees stock and pending requests any time |
-| Better financial control| Payment only after requestor verifies delivery      |
-| Room to grow            | Later modules build on the same foundation          |
+## 3. Out of scope for now
+- Parents and students signing in (later: Musabe Parent Connect reads from this system)
+- Fees, transport, payroll
+- SMS/email
+- Online payments
