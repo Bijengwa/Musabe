@@ -23,6 +23,7 @@ export default function Schools() {
             <div className="hd"><SchoolPill code={s.code} name={s.shortName} /><h2>{s.name}</h2></div>
             <div className="bd stack small">
               <div className="kv"><span>Levels</span><b>{s.levels || '—'}</b></div>
+              <div className="kv"><span>Students</span><b>{{ boys: 'Boys only', girls: 'Girls only', mixed: 'Boys and girls' }[s.students] || '—'}</b></div>
               <div className="kv"><span>Receipt prefix</span><b>{s.receiptPrefix}</b></div>
               <div className="kv"><span>Active staff</span><b>{s.staffCount}</b></div>
               <div className="kv"><span>School Admin</span><b>{s.schoolAdmins || <span className="pill bad">None yet</span>}</b></div>
@@ -37,7 +38,7 @@ export default function Schools() {
 }
 
 function SchoolForm({ s, onClose, onDone }) {
-  const [f, setF] = useState({ name: s.name || '', shortName: s.shortName || '', levels: s.levels || '', receiptPrefix: s.receiptPrefix || '' });
+  const [f, setF] = useState({ name: s.name || '', shortName: s.shortName || '', levels: s.levels || '', receiptPrefix: s.receiptPrefix || '', students: s.students || 'mixed' });
   const [error, setError] = useState('');
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
   const submit = async (e) => {
@@ -53,6 +54,9 @@ function SchoolForm({ s, onClose, onDone }) {
           <label>Short name<input id="sc-short" value={f.shortName} onChange={set('shortName')} placeholder="e.g. High School" /></label>
           <label>Levels<input id="sc-levels" value={f.levels} onChange={set('levels')} placeholder="e.g. Form V–VI" /></label>
           <label>Receipt prefix<input id="sc-prefix" value={f.receiptPrefix} onChange={set('receiptPrefix')} maxLength={4} placeholder="e.g. HS" required /></label>
+          <label>Students<select id="sc-students" value={f.students} onChange={set('students')}>
+            <option value="mixed">Boys and girls</option><option value="boys">Boys only</option><option value="girls">Girls only</option>
+          </select></label>
         </div>
         {!s.id && <p className="small muted">After adding the school, create its School Admin in Staff accounts.</p>}
         <ErrorNote error={error} />

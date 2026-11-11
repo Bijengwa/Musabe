@@ -14,6 +14,7 @@ const LOCKED = { fullName: 'name', username: 'username', role: 'role', schoolId:
 
 const THEMES = ['system', 'light', 'dark'];
 const TEXT_SIZES = ['normal', 'large'];
+// sound: play a sound for new notifications (default on)
 
 // Short public id for a session. The full value is a hash of the cookie and never leaves the server.
 const sid = (hash) => hash.slice(0, 12);
@@ -77,6 +78,7 @@ router.put('/preferences', async (req, res) => {
     if (!THEMES.includes(b.theme)) throw new HttpError(400, 'Choose Light, Dark or System.');
     prefs.theme = b.theme;
   }
+  if (b.sound !== undefined) prefs.sound = !!b.sound;
   if (b.textSize !== undefined) {
     if (!TEXT_SIZES.includes(b.textSize)) throw new HttpError(400, 'Choose Normal or Large text.');
     prefs.textSize = b.textSize;

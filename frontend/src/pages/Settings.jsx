@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
+import { chime } from '../layout/Bell';
 import { useAuth } from '../auth/AuthContext';
 import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, useToast } from '../components/ui';
 
@@ -64,6 +65,9 @@ export default function Settings() {
         </div>
       </Panel>
 
+      <div id="notifications" className="anchor" />
+      <Notifications sound={user.preferences?.sound !== false} set={set} />
+
       <div id="security" className="anchor" />
       <Panel title="Password" right={<button className="btn sm" onClick={() => setPwOpen(true)}><Icon name="key" /> Change password</button>}>
         <p style={{ margin: 0 }} className="muted">Use a password only you know, with at least 8 characters, letters and numbers. When you change it, your other devices are signed out.</p>
@@ -80,6 +84,35 @@ export default function Settings() {
 
       {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}
     </>
+  );
+}
+
+function Notifications({ sound, set }) {
+  const supported = typeof window !== 'undefined' && 'Notification' in window;
+  const [perm, setPerm] = useState(supported ? window.Notification.permission : 'unsupported');
+  const ask = async () => { try { setPerm(await window.Notification.requestPermission()); } catch { /* ignore */ } };
+  return (
+    <Panel title="Notifications">
+      <div className="stack">
+        <div className="row spread">
+          <div><b className="fw5">Sound</b><p className="small muted" style={{ margin: 0 }}>Play a short sound when something new happens.</p></div>
+          <div className="row">
+            <button className="btn sm" onClick={chime}><Icon name="volume" /> Test</button>
+            <div className="seg" role="radiogroup" aria-label="Sound">
+              <button role="radio" aria-checked={sound} className={sound ? 'on' : ''} onClick={() => set({ sound: true })}>On</button>
+              <button role="radio" aria-checked={!sound} className={!sound ? 'on' : ''} onClick={() => set({ sound: false })}>Off</button>
+            </div>
+          </div>
+        </div>
+        <div className="row spread">
+          <div><b className="fw5">Pop-ups on this device</b><p className="small muted" style={{ margin: 0 }}>Show a message on the screen even when the app is in the background.</p></div>
+          {perm === 'granted' ? <span className="pill ok"><Icon name="check" /> On</span>
+            : perm === 'denied' ? <span className="pill">Blocked in browser settings</span>
+              : perm === 'unsupported' ? <span className="pill">Not available here</span>
+                : <button className="btn sm" onClick={ask}>Turn on</button>}
+        </div>
+      </div>
+    </Panel>
   );
 }
 

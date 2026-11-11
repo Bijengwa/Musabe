@@ -19,7 +19,9 @@ const P = {
   phone: 'M7 2h10v20H7zM11 18h2', monitor: 'M3 4h18v12H3zM8 20h8M12 16v4', mail: 'M3 5h18v14H3zM3 6l9 7 9-7',
   sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   moon: 'M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z', auto: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 3v18', text: 'M4 7V5h12v2M10 5v14M8 19h4M14 13v-1h7v1M17.5 12v7M16 19h3',
-  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2', chev: 'M9 6l6 6-6 6', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-4.3-4.3', edit: 'M4 20h4L19 9l-4-4L4 16z',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2', chev: 'M9 6l6 6-6 6',
+  excel: 'M4 3h11l5 5v13H4zM14 3v6h6M8 12l5 6M13 12l-5 6', upload: 'M12 16V4M7 9l5-5 5 5M4 20h16',
+  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0', volume: 'M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-4.3-4.3', edit: 'M4 20h4L19 9l-4-4L4 16z',
 };
 export const Icon = ({ name, size }) => (
   <svg className="ic" viewBox="0 0 24 24" aria-hidden="true" style={size ? { width: size, height: size } : undefined}><path d={P[name] || ''} /></svg>
@@ -104,6 +106,14 @@ export function PhoneInput({ id, value, onChange, autoFocus }) {
     </>
   );
 }
+
+// "Download Excel" button. `href` is an /api/... .xlsx address; the browser downloads it with the sign-in cookie.
+export const ExcelButton = ({ href, label = 'Excel' }) => (
+  <a className="btn xl" href={href} download title="Download as Excel"><Icon name="excel" /> {label}</a>
+);
+
+// Money in Tanzanian shillings: 36000 -> "36,000"
+export const tsh = (n) => Number(n).toLocaleString('en-GB');
 
 export const Empty = ({ children }) => <div className="empty">{children}</div>;
 export const ErrorNote = ({ error }) => (error ? <p className="err" role="alert">{error}</p> : null);

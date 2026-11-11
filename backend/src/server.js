@@ -31,6 +31,8 @@ app.use('/api/me', require('./routes/me'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/schools', require('./routes/schools'));
 app.use('/api/audit', require('./routes/audit'));
+app.use('/api/items', require('./routes/items'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found.' }));
 

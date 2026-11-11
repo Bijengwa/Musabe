@@ -1,0 +1,302 @@
+// Library items and prices.
+// Finance Manager adds and changes items and prices. Others with access can look.
+// School staff (bursar, librarian, head master) only see their own school's prices.
+const express = require('express');
+const db = require('../db');
+const { HttpError, audit } = require('../lib/util');
+const { requireAuth, requirePage } = require('../auth/session');
+const { ROLES } = require('../auth/roles');
+const { publish } = require('../realtime');
+const { sendExcel, readExcel } = require('../lib/excel');
+
+const router = express.Router();
+router.use(requireAuth);
+
+const CATEGORIES = ['uniform', 'book', 'exercise_book', 'stationery', 'other']; // same list as migration 004
+const LABEL = { uniform: 'Uniform', book: 'Book', exercise_book: 'Exercise book', stationery: 'Stationery', other: 'Other' };
+const money = (n) => `TSh ${Number(n).toLocaleString('en-GB')}`;
+const allSchools = (u) => ROLES[u.role]?.scope === 'all';
+
+// "36,000" / "36000" / 36000 -> 36000. Empty -> null.
+function amount(v, what) {
+  if (v === null || v === undefined || String(v).trim() === '') return null;
+  const n = Number(String(v).replace(/[,\s]/g, ''));
+  if (!Number.isInteger(n) || n <= 0 || n > 10000000) throw new HttpError(400, `${what}: type a whole amount in shillings, e.g. 36000.`);
+  return n;
+}
+
+const priceOf = (p) => (p ? { price: p.price, boys: p.price_boys, girls: p.price_girls } : null);
+const describe = (p) => (!p ? 'not sold' : p.price != null ? money(p.price) : [p.boys != null && `boys ${money(p.boys)}`, p.girls != null && `girls ${money(p.girls)}`].filter(Boolean).join(', '));
+
+async function list(user, { q, category, status, id } = {}) {
+  let query = db('items as i').select('i.*');
+  if (id) query = query.where('i.id', id);
+  if (q) query = query.whereILike('i.name', `%${q}%`);
+  if (category) query = query.where('i.category', category);
+  if (status === 'archived') query = query.where('i.active', false);
+  else if (status !== 'all') query = query.where('i.active', true);
+  const items = await query.orderBy('i.category').orderBy('i.name');
+  let prices = await db('item_prices').whereIn('item_id', items.map((i) => i.id));
+  if (!allSchools(user)) prices = prices.filter((p) => p.school_id === user.school_id);
+  const by = {};
+  for (const p of prices) (by[p.item_id] ||= {})[p.school_id] = priceOf(p);
+  return items
+    .filter((i) => allSchools(user) || by[i.id]) // school staff: only items sold in their school
+    .map((i) => ({
+      id: i.id, name: i.name, category: i.category, categoryLabel: LABEL[i.category],
+      genderPriced: i.gender_priced, active: i.active, updatedAt: i.updated_at, prices: by[i.id] || {},
+    }));
+}
+
+router.get('/', requirePage('items'), async (req, res) => {
+  const { q, category, status } = req.query;
+  res.json({ items: await list(req.user, { q: q && String(q).trim(), category, status }), categories: CATEGORIES.map((c) => ({ key: c, label: LABEL[c] })) });
+});
+
+// Read and check the form. Returns the item fields and the price for each school (null = not sold there).
+async function readBody(b, existing) {
+  const name = String(b.name ?? existing?.name ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
+  const category = String(b.category ?? existing?.category ?? '');
+  const genderPriced = b.genderPriced !== undefined ? !!b.genderPriced : !!existing?.gender_priced;
+  if (name.length < 2) throw new HttpError(400, 'Type the item name.');
+  if (!CATEGORIES.includes(category)) throw new HttpError(400, 'Choose a category.');
+  const dup = await db('items').whereRaw('lower(name) = ?', [name.toLowerCase()]).modify((q) => existing && q.whereNot('id', existing.id)).first();
+  if (dup) throw new HttpError(409, `There is already an item called "${dup.name}".`);
+
+  const schools = await db('schools').where({ active: true }).orderBy('id');
+  const input = b.prices && typeof b.prices === 'object' ? b.prices : null;
+  const prices = {};
+  for (const s of schools) {
+    const p = input ? input[s.id] : undefined;
+    if (p === undefined) continue; // not sent = leave as it is
+    if (p === null || p.sold === false) { prices[s.id] = null; continue; }
+    if (!genderPriced) {
+      prices[s.id] = { price: amount(p.price, s.short_name), price_boys: null, price_girls: null };
+      if (prices[s.id].price == null) throw new HttpError(400, `${s.short_name}: type the price, or untick "Sold here".`);
+    } else {
+      const boys = s.students === 'girls' ? null : amount(p.boys, `${s.short_name} boys price`);
+      const girls = s.students === 'boys' ? null : amount(p.girls, `${s.short_name} girls price`);
+      if (s.students !== 'girls' && boys == null) throw new HttpError(400, `${s.short_name}: type the price for boys.`);
+      if (s.students !== 'boys' && girls == null) throw new HttpError(400, `${s.short_name}: type the price for girls.`);
+      prices[s.id] = { price: null, price_boys: boys, price_girls: girls };
+    }
+  }
+  return { fields: { name, category, gender_priced: genderPriced }, prices, schools };
+}
+
+// Save prices for each school and keep a record of every change.
+async function savePrices(trx, itemId, prices, userId, genderChanged) {
+  const current = Object.fromEntries((await trx('item_prices').where({ item_id: itemId })).map((p) => [p.school_id, p]));
+  const changes = [];
+  const ids = new Set([...Object.keys(prices).map(Number), ...(genderChanged ? Object.keys(current).map(Number) : [])]);
+  for (const schoolId of ids) {
+    const before = current[schoolId] || null;
+    let after = prices[schoolId];
+    if (after === undefined) after = null; // gender switch with no new price for this school: stop selling until priced
+    const same = before && after && before.price === after.price && before.price_boys === after.price_boys && before.price_girls === after.price_girls;
+    if (same || (!before && !after)) continue;
+    if (after) {
+      await trx('item_prices').insert({ item_id: itemId, school_id: schoolId, ...after, updated_at: trx.fn.now(), updated_by: userId })
+        .onConflict(['item_id', 'school_id']).merge();
+    } else {
+      await trx('item_prices').where({ item_id: itemId, school_id: schoolId }).del();
+    }
+    const o = priceOf(before), n = after && { price: after.price, boys: after.price_boys, girls: after.price_girls };
+    await trx('item_price_changes').insert({ item_id: itemId, school_id: schoolId, old_price: o && JSON.stringify(o), new_price: n && JSON.stringify(n), changed_by: userId });
+    changes.push({ schoolId, from: describe(o), to: describe(n) });
+  }
+  return changes;
+}
+
+// School staff screens refresh too when an item of their school changes.
+const tellSchools = (ids, trx) => [...new Set(ids.map(Number))].forEach((schoolId) => publish({ topics: ['item'], schoolId }, trx));
+
+const nameOf = (schools, id) => schools.find((s) => s.id === Number(id))?.short_name || `school ${id}`;
+
+router.post('/', requirePage('items', 'f'), async (req, res) => {
+  const { fields, prices, schools } = await readBody(req.body || {});
+  const id = await db.transaction(async (trx) => {
+    const [{ id: newId }] = await trx('items').insert({ ...fields, created_by: req.user.id }).returning('id');
+    const changes = await savePrices(trx, newId, prices, req.user.id, false);
+    const where = changes.length ? changes.map((c) => `${nameOf(schools, c.schoolId)} ${c.to}`).join('; ') : 'not sold anywhere yet';
+    await audit(req, 'item.create', `Added item ${fields.name} (${where})`, { detail: { itemId: newId } }, trx);
+    tellSchools(changes.map((c) => c.schoolId), trx);
+    return newId;
+  });
+  res.status(201).json({ item: (await list(req.user, { id, status: 'all' }))[0] });
+});
+
+router.patch('/:id', requirePage('items', 'f'), async (req, res) => {
+  const item = await db('items').where({ id: Number(req.params.id) }).first();
+  if (!item) throw new HttpError(404, 'Item not found.');
+  const { fields, prices, schools } = await readBody(req.body || {}, item);
+  await db.transaction(async (trx) => {
+    const edits = [];
+    if (fields.name !== item.name) edits.push(`renamed from ${item.name}`);
+    if (fields.category !== item.category) edits.push(`category ${LABEL[fields.category]}`);
+    const genderChanged = fields.gender_priced !== item.gender_priced;
+    if (genderChanged) edits.push(fields.gender_priced ? 'now priced by gender' : 'same price for boys and girls');
+    if (edits.length) await trx('items').where({ id: item.id }).update({ ...fields, updated_at: trx.fn.now() });
+    const changes = await savePrices(trx, item.id, prices, req.user.id, genderChanged);
+    for (const c of changes) {
+      await audit(req, 'item.price', `Price of ${fields.name} at ${nameOf(schools, c.schoolId)}: ${c.from} → ${c.to}`,
+        { schoolId: c.schoolId, detail: { itemId: item.id } }, trx);
+    }
+    if (edits.length) {
+      await audit(req, 'item.update', `Changed item ${fields.name}: ${edits.join(', ')}`, { detail: { itemId: item.id } }, trx);
+      tellSchools((await trx('item_prices').where({ item_id: item.id }).pluck('school_id')), trx);
+    }
+  });
+  res.json({ item: (await list(req.user, { id: item.id, status: 'all' }))[0] });
+});
+
+// Stop selling everywhere (kept for history) or sell again.
+router.post('/:id/active', requirePage('items', 'f'), async (req, res) => {
+  const item = await db('items').where({ id: Number(req.params.id) }).first();
+  if (!item) throw new HttpError(404, 'Item not found.');
+  const active = !!req.body?.active;
+  if (active !== item.active) {
+    await db.transaction(async (trx) => {
+      await trx('items').where({ id: item.id }).update({ active, updated_at: trx.fn.now() });
+      await audit(req, active ? 'item.restore' : 'item.archive', active ? `Started selling ${item.name} again` : `Stopped selling ${item.name}`, { detail: { itemId: item.id } }, trx);
+      tellSchools(await trx('item_prices').where({ item_id: item.id }).pluck('school_id'), trx);
+    });
+  }
+  res.json({ item: (await list(req.user, { id: item.id, status: 'all' }))[0] });
+});
+
+router.get('/:id/history', requirePage('items'), async (req, res) => {
+  const rows = await db('item_price_changes as c')
+    .join('schools as s', 's.id', 'c.school_id')
+    .leftJoin('users as u', 'u.id', 'c.changed_by')
+    .where('c.item_id', Number(req.params.id))
+    .modify((q) => { if (!allSchools(req.user)) q.where('c.school_id', req.user.school_id); })
+    .orderBy('c.at', 'desc').limit(100)
+    .select('c.id', 'c.at', 's.short_name as school', 's.code as school_code', 'c.old_price', 'c.new_price', 'u.full_name as by');
+  res.json({ changes: rows.map((r) => ({ id: r.id, at: r.at, school: r.school, schoolCode: r.school_code, from: describe(r.old_price), to: describe(r.new_price), by: r.by || 'System setup' })) });
+});
+
+// ---------- Excel ----------
+// Download the price list (what the person may see). One row per item per school.
+async function priceRows(user) {
+  const schools = (await db('schools').where({ active: true }).orderBy('id')).filter((s) => allSchools(user) || s.id === user.school_id);
+  const items = await list(user, { status: 'all' });
+  const rows = [];
+  for (const i of items) {
+    for (const s of schools) {
+      const p = i.prices[s.id];
+      rows.push({ item: i.name, category: LABEL[i.category], school: s.short_name, gender: i.genderPriced ? 'Yes' : 'No',
+        price: p?.price ?? null, boys: p?.boys ?? null, girls: p?.girls ?? null, sold: p ? 'Yes' : 'No', status: i.active ? 'On sale' : 'Stopped' });
+    }
+  }
+  return rows;
+}
+const PRICE_COLUMNS = [
+  { header: 'Item', key: 'item', width: 28 }, { header: 'Category', key: 'category', width: 16 },
+  { header: 'School', key: 'school', width: 18 }, { header: 'Price by gender', key: 'gender', width: 15 },
+  { header: 'Price', key: 'price', type: 'money', width: 12 }, { header: 'Boys price', key: 'boys', type: 'money', width: 12 },
+  { header: 'Girls price', key: 'girls', type: 'money', width: 12 },
+];
+
+router.get('/export.xlsx', requirePage('items'), async (req, res) => {
+  await sendExcel(res, 'musabe-items-prices', [{
+    name: 'Items & prices', title: 'Musabe Schools: items and prices (TSh)',
+    columns: [...PRICE_COLUMNS, { header: 'Sold here', key: 'sold', width: 10 }, { header: 'Status', key: 'status', width: 10 }],
+    rows: await priceRows(req.user),
+  }]);
+});
+
+// Template for upload: today's list, ready to change and add to.
+router.get('/template.xlsx', requirePage('items', 'f'), async (req, res) => {
+  const cats = CATEGORIES.map((c) => LABEL[c]).join(', ');
+  await sendExcel(res, 'musabe-items-template', [{
+    name: 'Items & prices', title: 'Musabe Schools: items and prices. Change prices or add new rows, then upload.',
+    columns: PRICE_COLUMNS,
+    rows: (await priceRows(req.user)).filter((r) => r.status === 'On sale'),
+    notes: [
+      'One row for each item in each school. Prices in TSh, numbers only (e.g. 36000).',
+      `Category: ${cats}.`,
+      'Price by gender = No: fill "Price". Price by gender = Yes: fill "Boys price" and/or "Girls price".',
+      'Leave all prices empty for a school that does not sell the item. Rows not in the file are not changed.',
+    ],
+  }]);
+});
+
+// Upload: ?check=1 only checks and shows what would change. Without it, saves (only if there are no mistakes).
+router.post('/import', requirePage('items', 'f'), express.raw({ type: () => true, limit: '5mb' }), async (req, res) => {
+  const rows = await readExcel(req.body, 'item');
+  if (!rows.length) throw new HttpError(400, 'The file has no rows under the header.');
+  if (rows.length > 3000) throw new HttpError(400, 'Too many rows (more than 3000).');
+  const schools = await db('schools').where({ active: true });
+  const findSchool = (v) => schools.find((s) => [s.short_name, s.name, s.code].some((x) => x.toLowerCase() === v.toLowerCase()));
+  const catOf = (v) => CATEGORIES.find((c) => c === v.toLowerCase().replace(/\s+/g, '_') || LABEL[c].toLowerCase() === v.toLowerCase());
+  const yes = (v) => /^(yes|y|ndiyo|true|1)$/i.test(v);
+  const existing = Object.fromEntries((await db('items')).map((i) => [i.name.toLowerCase(), i]));
+  const curPrices = {};
+  for (const p of await db('item_prices')) curPrices[`${p.item_id}:${p.school_id}`] = p;
+
+  const plan = {};  // name -> { name, category, gender, item, prices: {schoolId: price|null} }
+  const out = [];
+  for (const r of rows) {
+    const line = { row: r._row, item: (r.item || '').toUpperCase().replace(/\s+/g, ' '), school: r.school || '', error: null, change: '' };
+    try {
+      const amt = (v, what) => { try { return amount(v, what); } catch (e) { throw new Error(e.message); } };
+      if (!line.item) throw new Error('Item name is empty.');
+      const s = findSchool(r.school || '');
+      if (!s) throw new Error(`School "${r.school || ''}" not found. Use: ${schools.map((x) => x.short_name).join(', ')}.`);
+      line.school = s.short_name;
+      const old = existing[line.item.toLowerCase()];
+      const cat = r.category ? catOf(r.category) : old?.category;
+      if (!cat) throw new Error(`Category "${r.category || ''}" is not known.`);
+      const gender = r['price by gender'] ? yes(r['price by gender']) : !!old?.gender_priced;
+      const p = plan[line.item] ||= { name: line.item, category: cat, gender, item: old, prices: {}, rows: [] };
+      if (p.gender !== gender) throw new Error('"Price by gender" must be the same on every row of this item.');
+      let price = null;
+      if (!gender) {
+        const v = amt(r.price, 'Price');
+        if (v != null) price = { price: v, price_boys: null, price_girls: null };
+        if (r['boys price'] || r['girls price']) throw new Error('This item has one price. Put it in "Price", or set "Price by gender" to Yes.');
+      } else {
+        const b = s.students === 'girls' ? null : amt(r['boys price'], 'Boys price');
+        const g = s.students === 'boys' ? null : amt(r['girls price'], 'Girls price');
+        if (b != null || g != null) {
+          if (s.students !== 'girls' && b == null) throw new Error(`${s.short_name} teaches boys: fill "Boys price".`);
+          if (s.students !== 'boys' && g == null) throw new Error(`${s.short_name} teaches girls: fill "Girls price".`);
+          price = { price: null, price_boys: b, price_girls: g };
+        }
+      }
+      if (s.id in p.prices) throw new Error(`${line.item} for ${s.short_name} appears twice in the file.`);
+      p.prices[s.id] = price;
+      const before = old && curPrices[`${old.id}:${s.id}`];
+      const same = before && price && before.price === price.price && before.price_boys === price.price_boys && before.price_girls === price.price_girls;
+      line.from = describe(priceOf(before));
+      line.to = describe(price && { price: price.price, boys: price.price_boys, girls: price.price_girls });
+      line.change = !old ? 'New item' : same || (!before && !price) ? 'No change' : !before ? 'Start selling' : !price ? 'Stop selling here' : 'New price';
+      if (old && (old.category !== cat || old.gender_priced !== gender) && line.change === 'No change') line.change = 'Item details';
+    } catch (e) { line.error = e.message; }
+    out.push(line);
+  }
+  const errors = out.filter((l) => l.error).length;
+  const changes = out.filter((l) => !l.error && l.change !== 'No change').length;
+  if (req.query.check || errors || !changes) return res.json({ rows: out, errors, changes, saved: false });
+
+  await db.transaction(async (trx) => {
+    let added = 0, priced = 0;
+    for (const p of Object.values(plan)) {
+      let id = p.item?.id;
+      if (!id) {
+        [{ id }] = await trx('items').insert({ name: p.name, category: p.category, gender_priced: p.gender, created_by: req.user.id }).returning('id');
+        added++;
+      } else if (p.item.category !== p.category || p.item.gender_priced !== p.gender) {
+        await trx('items').where({ id }).update({ category: p.category, gender_priced: p.gender, updated_at: trx.fn.now() });
+      }
+      const ch = await savePrices(trx, id, p.prices, req.user.id, !!p.item && p.item.gender_priced !== p.gender);
+      priced += ch.length;
+      tellSchools(ch.map((c) => c.schoolId), trx);
+    }
+    await audit(req, 'item.import', `Uploaded items and prices from Excel: ${added} new item${added === 1 ? '' : 's'}, ${priced} price change${priced === 1 ? '' : 's'}`, {}, trx);
+  });
+  res.json({ rows: out, errors: 0, changes, saved: true });
+});
+
+module.exports = router;

@@ -5,6 +5,7 @@ import { NAV, ALL_PAGES, MY_PAGES } from '../nav';
 import { Avatar, Icon, SchoolPill } from '../components/ui';
 import { useSchools, useScope } from './scope';
 import { useLiveStatus } from '../live';
+import Bell from './Bell';
 
 const PHONE = 900;
 const isPhone = () => window.innerWidth <= PHONE;
@@ -91,6 +92,7 @@ export default function Shell() {
             ) : (
               <SchoolPill code={user.school?.code} name={user.school?.shortName} />
             )}
+            <Bell />
             <UserMenu />
           </div>
         </header>

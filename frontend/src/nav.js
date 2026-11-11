@@ -16,7 +16,7 @@ export const NAV = [
     { key: 'requests', label: 'Stock requests', icon: 'inbox', path: '/requests', step: 'Step 2: Library & Sales' },
     { key: 'stock', label: 'Stock levels', icon: 'box', path: '/stock', step: 'Step 2: Library & Sales' },
     { key: 'damage', label: 'Damaged / lost', icon: 'alert', path: '/damage', step: 'Step 2: Library & Sales' },
-    { key: 'items', label: 'Items & prices', icon: 'tag', path: '/items', step: 'Step 2: Library & Sales' },
+    { key: 'items', label: 'Items & prices', icon: 'tag', path: '/items', ready: true },
   ] },
   { group: 'Academic', items: [
     { key: 'year', label: 'Year progress', icon: 'trend', path: '/year', step: 'Step 3: Academic' },
@@ -28,7 +28,7 @@ export const NAV = [
   ] },
   { group: 'System', items: [
     { key: 'reports', label: 'Reports', icon: 'file', path: '/reports', step: 'Step 4: Reports' },
-    { key: 'audit', label: 'Audit log', icon: 'list', path: '/audit', ready: true },
+    { key: 'audit', label: 'Activity', icon: 'list', path: '/audit', ready: true },
   ] },
 ];
 

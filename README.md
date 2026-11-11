@@ -2,8 +2,8 @@
 
 One system for Musabe English Medium School, Musabe Boys Secondary School and Musabe Girls Secondary School.
 
-- `backend/` — Node.js + Express 5 + Knex + PostgreSQL (API on port 3001)
-- `frontend/` — React 19 + Vite (opens on port 5173, sends `/api` to the backend)
+- `backend/` — Node.js + Express 5 + Knex + PostgreSQL (API on port 4310)
+- `frontend/` — React 19 + Vite (opens on port 5190, sends `/api` to the backend)
 - `docs/roadmap.md` — the plan · `docs/progress.md` — where we are
 - `musabe_schools_system.html` — clickable prototype of the full system
 
@@ -21,14 +21,14 @@ One system for Musabe English Medium School, Musabe Boys Secondary School and Mu
    npm run setup               # creates the tables and the first Super Admin
    npm run dev
    ```
-   Check http://localhost:3001/api/health shows `"database": "connected"`.
+   Check http://localhost:4310/api/health shows `"database": "connected"`.
 3. **Frontend** (second terminal)
    ```powershell
    cd frontend
    npm install
    npm run dev
    ```
-   Open http://localhost:5173
+   Open http://localhost:5190
 
 ## First sign-in
 - Username: `superadmin`

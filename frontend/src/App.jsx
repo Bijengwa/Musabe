@@ -9,11 +9,12 @@ import Home from './pages/Home';
 import Staff from './pages/Staff';
 import Schools from './pages/Schools';
 import Audit from './pages/Audit';
+import Items from './pages/Items';
 import ComingSoon from './pages/ComingSoon';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 
-const SCREENS = { home: Home, staff: Staff, schools: Schools, audit: Audit };
+const SCREENS = { home: Home, staff: Staff, schools: Schools, audit: Audit, items: Items };
 
 export default function App() {
   const { me } = useAuth();

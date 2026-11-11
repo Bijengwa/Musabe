@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { publish } = require('../realtime');
+const { sendExcel } = require('../lib/excel');
 const { HttpError, tempPassword, tzPhone, suggestUsername, audit } = require('../lib/util');
 const { requireAuth, requirePage, endAllSessions } = require('../auth/session');
 const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage } = require('../auth/roles');
@@ -53,6 +54,23 @@ router.get('/', requirePage('staff'), async (req, res) => {
   if (q) query = query.where((w) => w.whereILike('u.full_name', `%${q}%`).orWhereILike('u.username', `%${q}%`));
   const rows = await query.orderByRaw('u.school_id NULLS FIRST').orderBy('u.role').orderBy('u.full_name');
   res.json({ users: rows.map((r) => shape(r, req.user)) });
+});
+
+router.get('/export.xlsx', requirePage('staff'), async (req, res) => {
+  const rows = await scoped(baseQuery(), req.user).select(COLS).orderByRaw('u.school_id NULLS FIRST').orderBy('u.role').orderBy('u.full_name');
+  const fmt = (p) => (p && p.length === 10 ? `${p.slice(0, 4)} ${p.slice(4, 7)} ${p.slice(7)}` : p || '');
+  await sendExcel(res, 'musabe-staff', [{
+    name: 'Staff accounts', title: 'Musabe Schools: staff accounts',
+    columns: [
+      { header: 'Full name', key: 'name', width: 28 }, { header: 'Username', key: 'username', width: 20 },
+      { header: 'Role', key: 'role', width: 24 }, { header: 'School', key: 'school', width: 18 },
+      { header: 'Phone', key: 'phone', width: 15 }, { header: 'Status', key: 'status', width: 18 },
+      { header: 'Last sign-in', key: 'last', type: 'date', width: 20 }, { header: 'Created by', key: 'by', width: 24 },
+    ],
+    rows: rows.map((r) => ({ name: r.full_name, username: r.username, role: ROLES[r.role]?.label, school: r.school_short || 'Administration',
+      phone: fmt(r.phone), status: !r.active ? 'Switched off' : r.must_change_password ? 'Temporary password' : 'Active',
+      last: r.last_login_at ? new Date(r.last_login_at) : null, by: r.created_by_name || '' })),
+  }]);
 });
 
 // Helps the form: suggested username for a name.

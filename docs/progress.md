@@ -42,14 +42,24 @@ Current step: **1b — Students**
 - [ ] Student search used by other modules
 
 ## Step 2 — Library & Sales
-- [ ] Items & prices
+Agreed 2026-11-11:
+- Working accounts: Finance Manager, Assistant Finance Manager, Accountant, Assistant Accountant, Bursar (each school), Librarian (each school). Director/Manager/Head Master view only.
+- Damaged/lost: only Finance Manager and Accountant approve.
+- Items: Finance Manager creates items and prices; they can be sold at once (no approval step).
+- Sending stock: Accountant and the Finance office (FM + Assistant FM). Later a Store-keeper role receives from suppliers and sends to libraries.
+- Payment: always the full amount.
+- Accountant: watches bursar receipts live with alerts when receipts wait too long (e.g. paid but items not given), confirms each bursar's daily money (received/banked), approves damaged/lost, reports and Excel export.
+- [x] Items & prices (migration 004, seed 02): one item list, a price per school or "not sold", boys/girls prices, price history, stop/start selling, live
+- [x] Excel: download on every list (`lib/excel.js`, exceljs); items & prices upload with template, check-before-save and row mistakes
+- [x] Activity page (was Audit log): filter by area (Library, Accounts, Schools, Academic), role, dates, words; Excel; who sees which area in `lib/activity.js`
+- [x] Notifications (migration 005): bell with unread count, sound (Settings → on/off, test), pop-ups when the app is in the background, live
 - [ ] Send stock / confirm delivery
 - [ ] Sell + receipt
 - [ ] Give items
 - [ ] Stock levels
 - [ ] Damaged / lost
 - [ ] Stock requests
-- [ ] Excel export
+- [ ] Excel export for sales, receipts and stock (as each screen is built)
 
 ## Step 3 — Academic
 - [ ] Subjects, topics, teaching assignments

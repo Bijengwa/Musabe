@@ -4,7 +4,7 @@ import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
 import { useSchools, useScope } from '../layout/scope';
 import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
-import { CopyBox, Empty, ErrorNote, Icon, Modal, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
+import { CopyBox, Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
 
 export default function Staff() {
   const { user, me, can } = useAuth();
@@ -57,6 +57,7 @@ export default function Staff() {
   return (
     <>
       <PageHead title="Staff accounts" sub={sub}>
+        <ExcelButton href={`/api/users/export.xlsx`} />
         {canCreate ? <button className="btn p" onClick={() => setModal({ kind: 'new' })}><Icon name="plus" /> New account</button>
           : <span className="pill"><Icon name="eye" /> View only</span>}
       </PageHead>

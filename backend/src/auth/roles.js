@@ -35,17 +35,23 @@ const parse = (s) =>
 const ACCESS = {
   super:     parse('home schools staff students items:v receipts:v requests:v stock:v damage:v year:v watch:v classes:v marks:v support:v reports audit settings'),
   director:  parse('home schools:v staff:v students:v receipts:v requests:v stock:v damage:v items:v year:v watch:v classes:v marks:v support:v reports audit:v'),
-  manager:   parse('home schools:v staff:v students:v receipts:v requests stock:v damage items:v year:v watch:v classes:v support:v reports audit:v'),
-  fm:        parse('home students:v items stockin requests:v receipts:v stock damage:v reports'),
-  afm:       parse('home students:v items:v stockin requests:v receipts:v stock damage:v reports'),
-  acc:       parse('home students:v items:v stockin:v requests:v receipts:v stock:v damage reports'),
-  aacc:      parse('home students:v items:v receipts:v stock:v damage reports'),
+  manager:   parse('home schools:v staff:v students:v receipts:v requests:v stock:v damage:v items:v year:v watch:v classes:v support:v reports audit:v'),
+  // Library (agreed 2026-11-11):
+  // - Finance Manager: creates items and prices (sellable at once), sends stock, handles stock requests, approves damaged/lost.
+  // - Assistant Finance Manager: sends stock and handles requests (until a Store-keeper role exists). Prices view only.
+  // - Accountant: runs the items after they are created: sends stock, handles requests, watches bursar receipts live
+  //   with alerts, confirms each bursar's daily money, approves damaged/lost, reports and Excel.
+  // - Assistant Accountant: view and reports.
+  fm:        parse('home students:v items stockin requests receipts:v stock:v damage reports audit:v'),
+  afm:       parse('home students:v items:v stockin requests receipts:v stock:v damage:v reports audit:v'),
+  acc:       parse('home students:v items:v stockin requests receipts:v stock:v damage reports audit:v'),
+  aacc:      parse('home students:v items:v receipts:v stock:v damage:v reports audit:v'),
   sadmin:    parse('home staff students classes:v reports audit:v'),
-  head:      parse('home staff:v students:v receipts:v stock:v damage:v year watch classes marks:v bank:v support reports'),
+  head:      parse('home staff:v students:v items:v receipts:v stock:v damage:v year watch classes marks:v bank:v support reports audit:v'),
   acad:      parse('home students:v year watch classes marks bank support reports'),
   teacher:   parse('home students:v year watch classes marks bank support'),
-  bursar:    parse('home students:v sell receipts stock:v reports'),
-  librarian: parse('home give incoming stock requests damage receipts:v reports'),
+  bursar:    parse('home students:v items:v sell receipts stock:v reports'),
+  librarian: parse('home items:v give incoming stock:v requests damage receipts:v reports'),
 };
 ACCESS.adirector = ACCESS.director;
 

@@ -8,7 +8,7 @@ router.use(requireAuth);
 
 const shape = (s) => ({
   id: s.id, code: s.code, name: s.name, shortName: s.short_name, levels: s.levels,
-  receiptPrefix: s.receipt_prefix, active: s.active,
+  receiptPrefix: s.receipt_prefix, active: s.active, students: s.students,
   staffCount: s.staff_count !== undefined ? Number(s.staff_count) : undefined,
   schoolAdmins: s.school_admins || undefined,
 });
@@ -31,7 +31,9 @@ function readBody(b) {
   const receiptPrefix = String(b.receiptPrefix || '').trim().toUpperCase();
   if (name.length < 5) throw new HttpError(400, 'Type the full school name.');
   if (!/^[A-Z]{2,4}$/.test(receiptPrefix)) throw new HttpError(400, 'Receipt prefix: 2 to 4 capital letters, e.g. HS.');
-  return { name, short_name: shortName, levels, receipt_prefix: receiptPrefix };
+  const students = String(b.students || 'mixed');
+  if (!['mixed', 'boys', 'girls'].includes(students)) throw new HttpError(400, 'Choose who the school teaches: boys, girls or both.');
+  return { name, short_name: shortName, levels, receipt_prefix: receiptPrefix, students };
 }
 
 router.post('/', requirePage('schools', 'f'), async (req, res) => {
@@ -49,7 +51,7 @@ router.post('/', requirePage('schools', 'f'), async (req, res) => {
 router.patch('/:id', requirePage('schools', 'f'), async (req, res) => {
   const s = await db('schools').where({ id: Number(req.params.id) }).first();
   if (!s) throw new HttpError(404, 'School not found.');
-  const data = readBody({ name: s.name, shortName: s.short_name, levels: s.levels, receiptPrefix: s.receipt_prefix, ...req.body });
+  const data = readBody({ name: s.name, shortName: s.short_name, levels: s.levels, receiptPrefix: s.receipt_prefix, students: s.students, ...req.body });
   if (data.receipt_prefix !== s.receipt_prefix && await db('schools').where({ receipt_prefix: data.receipt_prefix }).whereNot('id', s.id).first())
     throw new HttpError(409, `Receipt prefix ${data.receipt_prefix} is already used.`);
   const [row] = await db('schools').where({ id: s.id }).update({ ...data, updated_at: db.fn.now() }).returning('*');

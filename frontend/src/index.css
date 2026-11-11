@@ -320,3 +320,74 @@ input:disabled, select:disabled { background: var(--soft) }
 /* field hints (e.g. phone: "3 more digits needed") */
 .fieldhint { font-size: 12px; font-weight: 500; color: var(--warn) }
 input.bad { border-color: var(--warn) }
+
+/* ---------- library: items & prices ---------- */
+.money { font-variant-numeric: tabular-nums; font-weight: 600 }
+.itemtable tr.off td { opacity: .6 }
+.itemtable td:first-child { min-width: 170px }
+.gp { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px }
+.gp span { white-space: nowrap }
+.gp i { font-style: normal; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 999px; color: #fff }
+.gb { background: var(--boys) } .gg { background: var(--girls) }
+.pricegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 10px }
+.pricerow { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px }
+.pricerow.off { background: var(--soft) }
+.pr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap }
+.pr-in { display: flex; flex-direction: column; gap: 8px }
+.money-in span { position: relative; display: block }
+.money-in input { padding-right: 46px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600 }
+.money-in em { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted) }
+.hist .li { align-items: flex-start }
+/* items table becomes cards on phones: name, then one line per school */
+@media (max-width: 720px) {
+  .itemtable thead { display: none }
+  .itemtable, .itemtable tbody, .itemtable tr, .itemtable td { display: block; width: 100% }
+  .itemtable tr { border-bottom: 1px solid var(--line); padding: 10px 4px }
+  .itemtable td { border: 0; padding: 4px 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: right }
+  .itemtable td[data-l]::before { content: attr(data-l); color: var(--muted); font-size: 12.5px; text-align: left }
+  .itemtable td:first-child { display: block; font-size: 15px; text-align: left; min-width: 0 }
+  .itemtable .acts-cell { display: block; padding-top: 8px }
+  .itemtable .acts-cell .row { flex-wrap: wrap }
+}
+
+/* Excel buttons */
+.btn.xl { color: #1d6f42; border-color: color-mix(in srgb, #1d6f42 35%, var(--line)) }
+:root[data-theme="dark"] .btn.xl { color: #5cc48a }
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px }
+.steps .linkbtn { padding: 0 4px }
+.filepick { flex-direction: row; align-items: center; gap: 10px; border: 1.5px dashed var(--primary); border-radius: 10px; padding: 14px; color: var(--primary); font-size: 14px; cursor: pointer; justify-content: center }
+.filepick input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+.filepick:focus-within { outline: 2px solid var(--primary); outline-offset: 2px }
+.upl { max-height: 46vh; border: 1px solid var(--line); border-radius: 8px }
+.upl tr.bad td { background: var(--bad-soft) }
+.err-t { color: var(--bad); font-weight: 500 }
+
+/* activity */
+.grouptabs { align-self: flex-start; max-width: 100%; overflow-x: auto; flex-wrap: nowrap }
+.grouptabs button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap }
+.grouptabs .ic { width: 15px; height: 15px }
+.datein { flex-direction: row; align-items: center; gap: 6px; font-size: 12.5px }
+.datein input { width: auto; padding: 7px 8px }
+.gic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--soft); color: var(--muted) }
+.gic .ic { width: 16px; height: 16px }
+.g-library { background: var(--primary-soft); color: var(--primary) }
+.g-accounts { background: color-mix(in srgb, var(--boys) 15%, transparent); color: var(--boys) }
+.g-schools { background: color-mix(in srgb, var(--pre) 18%, transparent); color: var(--pre) }
+.g-academic { background: color-mix(in srgb, var(--girls) 15%, transparent); color: var(--girls) }
+
+/* notification bell */
+.bell { position: relative }
+.bbtn { position: relative; width: 36px; height: 36px; border: 1px solid var(--line); background: none; border-radius: 50%; display: inline-grid; place-items: center; padding: 0 }
+.bbtn:hover { border-color: var(--primary) }
+.bcount { position: absolute; top: -5px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--surface) }
+.bdrop { position: absolute; right: -48px; top: calc(100% + 8px); z-index: 40; width: min(380px, calc(100vw - 24px)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px rgba(0, 0, 0, .18); display: flex; flex-direction: column; max-height: min(560px, 75vh) }
+.bhead { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line) }
+.bhead a { color: var(--muted); display: inline-flex }
+.blist { overflow-y: auto }
+.bi { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); align-items: flex-start }
+.bi .grow { min-width: 0 }
+.bi b { display: block; font-weight: 500; font-size: 13px; overflow-wrap: anywhere }
+.bi span:not(.gic) { font-size: 12px; color: var(--muted) }
+.bi.new { background: color-mix(in srgb, var(--primary-soft) 55%, transparent) }
+.ball { padding: 10px; text-align: center; color: var(--primary); font-weight: 600; text-decoration: none; font-size: 13px }
+@media (max-width: 520px) { .bdrop { position: fixed; left: 12px; right: 12px; top: 58px; width: auto } }
