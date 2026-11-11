@@ -1,0 +1,1199 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Musabe Academic Progress</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: same family as the Musabe Library app. Green sidebar card + workspace. Year runs left to right: Set 1 … Set 8. Bands: critical red → excellent green. */
+:root{
+  --bg:#f4f8f5; --surface:#ffffff; --soft:#ebf3ee; --ink:#13241b; --muted:#587064; --line:#d8e5dc;
+  --primary:#16794a; --on-primary:#ffffff; --primary-soft:#dff2e7;
+  --boys:#1f5fbf; --girls:#c2347a; --pre:#d9822b;
+  --ok:#16794a; --ok-soft:#dff2e7; --warn:#8a5a00; --warn-soft:#fbecca; --bad:#c0392b; --bad-soft:#fbe1de;
+  --b0:#d0402f; --b1:#e2a127; --b2:#a9bfb3; --b3:#5fb185; --b4:#16794a;
+  --s1:#1f5fbf; --s2:#c2347a; --s3:#d9822b; --s4:#7a4fc2;
+  --necta:#1b3fa8; --book:#8a5a00; --teach:#16794a;
+  --shadow:0 1px 2px rgba(12,58,41,.06),0 4px 12px rgba(12,58,41,.04);
+  --font:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --mono:ui-monospace,'Cascadia Mono',Consolas,'SF Mono',monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1511; --surface:#111f18; --soft:#172a21; --ink:#e6f2ea; --muted:#93ad9f; --line:#223a2e;
+  --primary:#4ec58a; --on-primary:#06241a; --primary-soft:#173a2a;
+  --boys:#6aa2ff; --girls:#f27bb4; --pre:#f0a95a;
+  --ok:#4ec58a; --ok-soft:#173a2a; --warn:#e3b252; --warn-soft:#3a2d0f; --bad:#f08a80; --bad-soft:#40201c;
+  --b0:#e8685b; --b1:#d9a441; --b2:#4f6a5d; --b3:#3c9466; --b4:#4ec58a;
+  --s1:#6aa2ff; --s2:#f27bb4; --s3:#f0a95a; --s4:#b192f0;
+  --necta:#8fa8ff; --book:#e3b252; --teach:#4ec58a; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1511; --surface:#111f18; --soft:#172a21; --ink:#e6f2ea; --muted:#93ad9f; --line:#223a2e;
+  --primary:#4ec58a; --on-primary:#06241a; --primary-soft:#173a2a;
+  --boys:#6aa2ff; --girls:#f27bb4; --pre:#f0a95a;
+  --ok:#4ec58a; --ok-soft:#173a2a; --warn:#e3b252; --warn-soft:#3a2d0f; --bad:#f08a80; --bad-soft:#40201c;
+  --b0:#e8685b; --b1:#d9a441; --b2:#4f6a5d; --b3:#3c9466; --b4:#4ec58a;
+  --s1:#6aa2ff; --s2:#f27bb4; --s3:#f0a95a; --s4:#b192f0;
+  --necta:#8fa8ff; --book:#e3b252; --teach:#4ec58a; --shadow:none; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45}
+h1,h2,h3,p{margin:0} h1{font-size:22px;font-weight:700;letter-spacing:-.01em;text-wrap:balance} h2{font-size:15px;font-weight:700;text-wrap:balance} h3{font-size:13px;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:12.5px} .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sch{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));white-space:nowrap}
+.sc-boys{--c:var(--boys)} .sc-girls{--c:var(--girls)} .sc-pre{--c:var(--pre)}
+
+/* shell */
+.app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+.sw{padding:12px 0 12px 12px;min-width:0}
+.side{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;padding:14px 12px;position:sticky;top:12px;height:calc(100vh - 24px);overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.brand img{width:44px;height:44px;object-fit:contain;flex:none}
+.brand b{display:block;font-size:15px} .brand span{font-size:12px;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.sn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;font-weight:500;white-space:nowrap}
+.sn:hover{background:var(--soft)}
+.sn[aria-current="page"]{background:var(--primary-soft);color:var(--primary);font-weight:700}
+.sn .nb{margin-left:auto;background:var(--bad);color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:grid;place-items:center;padding:0 6px}
+.sfoot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.sfoot label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.sfoot select{min-height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 8px}
+.col{min-width:0;display:flex;flex-direction:column}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 20px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.bar .yr{font-weight:700} .bar .ctx{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.find{position:relative}
+.find input{min-height:38px;border:1px solid var(--line);border-radius:999px;padding:0 14px 0 36px;background:var(--surface);width:260px;max-width:70vw}
+.find svg{position:absolute;left:12px;top:10px;color:var(--muted)}
+.sug{position:absolute;z-index:20;top:42px;left:0;right:0;min-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
+.sug button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;gap:10px;width:100%;padding:8px 12px}
+.sug button:hover,.sug button.on{background:var(--soft)}
+.main{padding:6px 20px 40px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sw{padding:10px 16px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .side{position:static;height:auto;border-radius:16px;padding:10px}
+  .brand{border:0;margin:0;padding-bottom:6px}
+  .nav{flex-direction:row;overflow-x:auto;scrollbar-width:none}
+  .sfoot{flex-direction:row;flex-wrap:wrap;align-items:end}
+  .sfoot label{flex:1;min-width:160px}
+  .bar,.main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .find input{width:100%;max-width:none}
+  .find{flex:1 1 100%}
+}
+
+/* building blocks */
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.head p{color:var(--muted);margin-top:3px;max-width:70ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:0}
+.ph{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ph p{color:var(--muted);font-size:12.5px;margin-top:2px}
+.pb{padding:14px 16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.grid2e{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:1000px){.grid2,.grid2e{grid-template-columns:minmax(0,1fr)}}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted);font-weight:600}
+.tile .v{font-size:26px;font-weight:700;font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tile .d{font-size:12.5px;color:var(--muted)}
+.tile.click{cursor:pointer} .tile.click:hover{border-color:var(--primary)}
+.up{color:var(--ok);font-weight:700} .down{color:var(--bad);font-weight:700} .flat{color:var(--muted);font-weight:700}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600}
+select,input[type=text],input[type=number],textarea{min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px}
+textarea{padding:8px 10px;min-height:70px;resize:vertical}
+.btn{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--surface);color:var(--primary);padding:0 15px;border-radius:999px;font-weight:700;min-height:38px;white-space:nowrap}
+.btn:hover{border-color:var(--primary)}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.btn.sm{min-height:32px;padding:0 12px;font-size:13px}
+.btn.ghost{border-color:transparent}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 12px;overflow-x:auto}
+.tab{all:unset;cursor:pointer;padding:10px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--primary);border-color:var(--primary)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{all:unset;cursor:pointer;padding:5px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:600;background:var(--surface)}
+.chip[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:color-mix(in srgb,var(--c) 18%,var(--surface));color:color-mix(in srgb,var(--c) 70%,var(--ink))}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.b0{--c:var(--b0)} .b1{--c:var(--b1)} .b2{--c:var(--b2)} .b3{--c:var(--b3)} .b4{--c:var(--b4)}
+.mv{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.flag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:7px;background:var(--soft);color:var(--ink);white-space:nowrap}
+.flag.bad{background:var(--bad-soft);color:var(--bad)} .flag.warn{background:var(--warn-soft);color:var(--warn)}
+.src{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:6px;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.src-NECTA{--c:var(--necta)} .src-BOOK{--c:var(--book)} .src-TEACHER{--c:var(--teach)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--soft)}
+td.r,th.r{text-align:right} td.c,th.c{text-align:center}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+.notice{padding:10px 14px;border-radius:12px;background:var(--primary-soft);color:var(--ink);font-size:13.5px}
+.notice.warn{background:var(--warn-soft)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--c);vertical-align:middle;margin-right:5px}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 4px,transparent 4px 7px)}
+.legend i.sq{width:10px;height:10px;border-radius:3px}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font-size:11px;font-family:var(--font)}
+svg.spark{display:block}
+
+/* heatmap */
+.hm td,.hm th{padding:6px 8px}
+.hm th.t,.hm td.t{position:sticky;left:0;background:var(--surface);z-index:1;min-width:170px;max-width:240px}
+.hm td.h{text-align:center;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:600;min-width:46px;border-left:2px solid var(--surface)}
+.h0{background:color-mix(in srgb,var(--b0) 32%,var(--surface))} .h1{background:color-mix(in srgb,var(--b1) 32%,var(--surface))}
+.h2{background:color-mix(in srgb,var(--b2) 30%,var(--surface))} .h3{background:color-mix(in srgb,var(--b3) 30%,var(--surface))} .h4{background:color-mix(in srgb,var(--b4) 38%,var(--surface))}
+.hx{color:var(--muted);font-weight:400!important}
+
+/* timeline */
+.tl{display:grid;grid-template-columns:repeat(8,minmax(92px,1fr));gap:8px;overflow-x:auto;padding-bottom:2px}
+.ts{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:var(--surface);display:flex;flex-direction:column;gap:3px;min-width:0}
+.ts:hover{border-color:var(--primary)}
+.ts .n{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.ts b{font-size:13px;line-height:1.25}
+.ts .m{font-size:12px;color:var(--muted)}
+.ts .pg{height:4px;border-radius:2px;background:var(--soft);overflow:hidden;margin-top:3px}
+.ts .pg span{display:block;height:100%;background:var(--primary)}
+.ts.cur{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.term{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:600;padding:0 2px 6px}
+
+/* marks grid */
+.mg{border-collapse:separate;border-spacing:0}
+.mg th,.mg td{padding:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.mg th{padding:6px 4px;text-align:center;font-size:11.5px;position:sticky;top:0;z-index:2}
+.mg th.nm,.mg td.nm{position:sticky;left:0;z-index:3;background:var(--surface);text-align:left;padding:6px 10px;min-width:190px;white-space:nowrap}
+.mg td.nm{z-index:1;font-size:13px}
+.mg input.mk{all:unset;box-sizing:border-box;width:46px;height:34px;text-align:center;font-family:var(--mono);font-size:13.5px;background:var(--surface)}
+.mg input.mk:focus{background:var(--primary-soft);outline:2px solid var(--primary);outline-offset:-2px}
+.mg input.mk.err{background:var(--bad-soft);color:var(--bad);font-weight:700}
+.mg input.mk:disabled{background:var(--soft);color:var(--muted)}
+.mg td.tot{padding:0 8px;text-align:right;font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.mg th .tp{display:block;font-weight:400;color:var(--muted);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mg th.opt{background:var(--warn-soft)}
+.mg tr.ab td{opacity:.55}
+
+/* dialog + toast */
+.ov{position:fixed;inset:0;background:rgba(5,20,14,.45);display:grid;place-items:center;padding:16px;z-index:50}
+.dlg{background:var(--surface);border-radius:18px;max-width:640px;width:100%;max-height:min(86vh,760px);overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--line)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:60;max-width:calc(100vw - 32px)}
+.xlbox{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;padding:12px 14px;border:1px dashed var(--line);border-radius:12px}
+.xp td{padding:5px 8px;border:1px solid var(--line)}
+.xlbox>div:first-child{flex:1;min-width:220px;max-width:70ch}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 12px;max-height:200px;overflow:auto;padding:4px}
+.checks label{display:flex;gap:8px;align-items:center;font-size:13.5px}
+.why{display:flex;flex-direction:column;gap:8px}
+.why li{margin-left:18px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:600}
+.bar2{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;min-width:60px}
+.bar2 span{display:block;height:100%}
+@media (prefers-reduced-motion:no-preference){.panel,.tile{transition:border-color .15s}}
+</style>
+
+<div id="app"></div>
+<div class="ov" id="ov" hidden><div class="dlg" id="dlg" role="dialog" aria-modal="true"></div></div>
+<div id="toast" hidden></div>
+
+<script>
+const LOGO='data:image/png;base64,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';
+(()=>{
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const avg=a=>{a=a.filter(x=>x!=null&&!isNaN(x));return a.length?a.reduce((s,x)=>s+x,0)/a.length:null};
+const pct=x=>x==null?'–':Math.round(x)+'%';
+const signed=x=>x==null?'–':(x>0?'+':x<0?'−':'±')+Math.abs(Math.round(x));
+const KEY='musabe-academic-v1';
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+let rnd=mulberry32(20261109);
+const gauss=(r=rnd)=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+const pick=(a,r=rnd)=>a[Math.floor(r()*a.length)];
+const sig=x=>1/(1+Math.exp(-x));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+
+const IC={
+  year:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+  watch:'<path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+  cls:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+  sets:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/>',
+  bank:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  help:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  back:'<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', x:'<path d="M18 6 6 18M6 6l12 12"/>', edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  theme:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'
+};
+const icon=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+
+/* ================= school structure ================= */
+const SCHOOLS=[
+  {id:'pre',name:'Musabe English Medium School',short:'English Medium'},
+  {id:'boys',name:'Musabe Boys Secondary School',short:'Boys Sec'},
+  {id:'girls',name:'Musabe Girls Secondary School',short:'Girls Sec'}];
+const SUBJ={math:'Mathematics',eng:'English',sci:'Science and Technology',kis:'Kiswahili',bio:'Biology',chem:'Chemistry'};
+const LV={
+ std4:{name:'Standard 4',exam:'SFNA',choice:false,subj:{
+  math:['Numbers','Addition and Subtraction','Multiplication','Division','Fractions','Measurement','Geometry','Money','Time'],
+  eng:['Grammar','Vocabulary','Reading Comprehension','Writing','Tenses'],
+  sci:['Our Body','Plants','Animals','Health','Weather','Simple Machines'],
+  kis:['Sarufi','Msamiati','Ufahamu','Uandishi','Methali']}},
+ std7:{name:'Standard 7',exam:'PSLE',choice:false,subj:{
+  math:['Whole Numbers','Fractions','Decimals','Percentages','Ratio and Proportion','Measurement','Geometry','Algebra','Money','Statistics'],
+  eng:['Grammar','Vocabulary','Reading Comprehension','Composition','Tenses','Prepositions'],
+  sci:['The Human Body','Health and Diseases','Plants','Animals','Matter','Energy','Electricity and Magnetism','Environment'],
+  kis:['Sarufi','Msamiati','Ufahamu','Utungaji','Methali, Nahau na Vitendawili','Ngeli za Nomino']}},
+ f2:{name:'Form 2',exam:'FTNA',choice:true,subj:{
+  math:['Exponents and Radicals','Algebra','Quadratic Equations','Logarithms','Congruence','Similarity','Geometrical Transformations','Pythagoras Theorem','Trigonometry','Sets','Statistics','Rates and Variations'],
+  eng:['Grammar: Tenses','Grammar: Reported Speech','Vocabulary','Reading Comprehension','Composition','Letter Writing','Literature: Poetry','Summary Writing'],
+  bio:['Classification of Living Things','Cell Biology','Nutrition','Balance of Nature','Transport of Materials','Gaseous Exchange and Respiration','Safety in Our Environment','Health and Immunity'],
+  chem:['Laboratory Techniques and Safety','Matter','Oxygen','Hydrogen','Water','Fuels and Energy','Atomic Structure','Periodic Classification','Formula, Bonding and Nomenclature','Chemical Equations']}},
+ f4:{name:'Form 4',exam:'CSEE',choice:true,subj:{
+  math:['Algebra','Quadratic Equations','Coordinate Geometry','Areas and Perimeters','Three Dimensional Figures','Probability','Trigonometry','Vectors','Matrices and Transformations','Linear Programming','Functions','Sequences and Series','Circles','The Earth as a Sphere'],
+  eng:['Grammar: Tenses','Grammar: Conditionals','Vocabulary','Reading Comprehension','Summary Writing','Composition','Letter Writing','Literature: Poetry','Literature: Novels and Plays'],
+  bio:['Classification of Living Things','Nutrition','Transport of Materials','Gaseous Exchange and Respiration','Regulation (Homeostasis)','Coordination','Reproduction','Growth and Development','Genetics','Evolution','HIV/AIDS and STIs'],
+  chem:['Atomic Structure','Formula, Bonding and Nomenclature','Mole Concept','Ionic Theory and Electrolysis','Chemical Kinetics and Equilibrium','Extraction of Metals','Compounds of Metals','Non-Metals and Their Compounds','Organic Chemistry','Soil Chemistry','Pollution']}}
+};
+const CLASSES=[
+ {id:'std4',school:'pre',lv:'std4'},{id:'std7',school:'pre',lv:'std7'},
+ {id:'bf2',school:'boys',lv:'f2'},{id:'bf4',school:'boys',lv:'f4'},
+ {id:'gf2',school:'girls',lv:'f2'},{id:'gf4',school:'girls',lv:'f4'}];
+const CL={};CLASSES.forEach(c=>{c.name=LV[c.lv].name;c.subjs=Object.keys(LV[c.lv].subj);CL[c.id]=c});
+const schoolOf=id=>SCHOOLS.find(s=>s.id===id);
+const clsLabel=id=>`${schoolOf(CL[id].school).short} · ${CL[id].name}`;
+const clsPill=id=>`<span class="sch sc-${CL[id].school}">${esc(schoolOf(CL[id].school).short)}</span> ${esc(CL[id].name)}`;
+const SETS=[
+ {id:1,name:'Monthly Test 1',month:'Feb',term:1},{id:2,name:'Mid-Term 1',month:'Mar',term:1},
+ {id:3,name:'Monthly Test 2',month:'Apr',term:1},{id:4,name:'Terminal Examination',month:'Jun',term:1},
+ {id:5,name:'Monthly Test 3',month:'Jul',term:2},{id:6,name:'Mid-Term 2',month:'Aug',term:2},
+ {id:7,name:'Mock Examination',month:'Sep',term:2},{id:8,name:'Pre-National Examination',month:'Oct',term:2}];
+const SET=id=>SETS.find(s=>s.id===id);
+const TOP={};
+Object.entries(LV).forEach(([lv,L])=>Object.entries(L.subj).forEach(([sj,list])=>list.forEach((n,i)=>{const id=`${lv}.${sj}.${i}`;TOP[id]={id,lv,subj:sj,name:n,ord:i}})));
+const topicsOf=(lv,sj)=>LV[lv].subj[sj].map((_,i)=>TOP[`${lv}.${sj}.${i}`]);
+
+/* teachers + users */
+const TEACH={
+ pre:{math:'Ms. Agnes Temu',eng:'Mr. Peter Lyimo',sci:'Mrs. Esther Kimaro',kis:'Mr. Daniel Swai'},
+ boys:{math:'Mr. Joseph Mushi',eng:'Ms. Halima Juma',bio:'Mr. Frank Mollel',chem:'Mrs. Grace Minja'},
+ girls:{math:'Mr. Isaya Urio',eng:'Ms. Doreen Ngowi',bio:'Mr. Godfrey Sanga',chem:'Mrs. Mariam Laizer'}};
+const teacherOf=(cls,sj)=>TEACH[CL[cls].school][sj];
+// Administration oversees all three schools. Each school has a Head Master, an Academic Master and its teachers.
+const USERS=[{id:'admin',name:'Mr. Elia Mwakasege',role:'Administration (all schools)',kind:'admin'}];
+[['pre','Mrs. Jane Mrema','Mr. Simon Kessy'],['boys','Mr. Paul Massawe','Mrs. Rehema Kweka'],['girls','Mrs. Lucy Shirima','Ms. Ruth Mbwambo']].forEach(([sc,h,a])=>{
+  USERS.push({id:'hm-'+sc,name:h,role:'Head Master',kind:'head',school:sc});
+  USERS.push({id:'am-'+sc,name:a,role:'Academic Master',kind:'acad',school:sc})});
+Object.entries(TEACH).forEach(([sc,m])=>Object.entries(m).forEach(([sj,n])=>{
+  let u=USERS.find(x=>x.name===n);if(!u){u={id:'t-'+n.replace(/\W/g,''),name:n,role:'Teacher',kind:'teacher',school:sc,teaches:[]};USERS.push(u)}
+  CLASSES.filter(c=>c.school===sc).forEach(c=>u.teaches.push({cls:c.id,subj:sj}))}));
+
+/* ================= sample data (simulated) ================= */
+const D={students:[],bank:[],papers:{},interventions:[]};
+const LAT={};           // hidden simulation params per student
+const CS={};            // hidden class-subject params
+const BOOST={};         // support plans that worked
+const BOYS=['Hamisi','Ibrahim','Daudi','Emmanuel','Baraka','Amani','Elias','Joel','Prosper','Dickson','Yusuph','Godfrey','Frank','Kelvin','Brian','Juma','Musa','Rajabu','Isaya','Shukuru','Faraji','Erasto','Gabriel','Abdallah','Paulo','Samweli'];
+const GIRLS=['Rehema','Salma','Naomi','Upendo','Neema','Zawadi','Careen','Happiness','Irene','Agnes','Mariam','Esther','Grace','Joyce','Anna','Halima','Rose','Witness','Glory','Lightness','Aisha','Faith','Doreen','Mwanaisha','Catherine','Jesca'];
+const SUR=['Mrosso','Mwakyusa','Kessy','Lyimo','Msuya','Kimaro','Shayo','Mrema','Mushi','Kweka','Temu','Massawe','Kagaruki','Matiku','Ganza','Mwita','Mollel','Swai','Minja','Urio','Mbwambo','Ngowi','Massao','Kiwelu','Laizer','Sanga','Mwakalinga','Mbilinyi','Chacha','Magesa','Makoye','Masanja','Lukumay','Mfinanga','Kisanga','Nyirenda'];
+const INIT='ABCDEFGHJKLMNPRSW';
+function seed(){
+  rnd=mulberry32(20261109);
+  let reg=1;
+  CLASSES.forEach(c=>{
+    const used=new Set();
+    for(let i=0;i<24;i++){
+      const g=c.school==='boys'?'M':c.school==='girls'?'F':(rnd()<.5?'M':'F');
+      let name;do{name=`${pick(g==='M'?BOYS:GIRLS)} ${pick([...INIT])}. ${pick(SUR)}`}while(used.has(name));used.add(name);
+      const id='s'+(reg);
+      D.students.push({id,cls:c.id,name,gender:g,reg:`MS/${c.school==='pre'?'P':'S'}/${String(reg).padStart(4,'0')}`});reg++;
+      let th=gauss()*.85, sl=gauss()*.03;
+      const r=rnd();
+      if(i===0){th=.75;sl=-.24}else if(i===1){th=-1.0;sl=.24}
+      else if(r<.17)sl=.12+gauss()*.03;else if(r<.29)sl=-.11-Math.abs(gauss())*.03;
+      const so={};c.subjs.forEach(sj=>so[sj]=gauss()*.45);
+      LAT[id]={th,sl,so,tp:{}};
+    }
+    c.subjs.forEach(sj=>{
+      const tps=topicsOf(c.lv,sj),td={};tps.forEach(t=>td[t.id]=gauss()*.4);
+      const early=tps.slice(0,Math.max(3,Math.ceil(tps.length*.45)));
+      const h1=pick(early);let h2=pick(tps.slice(1));while(h2===h1)h2=pick(tps);
+      CS[c.id+'|'+sj]={off:gauss()*.22,td,fixed:h1.id,stuck:h2.id};
+      td[h1.id]+=1.3;td[h2.id]+=1.15;
+    });
+  });
+  // question bank
+  let qn=1;
+  const yrs=[2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+  Object.entries(LV).forEach(([lv,L])=>Object.keys(L.subj).forEach(sj=>topicsOf(lv,sj).forEach(t=>{
+    const mk=(max,src)=>{const q={id:'q'+(qn++),lv,subj:sj,topic:t.id,max,src,diff:gauss()*.35+(src==='NECTA'?.28:src==='TEACHER'?-.25:0)};
+      if(src==='NECTA')q.ref=`${L.exam} ${pick(yrs)} · Question ${1+Math.floor(rnd()*(L.choice?10:20))}`;
+      else if(src==='BOOK')q.ref=`Revision book · page ${10+Math.floor(rnd()*180)}`;
+      else{q.by=TEACH[lv.startsWith('std')?'pre':pick(['boys','girls'])][sj];q.ref='Written by '+q.by}
+      D.bank.push(q)};
+    mk(10,'NECTA');mk(10,'NECTA');mk(10,'BOOK');mk(10,'TEACHER');if(rnd()<.5)mk(10,'TEACHER');
+    if(L.choice){mk(15,'NECTA');if(rnd()<.4)mk(15,'TEACHER')}
+  })));
+  BANK={};D.bank.forEach(q=>BANK[q.id]=q);
+  // support plans started after the Terminal Examination
+  const PLANS=['Saturday remedial lessons for 4 weeks, then a short follow-up test.','Peer study group twice a week with weekly practice questions.','Extra homework on this topic with marking and one-to-one feedback.','Re-teach the topic in small group during prep time.','Practice NECTA past paper questions on this topic every week.'];
+  [['bf2','math',true],['gf4','chem',true],['std7','math',true],['bf4','bio',false],['gf2','eng',true]].forEach(([cid,sj,works],k)=>{
+    const st=D.students.filter(s=>s.cls===cid).slice(2).sort((a,b)=>LAT[a.id].th-LAT[b.id].th)[k%3];
+    const c=CL[cid],tps=topicsOf(c.lv,sj).slice(0,Math.max(3,Math.ceil(topicsOf(c.lv,sj).length*.4)));
+    const t=tps.reduce((w,x)=>stuTopicLat(st.id,x.id)<stuTopicLat(st.id,w.id)?x:w,tps[0]);
+    D.interventions.push({id:'iv'+(k+1),stu:st.id,subj:sj,topics:[t.id],plan:PLANS[k],target:55,start:4,followUp:7,by:teacherOf(cid,sj),status:'Active',created:'Jun 2026'});
+    if(works)BOOST[st.id+'|'+t.id]=1.2;
+  });
+  // papers
+  SETS.forEach(S_=>CLASSES.forEach(c=>c.subjs.forEach(sj=>{
+    const p=buildPaper(S_.id,c,sj,rnd);
+    D.papers[p.id]=p;
+  })));
+  // marks
+  Object.values(D.papers).forEach(p=>{p.marks=genMarks(p,mulberry32(hash(p.id)));p.entered=true});
+  // Pre-National: some papers still waiting
+  const wait=[['bf2','math'],['gf2','bio'],['std4','kis'],['gf4','eng'],['std7','sci']];
+  wait.forEach(([c,sj])=>{const p=D.papers[pid(8,c,sj)];p.marks={};p.entered=false});
+  const nb=D.papers[pid(8,'bf4','math')];nb.qs=[];nb.choose=null;nb.marks={};nb.entered=false;
+}
+function stuTopicLat(sid,tid){const L=LAT[sid];if(L.tp[tid]==null)L.tp[tid]=gauss(mulberry32(hash(sid+tid)))*.5;return L.tp[tid]}
+const pid=(set,cls,sj)=>`${set}|${cls}|${sj}`;
+function buildPaper(set,c,sj,r){
+  const L=LV[c.lv],tps=topicsOf(c.lv,sj);
+  const taught=c.lv==='f4'?tps.length:Math.max(3,Math.ceil(tps.length*(.2+.8*set/8)));
+  const avail=tps.slice(0,taught),recent=avail.slice(-3);
+  const nComp=L.choice?7:10,qs=[],used=new Set();
+  const take=(t,max)=>{const opts=D.bank.filter(q=>q.topic===t.id&&q.max===max&&!used.has(q.id)&&!q.added);if(!opts.length)return false;const q=pick(opts,r);used.add(q.id);qs.push(q.id);return true};
+  if(set>=5)D.interventions.filter(iv=>iv.subj===sj&&D.students.find(s=>s.id===iv.stu).cls===c.id).forEach(iv=>iv.topics.forEach(tid=>take(TOP[tid],10)));
+  let guard=0;while(qs.length<nComp&&guard++<80){const t=r()<.5?pick(recent,r):pick(avail,r);take(t,10)}
+  qs.sort((a,b)=>TOP[Q(a).topic].ord-TOP[Q(b).topic].ord);
+  let choose=null;
+  if(L.choice){const st=qs.length;guard=0;while(qs.length<st+3&&guard++<80)take(pick(avail,r),15);choose={from:[st,st+1,st+2],n:2}}
+  return {id:pid(set,c.id,sj),set,cls:c.id,subj:sj,qs,choose,marks:{},entered:false};
+}
+function genMarks(p,r){
+  for(let k=0;k<12;k++)r();
+  const c=CL[p.cls],cs=CS[p.cls+'|'+p.subj],out={};
+  D.students.filter(s=>s.cls===p.cls).forEach(s=>{
+    if(r()<.02){out[s.id]='AB';return}
+    const L=LAT[s.id],noise=gauss(r)*.25,base=.35+L.th+L.so[p.subj]+L.sl*(p.set-1)+cs.off+noise;
+    const exp=p.qs.map(qid=>{const q=Q(qid);let td=cs.td[q.topic];if(q.topic===cs.fixed&&p.set>=5)td-=1.0;
+      const b=BOOST[s.id+'|'+q.topic]&&p.set>=5?BOOST[s.id+'|'+q.topic]:0;
+      return base+stuTopicLat(s.id,q.topic)-td-q.diff+b});
+    const m=exp.map((lg,i)=>{const q=Q(p.qs[i]);return Math.round(clamp(sig(1.15*lg)+gauss(r)*.07,0,1)*q.max)});
+    if(p.choose){const ord=p.choose.from.slice().sort((a,b)=>exp[b]+gauss(r)*.4-exp[a]);ord.slice(p.choose.n).forEach(i=>m[i]=null)}
+    out[s.id]=m;
+  });
+  return out;
+}
+const Q=id=>BANK[id];
+let BANK={};
+
+/* ================= state + saved changes ================= */
+const S={user:'admin',page:'home',arg:null,scope:'all',cfg:{critical:40,target:50,good:70,excellent:85,weakTopic:40,drop:10,move:5},
+  watchTab:'support',watchCls:'',clsId:'bf2',clsSubj:'math',stuSubj:null,setId:8,paperTab:'q',bankF:{lv:'f2',subj:'math',src:'',topic:''},bankN:60,sug:[],sugI:-1};
+let SAVED={papers:{},bank:[],interventions:null,cfg:null};
+function boot(){
+  seed();
+  const sv=store.get(KEY);
+  if(sv){SAVED=Object.assign(SAVED,sv);
+    (SAVED.bank||[]).forEach(q=>D.bank.push(q));
+    Object.entries(SAVED.papers||{}).forEach(([k,v])=>{if(D.papers[k])Object.assign(D.papers[k],v)});
+    if(SAVED.interventions)D.interventions=SAVED.interventions;
+    if(SAVED.cfg)Object.assign(S.cfg,SAVED.cfg);
+    if(sv.user&&USERS.find(u=>u.id===sv.user))S.user=sv.user;}
+  BANK={};D.bank.forEach(q=>BANK[q.id]=q);
+}
+function persist(){store.set(KEY,{...SAVED,user:S.user})}
+function savePaper(p){SAVED.papers[p.id]={qs:p.qs,choose:p.choose,marks:p.marks,entered:p.entered};persist();bust()}
+// rebuild BANK index whenever bank grows
+function addBank(q){D.bank.push(q);BANK[q.id]=q;SAVED.bank.push(q);persist()}
+
+/* ================= analytics ================= */
+let MEMO=new Map();
+const bust=()=>MEMO=new Map();
+const memo=(k,f)=>{if(!MEMO.has(k))MEMO.set(k,f());return MEMO.get(k)};
+const USER=()=>USERS.find(u=>u.id===S.user);
+const isAdmin=()=>USER().kind==='admin';
+const myClasses=()=>{const u=USER();if(u.kind==='admin')return CLASSES.map(c=>c.id);if(u.kind!=='teacher')return CLASSES.filter(c=>c.school===u.school).map(c=>c.id);return [...new Set(u.teaches.map(t=>t.cls))]};
+const roleLabel=u=>u.role+(u.kind==='head'||u.kind==='acad'||u.kind==='teacher'?' · '+schoolOf(u.school).short:'');
+const P=(set,cls,sj)=>D.papers[pid(set,cls,sj)];
+const studentsOf=cls=>memo('st'+cls,()=>D.students.filter(s=>s.cls===cls));
+const STU=id=>D.students.find(s=>s.id===id);
+function pMax(p){if(!p.qs.length)return 0;let t=0;p.qs.forEach((q,i)=>{if(!(p.choose&&p.choose.from.includes(i)))t+=Q(q).max});if(p.choose)t+=p.choose.n*Q(p.qs[p.choose.from[0]]).max;return t}
+function stuPct(p,sid){if(!p||!p.entered)return null;const m=p.marks[sid];if(!m||m==='AB')return null;const mx=pMax(p);return mx?m.reduce((a,x)=>a+(x||0),0)/mx*100:null}
+// subjects the current user looks at for a class
+function subjsFor(cls){const u=USER();if(u.kind!=='teacher')return CL[cls].subjs;return u.teaches.filter(t=>t.cls===cls).map(t=>t.subj)}
+function classesInScope(){
+  let cs=myClasses();
+  if(S.scope.startsWith('school:'))cs=cs.filter(c=>CL[c].school===S.scope.slice(7));
+  if(S.scope.startsWith('class:'))cs=cs.filter(c=>c===S.scope.slice(6));
+  return cs;
+}
+// marks: the subject teacher, or the Academic Master of that school. Head Master and Administration can view.
+const canEdit=p=>{const u=USER();return (u.kind==='acad'&&CL[p.cls].school===u.school)||(u.kind==='teacher'&&u.teaches.some(t=>t.cls===p.cls&&t.subj===p.subj))};
+// one student's score in a set: average of the given subjects
+// a set only counts once every paper in it has marks, so a half-marked set never looks like a drop
+function stuSet(sid,set,subjs){const s=STU(sid);subjs=subjs||subjsFor(s.cls);return memo(`ss|${sid}|${set}|${subjs}`,()=>{const ps=subjs.map(sj=>P(set,s.cls,sj));if(ps.some(p=>!p||!p.entered))return null;return avg(ps.map(p=>stuPct(p,sid)))})}
+function series(sid,subjs){return SETS.map(x=>stuSet(sid,x.id,subjs))}
+function yearOf(sid,subjs){
+  return memo(`yr|${sid}|${subjs}`,()=>{
+    const v=series(sid,subjs),idx=v.map((x,i)=>x==null?-1:i).filter(i=>i>=0);
+    if(!idx.length)return {v,start:null,now:null,change:null,latest:null,latestSet:null,recent:null};
+    const start=avg(idx.slice(0,2).map(i=>v[i])),now=avg(idx.slice(-2).map(i=>v[i]));
+    const li=idx[idx.length-1],prev=avg(idx.slice(-3,-1).map(i=>v[i]));
+    return {v,start,now,change:now-start,latest:v[li],latestSet:li+1,recent:prev==null?null:v[li]-prev};
+  });
+}
+const BANDS=['Critical','Needs improvement','Developing','Good','Excellent'];
+function band(x){const c=S.cfg;if(x==null)return null;return x<c.critical?0:x<c.target?1:x<c.good?2:x<c.excellent?3:4}
+const bandPill=x=>{const b=band(x);return b==null?'<span class="muted">–</span>':`<span class="pill b${b}">${BANDS[b]}</span>`};
+function moveOf(ch){if(ch==null)return 'flat';return ch>=S.cfg.move?'up':ch<=-S.cfg.move?'down':'flat'}
+const moveTag=ch=>{const m=moveOf(ch);return `<span class="mv ${m}">${m==='up'?'▲ Improving':m==='down'?'▼ Declining':'● Steady'} <span class="num">${signed(ch)}</span></span>`};
+// topic score for a set of students in one paper
+function topicIn(p,sids){
+  const out={};if(!p||!p.entered)return out;
+  p.qs.forEach((qid,i)=>{const q=Q(qid);const o=out[q.topic]||(out[q.topic]={got:0,max:0});
+    sids.forEach(sid=>{const m=p.marks[sid];if(!m||m==='AB'||m[i]==null)return;o.got+=m[i];o.max+=q.max})});
+  return out;
+}
+function topicGrid(cls,sj,sids){
+  return memo(`tg|${cls}|${sj}|${sids?sids.join(','):'all'}`,()=>{
+    const ids=sids||studentsOf(cls).map(s=>s.id),g={};
+    SETS.forEach(st=>{const t=topicIn(P(st.id,cls,sj),ids);Object.entries(t).forEach(([tid,o])=>{(g[tid]||(g[tid]={}))[st.id]=o.max?o.got/o.max*100:null})});
+    return g;
+  });
+}
+function weakTopics(sid,subjs){
+  const s=STU(sid);subjs=subjs||subjsFor(s.cls);const out=[];
+  subjs.forEach(sj=>{const g=topicGrid(s.cls,sj,[sid]);Object.entries(g).forEach(([tid,row])=>{
+    const vals=Object.entries(row).filter(([,v])=>v!=null).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    const lowSets=vals.filter(v=>v<S.cfg.weakTopic).length, last=vals.slice(-2);
+    if(lowSets>=2&&avg(last)<S.cfg.weakTopic+5)out.push({tid,subj:sj,score:avg(last),lowSets})})});
+  return out.sort((a,b)=>a.score-b.score);
+}
+function flagsOf(sid,subjs){
+  return memo(`fl|${sid}|${subjs}`,()=>{
+    const y=yearOf(sid,subjs),f=[],c=S.cfg,s=STU(sid);
+    if(y.latest!=null&&y.latest<c.critical)f.push({k:'critical',sev:3,t:`Below ${c.critical}% in ${SET(y.latestSet).name}`});
+    else if(y.latest!=null&&y.latest<c.target)f.push({k:'low',sev:2,t:`Below the ${c.target}% target`});
+    if(y.recent!=null&&y.recent<=-c.drop)f.push({k:'drop',sev:2,t:`Dropped ${Math.round(-y.recent)} points in the last set`});
+    if(y.change!=null&&y.change<=-c.move)f.push({k:'decline',sev:2,t:`Down ${Math.round(-y.change)} points since the start of the year`});
+    const w=weakTopics(sid,subjs);if(w.length)f.push({k:'topic',sev:1,t:`Weak in ${w.length} topic${w.length>1?'s':''} across several sets`});
+    const missed=SETS.slice(-3).filter(st=>(subjs||subjsFor(s.cls)).some(sj=>{const p=P(st.id,s.cls,sj);return p&&p.entered&&p.marks[sid]==='AB'})).length;
+    if(missed)f.push({k:'missed',sev:1,t:`Absent from ${missed} of the last 3 sets`});
+    return f;
+  });
+}
+const needsSupport=sid=>flagsOf(sid).some(f=>['critical','low','drop','decline'].includes(f.k));
+const flagChips=fl=>fl.map(f=>`<span class="flag ${f.sev>=3?'bad':f.sev===2?'warn':''}">${esc(f.t)}</span>`).join(' ');
+function classSeries(cls,subjs){return SETS.map(st=>avg(studentsOf(cls).map(s=>stuSet(s.id,st.id,subjs))))}
+function rankIn(sid,set){const s=STU(sid),list=studentsOf(s.cls).map(x=>[x.id,stuSet(x.id,set)]).filter(x=>x[1]!=null).sort((a,b)=>b[1]-a[1]);const i=list.findIndex(x=>x[0]===sid);return i<0?null:{pos:i+1,of:list.length}}
+function srcScore(sids,cls,subjs,sets,src){let got=0,max=0;subjs.forEach(sj=>sets.forEach(set=>{const p=P(set,cls,sj);if(!p||!p.entered)return;p.qs.forEach((qid,i)=>{const q=Q(qid);if(src&&q.src!==src)return;sids.forEach(sid=>{const m=p.marks[sid];if(!m||m==='AB'||m[i]==null)return;got+=m[i];max+=q.max})})}));return max?got/max*100:null}
+function qStats(p,i){const q=Q(p.qs[i]);let n=0,sum=0,full=0,zero=0,na=0;Object.values(p.marks).forEach(m=>{if(m==='AB')return;if(m[i]==null){na++;return}n++;sum+=m[i];if(m[i]===q.max)full++;if(m[i]===0)zero++});return {n,avg:n?sum/n/q.max*100:null,full,zero,na}}
+function qHistory(qid){const out=[];Object.values(D.papers).forEach(p=>{if(!p.entered)return;const i=p.qs.indexOf(qid);if(i<0)return;out.push({p,avg:qStats(p,i).avg})});return out.sort((a,b)=>a.p.set-b.p.set)}
+const qLabel=a=>a==null?['–','']:a>=70?['Strong','b4']:a>=50?['Good','b3']:a>=30?['Weak','b1']:['Critical','b0'];
+const lastEnteredSet=cls=>{for(let i=SETS.length;i>=1;i--)if(CL[cls].subjs.some(sj=>P(i,cls,sj)?.entered))return i;return null};
+
+/* ================= charts ================= */
+function lineChart({series,h=230,ref=true,labels=SETS.map(s=>'S'+s.id),titles=SETS.map(s=>s.name)}){
+  const W=660,H=h,pl=36,pr=14,pt=12,pb=28,iw=W-pl-pr,ih=H-pt-pb,n=labels.length;
+  const x=i=>pl+i*iw/(n-1),y=v=>pt+ih*(1-v/100);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scores across the year">`;
+  [0,20,40,60,80,100].forEach(v=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`});
+  if(ref){s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(S.cfg.critical)}" y2="${y(S.cfg.critical)}" style="stroke:var(--b0)" stroke-dasharray="4 4" stroke-width="1.2" opacity=".8"/><text x="${W-pr}" y="${y(S.cfg.critical)-5}" text-anchor="end" style="fill:var(--b0)">Critical ${S.cfg.critical}%</text>`}
+  labels.forEach((l,i)=>{s+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle"><title>${esc(titles[i])}</title>${esc(l)}</text>`});
+  series.forEach(se=>{
+    let d='',pen=false;se.vals.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)+' ';pen=true});
+    s+=`<path d="${d}" fill="none" style="stroke:${se.color}" stroke-width="${se.w||2}" ${se.dash?'stroke-dasharray="6 5"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
+    const last=se.vals.reduce((a,v,i)=>v!=null?i:a,-1);
+    if(!se.noDots)se.vals.forEach((v,i)=>{if(v==null)return;s+=`<circle cx="${x(i)}" cy="${y(v)}" r="${i===last?4.5:2.6}" style="fill:${i===last?se.color:'var(--surface)'};stroke:${se.color}" stroke-width="2"><title>${esc(se.name)} · ${esc(titles[i])}: ${Math.round(v)}%</title></circle>`});
+  });
+  return s+'</svg>';
+}
+const legend=series=>`<div class="legend">${series.map(s=>`<span><i class="${s.dash?'dash':''}" style="--c:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>`;
+function spark(vals,w=96,h=26){
+  const pts=vals.map((v,i)=>[i,v]).filter(p=>p[1]!=null);if(pts.length<2)return '<span class="muted small">–</span>';
+  let lo=Math.min(...pts.map(p=>p[1])),hi=Math.max(...pts.map(p=>p[1]));const mid=(lo+hi)/2;if(hi-lo<24){lo=mid-12;hi=mid+12}
+  const x=i=>2+i*(w-6)/(vals.length-1),y=v=>h-3-(v-lo)/(hi-lo)*(h-6);
+  const d=pts.map((p,k)=>(k?'L':'M')+x(p[0]).toFixed(1)+' '+y(p[1]).toFixed(1)).join(' ');
+  const lp=pts[pts.length-1],b=band(lp[1]);
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" style="stroke:var(--muted)" stroke-width="1.5"/><circle cx="${x(lp[0])}" cy="${y(lp[1])}" r="3.2" style="fill:var(--b${b})"/></svg>`;
+}
+function bandColumns(counts){ // counts: per set array of 5
+  const W=660,H=200,pl=36,pr=14,pt=10,pb=28,iw=W-pl-pr,ih=H-pt-pb,n=counts.length,bw=iw/n*.62;
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Share of students in each band, set by set">`;
+  [0,50,100].forEach(v=>{const yy=pt+ih*(1-v/100);s+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line)"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${v}%</text>`});
+  counts.forEach((c,i)=>{const tot=c.reduce((a,b)=>a+b,0),cx=pl+(i+.5)*iw/n;
+    s+=`<text x="${cx}" y="${H-8}" text-anchor="middle"><title>${esc(SETS[i].name)}</title>S${i+1}</text>`;
+    if(!tot)return;let yy=pt+ih;
+    c.forEach((k,b)=>{if(!k)return;const hh=k/tot*ih;yy-=hh;s+=`<rect x="${cx-bw/2}" y="${yy}" width="${bw}" height="${Math.max(0,hh-1)}" rx="2" style="fill:var(--b${b})"><title>${esc(SETS[i].name)} · ${BANDS[b]}: ${k} students (${Math.round(k/tot*100)}%)</title></rect>`});
+  });
+  return s+'</svg>';
+}
+const bandLegend=()=>`<div class="legend">${BANDS.map((b,i)=>`<span><i class="sq" style="--c:var(--b${i})"></i>${b}</span>`).join('')}</div>`;
+const SUBC=['var(--s1)','var(--s2)','var(--s3)','var(--s4)'];
+const clsColor=id=>`var(--${CL[id].school})`;
+const clsDash=id=>['std4','f2'].includes(CL[id].lv);
+
+/* ================= views ================= */
+const head=(t,p,right='')=>`<div class="head"><div><h1>${t}</h1>${p?`<p>${p}</p>`:''}</div>${right?`<div class="row">${right}</div>`:''}</div>`;
+const table=(cols,rows,empty='Nothing here yet.')=>rows.length?`<div class="tw"><table><thead><tr>${cols.map(c=>`<th class="${c[1]||''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:`<div class="empty">${empty}</div>`;
+const scopeSelect=()=>{
+  const u=USER(),cs=myClasses(),adm=u.kind==='admin';
+  const opts=[`<option value="all">${adm?'All three schools':u.kind==='teacher'?'All my classes':'Whole school'}</option>`];
+  SCHOOLS.forEach(sc=>{const mine=cs.filter(c=>CL[c].school===sc.id);if(!mine.length)return;
+    if(adm)opts.push(`<option value="school:${sc.id}" ${S.scope==='school:'+sc.id?'selected':''}>${esc(sc.name)}</option>`);
+    mine.forEach(c=>opts.push(`<option value="class:${c}" ${S.scope==='class:'+c?'selected':''}>${adm?'&nbsp;&nbsp;&nbsp;':''}${esc(clsLabel(c))}</option>`))});
+  return `<label class="f">Showing<select id="scope" style="min-width:230px">${opts.join('')}</select></label>`;
+};
+const PAGES={};
+
+/* ---- Year progress ---- */
+PAGES.home=()=>{
+  const cs=classesInScope(),sids=cs.flatMap(c=>studentsOf(c).map(s=>s.id));
+  const ys=sids.map(id=>yearOf(id));
+  const startAvg=avg(ys.map(y=>y.start)),nowAvg=avg(ys.map(y=>y.now));
+  const up=ys.filter(y=>moveOf(y.change)==='up').length,down=ys.filter(y=>moveOf(y.change)==='down').length;
+  const sup=sids.filter(needsSupport).length;
+  const u=USER();
+  // timeline
+  const tl=SETS.map(st=>{const ps=cs.flatMap(c=>subjsFor(c).map(sj=>P(st.id,c,sj)));const done=ps.filter(p=>p.entered).length;
+    return `<button class="ts ${st.id===8?'cur':''}" data-act="set" data-id="${st.id}"><span class="n">Set ${st.id} · ${st.month}</span><b>${esc(st.name)}</b><span class="m">${done===ps.length?'All marks in':`${done} of ${ps.length} papers in`}</span><span class="pg"><span style="width:${ps.length?done/ps.length*100:0}%"></span></span></button>`}).join('');
+  // chart lines: one per class (or per subject if single class)
+  let lines;
+  if(cs.length===1){const c=cs[0];lines=subjsFor(c).map((sj,i)=>({name:SUBJ[sj],color:SUBC[i],vals:classSeries(c,[sj])}));lines.push({name:'Class average',color:'var(--ink)',w:3,vals:classSeries(c)})}
+  else lines=cs.map(c=>({name:clsLabel(c),color:clsColor(c),dash:clsDash(c),vals:classSeries(c)}));
+  // band movement
+  const counts=SETS.map(st=>{const c=[0,0,0,0,0];sids.forEach(id=>{const v=stuSet(id,st.id);const b=band(v);if(b!=null)c[b]++});return c});
+  // classes table
+  const crow=cs.map(c=>{const ys2=studentsOf(c).map(s=>yearOf(s.id));const st=avg(ys2.map(y=>y.start)),nw=avg(ys2.map(y=>y.now));
+    const need=studentsOf(c).filter(s=>needsSupport(s.id)).length;
+    const wk=subjsFor(c).flatMap(sj=>Object.entries(topicGrid(c,sj)).map(([tid,row])=>{const v=Object.entries(row).filter(([,x])=>x!=null).sort((a,b)=>a[0]-b[0]);return {tid,sj,last:v.length?v[v.length-1][1]:null}})).filter(x=>x.last!=null).sort((a,b)=>a.last-b.last)[0];
+    return `<tr class="click" data-act="cls" data-id="${c}"><td>${clsPill(c)}</td><td>${spark(classSeries(c))}</td><td class="r num">${pct(st)}</td><td class="r num">${pct(nw)}</td><td>${moveTag(nw-st)}</td><td class="r num">${need}</td><td class="small">${wk?`${esc(TOP[wk.tid].name)} <span class="muted">(${esc(SUBJ[wk.sj])}, ${pct(wk.last)})</span>`:'–'}</td></tr>`});
+  // weakest topics now
+  const topics=[];cs.forEach(c=>subjsFor(c).forEach(sj=>Object.entries(topicGrid(c,sj)).forEach(([tid,row])=>{const v=Object.entries(row).filter(([,x])=>x!=null).sort((a,b)=>a[0]-b[0]);if(v.length<2)return;topics.push({c,sj,tid,first:v[0][1],last:v[v.length-1][1],vals:SETS.map(st=>row[st.id]??null)})})));
+  const weak=topics.sort((a,b)=>a.last-b.last).slice(0,8);
+  const fixed=topics.filter(t=>t.first<S.cfg.weakTopic&&t.last-t.first>=15).sort((a,b)=>(b.last-b.first)-(a.last-a.first)).slice(0,5);
+  const ttl=u.kind==='admin'?'All schools · 2026':u.kind==='teacher'?'My classes this year':`${schoolOf(u.school).name} · 2026`;
+  // schools table (Administration) and missing marks (everyone who follows up)
+  const schRows=u.kind==='admin'&&S.scope==='all'?SCHOOLS.map(sc=>{const cc=CLASSES.filter(c=>c.school===sc.id).map(c=>c.id),ss=cc.flatMap(c=>studentsOf(c).map(x=>x.id)),yy=ss.map(id=>yearOf(id));
+    const a=avg(yy.map(y=>y.start)),b=avg(yy.map(y=>y.now)),miss=cc.flatMap(c=>CL[c].subjs.map(sj=>P(8,c,sj))).filter(p=>!p.entered).length;
+    return `<tr class="click" data-act="scopeTo" data-v="school:${sc.id}"><td><span class="sch sc-${sc.id}">${esc(sc.short)}</span> <span class="small muted">${esc(sc.name)}</span></td><td class="small">${esc(USERS.find(x=>x.kind==='head'&&x.school===sc.id).name)}<br><span class="muted">${esc(USERS.find(x=>x.kind==='acad'&&x.school===sc.id).name)}</span></td><td class="r num">${ss.length}</td><td class="r num">${pct(a)}</td><td class="r num">${pct(b)}</td><td>${moveTag(b-a)}</td><td class="r num">${ss.filter(needsSupport).length}</td><td class="r num">${miss?`<span class="down">${miss}</span>`:'0'}</td></tr>`}):[];
+  const missing=cs.flatMap(c=>subjsFor(c).flatMap(sj=>SETS.map(st=>P(st.id,c,sj)))).filter(p=>!p.entered);
+  const missRows=missing.map(p=>`<tr class="click" data-act="paper" data-id="${p.id}"><td>Set ${p.set} · ${esc(SET(p.set).name)}</td><td>${clsPill(p.cls)}</td><td>${esc(SUBJ[p.subj])}</td><td class="small">${esc(teacherOf(p.cls,p.subj))}</td><td>${p.qs.length?'<span class="flag warn">Waiting for marks</span>':'<span class="flag bad">No questions yet</span>'}</td></tr>`);
+  return head(ttl,`From Monthly Test 1 in February to the Pre-National Examination in October.${u.kind==='teacher'?' Showing the subjects you teach.':''}`,scopeSelect())+
+  `<div class="panel"><div class="pb"><div class="term"><span>Term 1</span><span>Term 2</span></div><div class="tl">${tl}</div></div></div>
+  <div class="tiles">
+    <div class="tile"><span class="k">Average score now</span><span class="v">${pct(nowAvg)}</span><span class="d">${pct(startAvg)} at the start of the year · <span class="${moveOf(nowAvg-startAvg)}">${signed(nowAvg-startAvg)} points</span></span></div>
+    <div class="tile click" data-act="watch" data-tab="up"><span class="k">Improved this year</span><span class="v up">${up}</span><span class="d">of ${sids.length} students went up ${S.cfg.move}+ points</span></div>
+    <div class="tile click" data-act="watch" data-tab="down"><span class="k">Declined this year</span><span class="v down">${down}</span><span class="d">went down ${S.cfg.move}+ points</span></div>
+    <div class="tile click" data-act="watch" data-tab="support"><span class="k">Need support now</span><span class="v">${sup}</span><span class="d">low score, a drop, or a decline</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="ph"><div><h2>Average score, set by set</h2><p>${cs.length===1?'Each subject and the class average':'Each line is one class. Solid lines are exam classes in their final year.'}</p></div></div><div class="pb stack">${lineChart({series:lines})}${legend(lines)}</div></div>
+    <div class="panel"><div class="ph"><div><h2>How the bands moved</h2><p>Share of students in each band in every set</p></div></div><div class="pb stack">${bandColumns(counts)}${bandLegend()}</div></div>
+  </div>
+  ${schRows.length?`<div class="panel"><div class="ph"><div><h2>The three schools</h2><p>Click a school to see only its classes</p></div></div>${table([['School'],['Head Master / Academic Master'],['Students','r'],['Start','r'],['Now','r'],['Change'],['Need support','r'],['Papers waiting','r']],schRows)}</div>`:''}
+  <div class="panel"><div class="ph"><div><h2>Classes</h2><p>Start of year is the average of Set 1–2. Now is the average of the last two sets with marks.</p></div></div>
+  ${table([['Class'],['Year trend'],['Start','r'],['Now','r'],['Change'],['Need support','r'],['Weakest topic now']],crow)}</div>
+  ${missRows.length?`<div class="panel"><div class="ph"><div><h2>Marks still missing</h2><p>These papers are not counted in progress until the marks are entered</p></div></div>${table([['Set'],['Class'],['Subject'],['Teacher'],['Status']],missRows)}</div>`:''}
+  <div class="grid2e">
+    <div class="panel"><div class="ph"><div><h2>Weakest topics right now</h2><p>Last time each topic was tested</p></div></div>
+    ${table([['Topic'],['Class'],['Across the year'],['Latest','r']],weak.map(t=>`<tr class="click" data-act="cls" data-id="${t.c}" data-subj="${t.sj}"><td><b>${esc(TOP[t.tid].name)}</b><div class="muted small">${esc(SUBJ[t.sj])}</div></td><td class="small">${esc(clsLabel(t.c))}</td><td>${spark(t.vals,90,24)}</td><td class="r"><span class="pill b${band(t.last)}">${pct(t.last)}</span></td></tr>`))}</div>
+    <div class="panel"><div class="ph"><div><h2>Topics that recovered</h2><p>Weak when first tested, now up 15+ points</p></div></div>
+    ${table([['Topic'],['Class'],['First','r'],['Now','r']],fixed.map(t=>`<tr class="click" data-act="cls" data-id="${t.c}" data-subj="${t.sj}"><td><b>${esc(TOP[t.tid].name)}</b><div class="muted small">${esc(SUBJ[t.sj])}</div></td><td class="small">${esc(clsLabel(t.c))}</td><td class="r num">${pct(t.first)}</td><td class="r num up">${pct(t.last)}</td></tr>`),'No topic has recovered by 15 points yet.')}</div>
+  </div>`;
+};
+
+/* ---- Students to watch ---- */
+PAGES.watch=()=>{
+  const cs=classesInScope();let sids=cs.flatMap(c=>studentsOf(c).map(s=>s.id));
+  const tabs=[['support','Need support'],['down','Declining'],['up','Improving'],['all','All students']];
+  let list;
+  if(S.watchTab==='support')list=sids.filter(needsSupport).sort((a,b)=>flagsOf(b).reduce((x,f)=>x+f.sev,0)-flagsOf(a).reduce((x,f)=>x+f.sev,0)||yearOf(a).now-yearOf(b).now);
+  else if(S.watchTab==='down')list=sids.filter(id=>moveOf(yearOf(id).change)==='down').sort((a,b)=>yearOf(a).change-yearOf(b).change);
+  else if(S.watchTab==='up')list=sids.filter(id=>moveOf(yearOf(id).change)==='up').sort((a,b)=>yearOf(b).change-yearOf(a).change);
+  else list=sids.slice().sort((a,b)=>(yearOf(b).now??0)-(yearOf(a).now??0));
+  S.watchList=list;
+  const rows=list.map(id=>{const s=STU(id),y=yearOf(id),w=weakTopics(id).slice(0,2);const plan=D.interventions.some(iv=>iv.stu===id&&iv.status==='Active');
+    return `<tr class="click" data-act="stu" data-id="${id}"><td><b>${esc(s.name)}</b>${plan?' <span class="flag">Support plan</span>':''}<div class="small">${clsPill(s.cls)}</div></td><td>${spark(y.v)}</td><td class="r num">${pct(y.start)}</td><td class="r num">${pct(y.now)}</td><td>${moveTag(y.change)}</td><td>${bandPill(y.latest)}</td>
+    <td class="small" style="min-width:220px">${S.watchTab==='up'?(w.length?'Still weak: '+w.map(x=>esc(TOP[x.tid].name)).join(', '):'<span class="muted">No weak topics</span>'):flagChips(flagsOf(id))}${S.watchTab!=='up'&&w.length?`<div class="muted" style="margin-top:4px">Topics: ${w.map(x=>esc(TOP[x.tid].name)+' ('+pct(x.score)+')').join(', ')}</div>`:''}</td></tr>`});
+  return head('Students to watch','Every student is compared with their own start of the year, not only with the class. Click a student to see subjects, topics and questions.',scopeSelect()+`<button class="btn sm" data-act="xlwatch" style="align-self:flex-end">Download list (Excel)</button>`)+
+  `<div class="panel"><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.watchTab===k}" data-act="wtab" data-tab="${k}">${l} <span class="muted">${k==='support'?sids.filter(needsSupport).length:k==='down'?sids.filter(id=>moveOf(yearOf(id).change)==='down').length:k==='up'?sids.filter(id=>moveOf(yearOf(id).change)==='up').length:sids.length}</span></button>`).join('')}</div>
+  ${table([['Student'],['Year trend'],['Start','r'],['Now','r'],['Change'],['Latest band'],[S.watchTab==='up'?'Next focus':'Why']],rows,'No students in this list.')}</div>`;
+};
+
+/* ---- Student profile ---- */
+PAGES.student=()=>{
+  const s=STU(S.arg);if(!s)return '<div class="empty">Student not found.</div>';
+  const subjs=subjsFor(s.cls),y=yearOf(s.id),c=CL[s.cls];
+  if(!S.stuSubj||!subjs.includes(S.stuSubj))S.stuSubj=subjs[0];
+  const r0=rankIn(s.id,1),ls=y.latestSet,r1=ls?rankIn(s.id,ls):null;
+  const nec=srcScore([s.id],s.cls,subjs,[7,8],'NECTA'),tch=srcScore([s.id],s.cls,subjs,[7,8],'TEACHER');
+  const lines=subjs.map((sj,i)=>({name:SUBJ[sj],color:SUBC[i],vals:series(s.id,[sj]),w:1.6}));
+  lines.push({name:'Overall',color:'var(--ink)',w:3,vals:y.v});
+  lines.push({name:'Class average',color:'var(--muted)',dash:true,noDots:true,vals:classSeries(s.cls)});
+  const grid=subjs.map(sj=>{const v=series(s.id,[sj]),vv=v.filter(x=>x!=null);return `<tr><td class="t"><b>${esc(SUBJ[sj])}</b></td>${v.map(x=>`<td class="h ${x==null?'hx':'h'+band(x)}">${x==null?'·':Math.round(x)}</td>`).join('')}<td class="r">${vv.length>1?moveTag(avg(vv.slice(-2))-avg(vv.slice(0,2))):'–'}</td></tr>`}).join('')+
+    `<tr><td class="t"><b>Overall</b></td>${y.v.map(x=>`<td class="h ${x==null?'hx':'h'+band(x)}">${x==null?'·':Math.round(x)}</td>`).join('')}<td class="r">${moveTag(y.change)}</td></tr>`;
+  // topic heatmap for chosen subject
+  const tg=topicGrid(s.cls,S.stuSubj,[s.id]);const cg=topicGrid(s.cls,S.stuSubj);
+  const trows=topicsOf(c.lv,S.stuSubj).filter(t=>tg[t.id]).map(t=>{const row=tg[t.id];const vals=SETS.map(st=>row[st.id]);const tested=vals.filter(v=>v!=null);const cl=avg(Object.values(cg[t.id]||{}));
+    return `<tr><td class="t">${esc(t.name)}</td>${vals.map(v=>`<td class="h ${v==null?'hx':'h'+band(v)}">${v==null?'·':Math.round(v)}</td>`).join('')}<td class="r num small">${pct(avg(tested.slice(-2)))}</td><td class="r num small muted">${pct(cl)}</td></tr>`}).join('');
+  // missed questions in latest set
+  const lp=ls?P(ls,s.cls,S.stuSubj):null;let missed=[];
+  if(lp&&lp.entered&&Array.isArray(lp.marks[s.id]))missed=lp.qs.map((qid,i)=>({q:Q(qid),i,m:lp.marks[s.id][i],cls:qStats(lp,i).avg})).filter(x=>x.m!=null&&x.m/x.q.max<.4);
+  const ivs=D.interventions.filter(iv=>iv.stu===s.id);
+  const fl=flagsOf(s.id),w=weakTopics(s.id);
+  return `<div class="row"><button class="btn sm ghost" data-act="back">${icon('back')}Back</button></div>`+
+  head(esc(s.name),`${clsPill(s.cls)} <span class="muted">· ${esc(s.reg)} · ${s.gender==='M'?'Boy':'Girl'}</span>`,`<button class="btn primary" data-act="newplan" data-id="${s.id}">${icon('plus')}Add support plan</button>`)+
+  `<div class="tiles">
+    <div class="tile"><span class="k">Start of year</span><span class="v">${pct(y.start)}</span><span class="d">Monthly Test 1 and Mid-Term 1</span></div>
+    <div class="tile"><span class="k">Now</span><span class="v">${pct(y.now)}</span><span class="d">${moveTag(y.change)}</span></div>
+    <div class="tile"><span class="k">Position in class</span><span class="v">${r1?r1.pos:'–'}<span class="muted" style="font-size:15px"> / ${r1?r1.of:'–'}</span></span><span class="d">Was ${r0?r0.pos:'–'} in Set 1</span></div>
+    <div class="tile"><span class="k">On NECTA questions</span><span class="v">${pct(nec)}</span><span class="d">Mock and Pre-National. Teacher questions: ${pct(tch)}</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="ph"><div><h2>Progress through the year</h2><p>Every set, every subject, with the class average for comparison</p></div></div><div class="pb stack">${lineChart({series:lines})}${legend(lines)}</div></div>
+    <div class="panel"><div class="ph"><h2>Why this student needs attention</h2></div><div class="pb why">
+      ${fl.length?`<ul style="margin:0;padding:0" class="why">${fl.map(f=>`<li><span class="flag ${f.sev>=3?'bad':f.sev===2?'warn':''}">${esc(f.t)}</span></li>`).join('')}</ul>`:'<p class="muted">No warning signs. Scores are steady or improving.</p>'}
+      ${w.length?`<h3 style="margin-top:6px">Topics still weak</h3><div class="stack" style="gap:6px">${w.slice(0,6).map(x=>`<div class="row" style="justify-content:space-between"><span>${esc(TOP[x.tid].name)} <span class="muted small">${esc(SUBJ[x.subj])}</span></span><span class="pill b${band(x.score)}">${pct(x.score)}</span></div>`).join('')}</div>`:''}
+      ${ivs.length?`<h3 style="margin-top:6px">Support plans</h3>${ivs.map(ivCard).join('')}`:''}
+    </div></div>
+  </div>
+  <div class="panel"><div class="ph"><div><h2>Results by set</h2><p>Percent in each subject. A dot means no marks yet (absent, or the teacher has not entered them). Overall counts a set only when all its papers have marks.</p></div></div>
+  <div class="tw"><table class="hm"><thead><tr><th class="t">Subject</th>${SETS.map(st=>`<th class="c" title="${esc(st.name)}">S${st.id}</th>`).join('')}<th class="r">Year</th></tr></thead><tbody>${grid}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><div><h2>Topics across the year</h2><p>Score on the questions from each topic, in every set where the topic was tested</p></div>
+    <div class="chips">${subjs.map(sj=>`<button class="chip" aria-pressed="${sj===S.stuSubj}" data-act="stusubj" data-subj="${sj}">${esc(SUBJ[sj])}</button>`).join('')}</div></div>
+  <div class="tw"><table class="hm"><thead><tr><th class="t">Topic</th>${SETS.map(st=>`<th class="c" title="${esc(st.name)}">S${st.id}</th>`).join('')}<th class="r">Recent</th><th class="r">Class</th></tr></thead><tbody>${trows||'<tr><td class="empty" colspan="11">No topics tested yet.</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><div><h2>Questions missed in ${ls?esc(SET(ls).name):'the last set'}</h2><p>${esc(SUBJ[S.stuSubj])}: questions where this student scored under 40%</p></div></div>
+  ${table([['Question'],['Topic'],['Source'],['Got','r'],['Class average','r']],missed.map(x=>`<tr><td class="num">Q${x.i+1}</td><td>${esc(TOP[x.q.topic].name)}</td><td><span class="src src-${x.q.src}">${x.q.src}</span> <span class="small muted">${esc(x.q.ref)}</span></td><td class="r num">${x.m} / ${x.q.max}</td><td class="r num">${pct(x.cls)}</td></tr>`),'No question under 40% in this subject.')}</div>`;
+};
+function ivResult(iv){
+  const s=STU(iv.stu);const g=topicGrid(s.cls,iv.subj,[s.id]);
+  const before=[],after=[];iv.topics.forEach(t=>Object.entries(g[t]||{}).forEach(([set,v])=>{if(v==null)return;(+set<=iv.start?before:after).push([+set,v])}));
+  const b=avg(before.sort((a,c)=>a[0]-c[0]).slice(-2).map(x=>x[1])),a=avg(after.map(x=>x[1]));
+  return {b,a,diff:a!=null&&b!=null?a-b:null,hit:a!=null&&a>=iv.target};
+}
+function ivCard(iv){const r=ivResult(iv);return `<div class="panel" style="box-shadow:none"><div class="pb stack" style="gap:6px">
+  <div class="row" style="justify-content:space-between"><b>${esc(SUBJ[iv.subj])}: ${iv.topics.map(t=>esc(TOP[t].name)).join(', ')}</b>${r.diff==null?'<span class="flag">Waiting for follow-up</span>':r.diff>=5?`<span class="flag" style="background:var(--ok-soft);color:var(--ok)">Improved ${signed(r.diff)}</span>`:`<span class="flag warn">No clear change (${signed(r.diff)})</span>`}</div>
+  <span class="small">${esc(iv.plan)}</span>
+  <span class="small muted">Before: ${pct(r.b)} → after: ${pct(r.a)} · target ${iv.target}% · started after ${esc(SET(iv.start).name)} · ${esc(iv.by)}</span></div></div>`}
+
+/* ---- Class progress ---- */
+PAGES.classes=()=>{
+  const u=USER(),cs=myClasses();
+  if(!cs.includes(S.clsId))S.clsId=cs[0];
+  const subjs=subjsFor(S.clsId);if(S.clsSubj!=='all'&&!subjs.includes(S.clsSubj))S.clsSubj=subjs[0];
+  const c=CL[S.clsId],sel=S.clsSubj==='all'?subjs:[S.clsSubj];
+  const st=studentsOf(c.id),ys=st.map(s=>yearOf(s.id,sel));
+  const sv=classSeries(c.id,sel);
+  const lines=S.clsSubj==='all'?[...subjs.map((sj,i)=>({name:SUBJ[sj],color:SUBC[i],vals:classSeries(c.id,[sj])})),{name:'All subjects',color:'var(--ink)',w:3,vals:sv}]:[{name:SUBJ[S.clsSubj],color:'var(--primary)',w:3,vals:sv}];
+  const counts=SETS.map(x=>{const k=[0,0,0,0,0];st.forEach(s=>{const b=band(stuSet(s.id,x.id,sel));if(b!=null)k[b]++});return k});
+  const tSubj=S.clsSubj==='all'?subjs[0]:S.clsSubj;const tg=topicGrid(c.id,tSubj),cs_=CS[c.id+'|'+tSubj];
+  const trows=topicsOf(c.lv,tSubj).filter(t=>tg[t.id]).map(t=>{const vals=SETS.map(x=>tg[t.id][x.id]??null),tv=vals.filter(v=>v!=null);
+    const low=st.filter(s=>{const g=topicGrid(c.id,tSubj,[s.id])[t.id];const v=g?Object.values(g).filter(x=>x!=null):[];return v.length&&avg(v.slice(-2))<S.cfg.weakTopic}).length;
+    const who=low>=st.length*.5?'<span class="flag bad">Whole class</span>':low>=st.length*.2?'<span class="flag warn">Part of class</span>':low?'<span class="flag">A few students</span>':'<span class="muted small">–</span>';
+    return `<tr><td class="t">${esc(t.name)}</td>${vals.map(v=>`<td class="h ${v==null?'hx':'h'+band(v)}">${v==null?'·':Math.round(v)}</td>`).join('')}<td class="r small">${tv.length>1?`<span class="${moveOf(tv[tv.length-1]-tv[0])}">${signed(tv[tv.length-1]-tv[0])}</span>`:'–'}</td><td class="r num small">${low}</td><td>${who}</td></tr>`}).join('');
+  const srows=st.map((s,i)=>[s,ys[i]]).sort((a,b)=>(a[1].change??0)-(b[1].change??0)).map(([s,y])=>`<tr class="click" data-act="stu" data-id="${s.id}"><td><b>${esc(s.name)}</b></td><td>${spark(y.v)}</td>${SETS.map(x=>{const v=y.v[x.id-1];return `<td class="r num small ${v==null?'muted':''}">${v==null?'·':Math.round(v)}</td>`}).join('')}<td>${moveTag(y.change)}</td><td>${bandPill(y.latest)}</td></tr>`);
+  const nec=srcScore(st.map(s=>s.id),c.id,sel,[7,8],'NECTA'),tch=srcScore(st.map(s=>s.id),c.id,sel,[7,8],'TEACHER');
+  return head('Class progress','One class through the whole year: scores, bands, topics and every student.',
+    `<label class="f">Class<select id="clsSel">${cs.map(x=>`<option value="${x}" ${x===c.id?'selected':''}>${esc(clsLabel(x))}</option>`).join('')}</select></label>
+     <button class="btn sm" data-act="xlclass" style="align-self:flex-end">Download to Excel</button>
+     <label class="f">Subject<select id="clsSubj">${subjs.length>1?`<option value="all" ${S.clsSubj==='all'?'selected':''}>All subjects</option>`:''}${subjs.map(sj=>`<option value="${sj}" ${sj===S.clsSubj?'selected':''}>${esc(SUBJ[sj])}</option>`).join('')}</select></label>`)+
+  `<div class="tiles">
+    <div class="tile"><span class="k">Class average now</span><span class="v">${pct(avg(ys.map(y=>y.now)))}</span><span class="d">${pct(avg(ys.map(y=>y.start)))} at the start · ${moveTag(avg(ys.map(y=>y.now))-avg(ys.map(y=>y.start)))}</span></div>
+    <div class="tile"><span class="k">Improved / declined</span><span class="v"><span class="up">${ys.filter(y=>moveOf(y.change)==='up').length}</span> <span class="muted" style="font-size:16px">/</span> <span class="down">${ys.filter(y=>moveOf(y.change)==='down').length}</span></span><span class="d">of ${st.length} students since February</span></div>
+    <div class="tile"><span class="k">Below ${S.cfg.target}% now</span><span class="v">${ys.filter(y=>y.latest!=null&&y.latest<S.cfg.target).length}</span><span class="d">${ys.filter(y=>y.latest!=null&&y.latest<S.cfg.critical).length} of them below ${S.cfg.critical}%</span></div>
+    <div class="tile"><span class="k">NECTA vs teacher questions</span><span class="v">${pct(nec)}</span><span class="d">Teacher questions: ${pct(tch)} (Mock and Pre-National)</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="ph"><h2>Average score, set by set</h2></div><div class="pb stack">${lineChart({series:lines})}${legend(lines)}</div></div>
+    <div class="panel"><div class="ph"><h2>How the bands moved</h2></div><div class="pb stack">${bandColumns(counts)}${bandLegend()}</div></div>
+  </div>
+  <div class="panel"><div class="ph"><div><h2>${esc(SUBJ[tSubj])}: topics across the year</h2><p>Class score on each topic in every set. New topics appear as the syllabus moves on.${S.clsSubj==='all'?' Pick one subject above to see its topics.':''}</p></div></div>
+  <div class="tw"><table class="hm"><thead><tr><th class="t">Topic</th>${SETS.map(x=>`<th class="c" title="${esc(x.name)}">S${x.id}</th>`).join('')}<th class="r">Change</th><th class="r">Students weak</th><th>Who is affected</th></tr></thead><tbody>${trows}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><div><h2>Students</h2><p>Sorted with the biggest drop first. Click a student for details.</p></div></div>
+  ${table([['Student'],['Trend'],...SETS.map(x=>['S'+x.id,'r']),['Change'],['Now']],srows)}</div>`;
+};
+
+/* ---- Exam sets & marks ---- */
+PAGES.sets=()=>{
+  const u=USER(),cs=myClasses();
+  const st=SET(S.setId);
+  const papers=cs.flatMap(c=>subjsFor(c).map(sj=>P(st.id,c,sj)));
+  const rows=papers.map(p=>{const status=!p.qs.length?'<span class="flag bad">No questions yet</span>':p.entered?'<span class="flag" style="background:var(--ok-soft);color:var(--ok)">Marks entered</span>':'<span class="flag warn">Waiting for marks</span>';
+    const a=p.entered?avg(studentsOf(p.cls).map(s=>stuPct(p,s.id))):null;
+    return `<tr class="click" data-act="paper" data-id="${p.id}"><td>${clsPill(p.cls)}</td><td><b>${esc(SUBJ[p.subj])}</b></td><td class="small">${esc(teacherOf(p.cls,p.subj))}</td><td class="r num">${p.qs.length}</td><td>${status}</td><td class="r">${a==null?'<span class="muted">–</span>':`<span class="pill b${band(a)}">${pct(a)}</span>`}</td></tr>`});
+  const tl=SETS.map(x=>{const ps=cs.flatMap(c=>subjsFor(c).map(sj=>P(x.id,c,sj)));const done=ps.filter(p=>p.entered).length;
+    return `<button class="ts ${x.id===st.id?'cur':''}" data-act="set" data-id="${x.id}"><span class="n">Set ${x.id} · ${x.month}</span><b>${esc(x.name)}</b><span class="m">${done}/${ps.length} papers</span><span class="pg"><span style="width:${done/ps.length*100}%"></span></span></button>`}).join('');
+  const waiting=papers.filter(p=>!p.entered).length,mine=setPapers(st.id),mineWait=mine.filter(p=>!p.entered).length;
+  const setxl=mine.length?`<div class="panel"><div class="pb"><div class="xlbox" style="border-style:solid"><div><b>All my papers for ${esc(st.name)} in one Excel file</b><div class="small muted">${mine.length} paper${mine.length>1?'s':''} you can mark${mineWait?`, ${mineWait} still waiting`:''}. One sheet per paper, names and questions already filled. Fill them, upload the one file, and every correct sheet is saved at once. A sheet with a mistake is held back and shown to you.</div></div><div class="row"><button class="btn sm" data-act="xlsetdown">Download my marks file</button><label class="btn sm primary" for="xlsetup">Upload filled file</label><input type="file" id="xlsetup" accept=".xlsx,.xls" hidden>${IN_FRAME&&mineWait?`<button class="btn sm ghost" data-act="xlsetsample">Try with a sample file</button>`:''}</div></div></div></div>`:'';
+  return head('Exam sets and marks','A set is one full examination, like a NECTA paper. Each subject paper is built from the question bank, then teachers enter the marks for every question.')+
+  `<div class="panel"><div class="pb"><div class="term"><span>Term 1</span><span>Term 2</span></div><div class="tl">${tl}</div></div></div>
+  ${setxl}
+  <div class="panel"><div class="ph"><div><h2>Set ${st.id}: ${esc(st.name)}</h2><p>${st.month} 2026 · Term ${st.term} · ${waiting?`${waiting} paper${waiting>1?'s':''} still waiting`:'All papers have marks'}</p></div></div>
+  ${table([['Class'],['Subject'],['Teacher'],['Questions','r'],['Status'],['Class average','r']],rows)}</div>`;
+};
+
+const qxl=p=>`<div class="xlbox"><div><b>Questions from Excel</b><div class="small muted">Download the questions sheet, list the questions (topic, marks, source, reference), and upload it. NECTA questions already in the bank are reused so their history is kept. New ones are saved to the bank.</div></div><div class="row"><button class="btn sm" data-act="xlqdown">Download questions sheet</button><label class="btn sm" for="xlqup">Upload questions</label><input type="file" id="xlqup" accept=".xlsx,.xls,.csv" hidden>${IN_FRAME?`<button class="btn sm ghost" data-act="xlqsample">Try with a sample file</button>`:''}</div></div>`;
+/* ---- One paper: questions, analysis, marks ---- */
+PAGES.paper=()=>{
+  const p=D.papers[S.arg];if(!p)return '<div class="empty">Paper not found.</div>';
+  const c=CL[p.cls],ed=canEdit(p),st=SET(p.set);
+  const tabs=`<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="${S.paperTab==='q'}" data-act="ptab" data-tab="q">Questions${p.entered?' and analysis':''}</button><button class="tab" role="tab" aria-selected="${S.paperTab==='m'}" data-act="ptab" data-tab="m">${p.entered?'Marks':'Enter marks'}</button></div>`;
+  let body='';
+  if(S.paperTab==='q'){
+    if(!p.qs.length)body=`<div class="pb stack"><div class="notice warn">This paper has no questions yet. Add questions from the bank (NECTA past papers, revision books, or questions other teachers wrote), or write a new one.</div>${ed?`<div class="row"><button class="btn primary" data-act="addq">${icon('plus')}Add from question bank</button><button class="btn" data-act="newq">${icon('edit')}Write a new question</button></div>${qxl(p)}`:''}</div>`;
+    else{
+      const rows=p.qs.map((qid,i)=>{const q=Q(qid),s=p.entered?qStats(p,i):null,h=qHistory(qid).filter(x=>x.p.id!==p.id),[lb,lc]=qLabel(s?.avg);const opt=p.choose&&p.choose.from.includes(i);
+        return `<tr><td class="num"><b>Q${i+1}</b>${opt?'<div class="small muted">Choice</div>':''}</td><td>${esc(TOP[q.topic].name)}</td><td><span class="src src-${q.src}">${q.src}</span><div class="small muted">${esc(q.ref)}</div></td><td class="r num">${q.max}</td>
+        ${p.entered?`<td class="r num">${pct(s.avg)}</td><td class="r num small">${s.full}</td><td class="r num small">${s.zero}</td><td class="r num small">${opt?s.na:'–'}</td><td>${lc?`<span class="pill ${lc}">${lb}</span>`:''}</td><td class="small muted">${h.length?h.slice(-3).map(x=>`S${x.p.set} ${clsLabel(x.p.cls).replace(' · ',' ')}: ${pct(x.avg)}`).join('<br>')+(h.length>3?`<br>and ${h.length-3} more`:''):'First time used'}</td>`:`${ed?`<td class="r"><button class="btn sm ghost" data-act="rmq" data-i="${i}" aria-label="Remove question ${i+1}">${icon('x')}</button></td>`:'<td></td>'}`}</tr>`});
+      const cols=p.entered?[['No.'],['Topic'],['Source'],['Marks','r'],['Average','r'],['Full marks','r'],['Zero','r'],['Skipped','r'],['Result'],['Used before']]:[['No.'],['Topic'],['Source'],['Marks','r'],['']];
+      let tsum='';
+      if(p.entered){const t=topicIn(p,studentsOf(p.cls).map(s=>s.id));tsum=`<div class="pb"><h3 style="margin-bottom:8px">Topics in this paper</h3><div class="stack" style="gap:6px">${Object.entries(t).sort((a,b)=>a[1].got/a[1].max-b[1].got/b[1].max).map(([tid,o])=>{const v=o.got/o.max*100;return `<div style="display:grid;grid-template-columns:minmax(120px,240px) 1fr 50px;gap:10px;align-items:center"><span class="small">${esc(TOP[tid].name)}</span><span class="bar2"><span style="width:${v}%;background:var(--b${band(v)})"></span></span><span class="num small r" style="text-align:right">${pct(v)}</span></div>`}).join('')}</div></div>`}
+      body=`${!p.entered&&ed?`<div class="pb row" style="border-bottom:1px solid var(--line)"><button class="btn sm" data-act="addq">${icon('plus')}Add from bank</button><button class="btn sm" data-act="newq">${icon('edit')}Write a new question</button>${c.lv.startsWith('f')?`<label class="row small" style="gap:6px"><input type="checkbox" id="choose" ${p.choose?'checked':''}> Last 3 questions: students answer any 2</label>`:''}<span class="muted small">Total: ${pMax(p)} marks</span></div><div class="pb" style="border-bottom:1px solid var(--line)">${qxl(p)}</div>`:''}
+      ${table(cols,rows)}${tsum}`;
+    }
+  }else body=marksGrid(p,ed);
+  return `<div class="row"><button class="btn sm ghost" data-act="set" data-id="${p.set}">${icon('back')}Set ${p.set}</button></div>`+
+  head(`${esc(SUBJ[p.subj])} · ${esc(st.name)}`,`${clsPill(p.cls)} <span class="muted">· ${esc(teacherOf(p.cls,p.subj))} · ${p.qs.length} questions · ${pMax(p)} marks${p.choose?' · choice in the last 3':''}</span>`,
+    p.entered?`<span class="pill b${band(avg(studentsOf(p.cls).map(s=>stuPct(p,s.id))))}">Class average ${pct(avg(studentsOf(p.cls).map(s=>stuPct(p,s.id))))}</span>`:'')+
+  `<div class="panel">${tabs}${body}</div>`;
+};
+function marksGrid(p,ed){
+  if(!p.qs.length)return '<div class="empty">Add questions first. Marks are entered per question.</div>';
+  const st=studentsOf(p.cls),lock=p.entered&&!S.editMarks;
+  const hdr=p.qs.map((qid,i)=>{const q=Q(qid),o=p.choose&&p.choose.from.includes(i);return `<th class="${o?'opt':''}" title="${esc(TOP[q.topic].name)} · ${q.max} marks${o?' · choice':''}">Q${i+1}<span class="tp">/${q.max} ${esc(TOP[q.topic].name)}</span></th>`}).join('');
+  const rows=st.map((s,r)=>{const m=p.marks[s.id];const ab=m==='AB';
+    return `<tr class="${ab?'ab':''}" data-sid="${s.id}"><td class="nm">${esc(s.name)}</td><td class="c"><input type="checkbox" data-ab="${s.id}" ${ab?'checked':''} ${lock||!ed?'disabled':''} aria-label="Absent"></td>${p.qs.map((qid,i)=>{const v=ab||!m?'':m[i]==null?'-':m[i];return `<td><input class="mk" data-r="${r}" data-c="${i}" value="${p.entered||m?v:''}" ${lock||!ed||ab?'disabled':''} inputmode="numeric" aria-label="${esc(s.name)} question ${i+1}"></td>`}).join('')}<td class="tot" id="tot-${r}"></td></tr>`}).join('');
+  const tools=!ed?`<div class="notice">Only ${esc(teacherOf(p.cls,p.subj))} or the ${esc(schoolOf(CL[p.cls].school).short)} Academic Master can enter or correct marks. Head Masters and Administration can view them.</div><div class="row"><button class="btn sm" data-act="xldown">Download marks (Excel)</button></div>`:lock?`<div class="row"><span class="muted small">Marks are saved and used in all reports.</span><button class="btn sm" data-act="editmarks">${icon('edit')}Correct marks</button><button class="btn sm" data-act="xldown">Download marks (Excel)</button></div>`:
+    `<div class="notice">Type the marks for each question. Type <b>-</b> for a question the student did not answer (choice questions can be left empty). Tick <b>Absent</b> if the student missed the paper. You can also copy a block of marks from Excel and paste it into the first cell.</div>
+     <div class="xlbox"><div><b>Prefer Excel?</b><div class="small muted">1. Download the marks sheet for this paper. It already has the student names, the questions, their topics and marks. 2. Fill it on any computer, even offline. 3. Upload it here, check the marks, then press Save marks.</div></div>
+     <div class="row"><button class="btn sm" data-act="xldown">Download marks sheet</button><label class="btn sm" for="xlup">Upload filled sheet</label><input type="file" id="xlup" accept=".xlsx,.xls,.csv" hidden>${IN_FRAME?`<button class="btn sm ghost" data-act="xlsample">Try with a sample file</button>`:''}</div></div>
+     <div class="row"><button class="btn primary" data-act="savemarks">Save marks</button><button class="btn sm" data-act="fillsample">Fill with sample marks (demo only)</button><span id="gridmsg" class="small muted"></span></div>`;
+  return `<div class="pb stack">${tools}</div><div class="tw" style="max-height:70vh"><table class="mg"><thead><tr><th class="nm">Student</th><th>Absent</th>${hdr}<th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ---- Question bank ---- */
+PAGES.bank=()=>{
+  const f=S.bankF,L=LV[f.lv];if(!L.subj[f.subj])f.subj=Object.keys(L.subj)[0];
+  let list=D.bank.filter(q=>q.lv===f.lv&&q.subj===f.subj&&(!f.src||q.src===f.src)&&(!f.topic||q.topic===f.topic));
+  const use={};Object.values(D.papers).forEach(p=>p.qs.forEach(q=>use[q]=(use[q]||0)+1));
+  const rows=list.slice(0,S.bankN).map(q=>{const h=qHistory(q.id);return `<tr><td><span class="src src-${q.src}">${q.src}</span></td><td>${esc(q.ref)}${q.text?`<div class="small muted">${esc(q.text)}</div>`:''}</td><td>${esc(TOP[q.topic].name)}</td><td class="r num">${q.max}</td><td class="r num">${use[q.id]||0}</td><td>${h.length?h.map(x=>`<span class="pill b${band(x.avg)}" title="${esc(SET(x.p.set).name+' · '+clsLabel(x.p.cls))}">S${x.p.set} ${pct(x.avg)}</span>`).join(' '):'<span class="muted small">Not used yet</span>'}</td></tr>`});
+  // source comparison for this level+subject
+  const cls=CLASSES.filter(c=>c.lv===f.lv);
+  const bySrc=['NECTA','BOOK','TEACHER'].map(sr=>{let got=0,max=0;cls.forEach(c=>SETS.forEach(st=>{const p=P(st.id,c.id,f.subj);if(!p||!p.entered)return;p.qs.forEach((qid,i)=>{const q=Q(qid);if(q.src!==sr)return;Object.values(p.marks).forEach(m=>{if(m==='AB'||m[i]==null)return;got+=m[i];max+=q.max})})}));return [sr,max?got/max*100:null,D.bank.filter(q=>q.lv===f.lv&&q.subj===f.subj&&q.src===sr).length]});
+  const n=bySrc.find(x=>x[0]==='NECTA')[1],t=bySrc.find(x=>x[0]==='TEACHER')[1];
+  return head('Question bank','Every question is saved once, with its topic and where it came from. A set picks questions from here, so the same NECTA question can be followed across classes and years.',`<button class="btn primary" data-act="newbank">${icon('plus')}Add a question</button>`)+
+  `<div class="panel"><div class="pb row" style="align-items:end">
+    <label class="f">Level<select id="bLv">${Object.entries(LV).map(([k,v])=>`<option value="${k}" ${k===f.lv?'selected':''}>${v.name} (${v.exam})</option>`).join('')}</select></label>
+    <label class="f">Subject<select id="bSubj">${Object.keys(L.subj).map(sj=>`<option value="${sj}" ${sj===f.subj?'selected':''}>${esc(SUBJ[sj])}</option>`).join('')}</select></label>
+    <label class="f">Topic<select id="bTopic"><option value="">All topics</option>${topicsOf(f.lv,f.subj).map(t=>`<option value="${t.id}" ${t.id===f.topic?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
+    <label class="f">Source<select id="bSrc"><option value="">All sources</option><option value="NECTA" ${f.src==='NECTA'?'selected':''}>NECTA past papers</option><option value="BOOK" ${f.src==='BOOK'?'selected':''}>Revision books</option><option value="TEACHER" ${f.src==='TEACHER'?'selected':''}>Teachers' own</option></select></label>
+  </div></div>
+  <div class="tiles" style="grid-template-columns:repeat(3,minmax(0,1fr))">${bySrc.map(([sr,v,cnt])=>`<div class="tile"><span class="k"><span class="src src-${sr}">${sr}</span> ${sr==='NECTA'?'past paper questions':sr==='BOOK'?'revision book questions':"teachers' own questions"}</span><span class="v">${pct(v)}</span><span class="d">average score this year · ${cnt} in the bank</span></div>`).join('')}</div>
+  ${n!=null&&t!=null&&t-n>=8?`<div class="notice warn">${esc(L.name)} ${esc(SUBJ[f.subj])}: students score ${Math.round(t-n)} points lower on NECTA questions than on teachers' own questions. Teacher questions may be easier than the national exam.</div>`:''}
+  <div class="panel"><div class="ph"><h2>${list.length} questions</h2></div>
+  ${table([['Source'],['Reference'],['Topic'],['Marks','r'],['Times used','r'],['How students did each time']],rows,'No questions match these filters.')}
+  ${list.length>S.bankN?`<div class="pb"><button class="btn sm" data-act="bankmore">Show more</button></div>`:''}</div>`;
+};
+
+/* ---- Support plans ---- */
+PAGES.support=()=>{
+  const cs=classesInScope();const list=D.interventions.filter(iv=>cs.includes(STU(iv.stu).cls)&&subjsFor(STU(iv.stu).cls).includes(iv.subj));
+  const res=list.map(iv=>[iv,ivResult(iv)]);
+  const worked=res.filter(([,r])=>r.diff!=null&&r.diff>=5).length,waiting=res.filter(([,r])=>r.diff==null).length;
+  const rows=res.map(([iv,r])=>{const s=STU(iv.stu);return `<tr class="click" data-act="stu" data-id="${s.id}"><td><b>${esc(s.name)}</b><div class="small">${clsPill(s.cls)}</div></td><td>${esc(SUBJ[iv.subj])}<div class="small muted">${iv.topics.map(t=>esc(TOP[t].name)).join(', ')}</div></td><td class="small" style="max-width:280px">${esc(iv.plan)}</td><td class="small">After ${esc(SET(iv.start).name)}</td><td class="r num">${pct(r.b)}</td><td class="r num">${pct(r.a)}</td><td class="r num">${iv.target}%</td><td>${r.diff==null?'<span class="flag">Waiting for follow-up</span>':r.diff>=5?`<span class="flag" style="background:var(--ok-soft);color:var(--ok)">Improved ${signed(r.diff)}</span>`:`<span class="flag warn">No clear change ${signed(r.diff)}</span>`}</td></tr>`});
+  return head('Support plans','A plan is opened for a student, then the next sets show whether their score on those topics went up.',scopeSelect())+
+  `<div class="tiles" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="tile"><span class="k">Plans</span><span class="v">${list.length}</span></div><div class="tile"><span class="k">Showing improvement</span><span class="v up">${worked}</span></div><div class="tile"><span class="k">Waiting for a follow-up set</span><span class="v">${waiting}</span></div></div>
+  <div class="panel"><div class="ph"><div><h2>All plans</h2><p>Before: the topic score in the last two sets before the plan. After: the topic score in the sets since then.</p></div></div>
+  ${table([['Student'],['Subject and topics'],['Plan'],['Started'],['Before','r'],['After','r'],['Target','r'],['Result']],rows,'No support plans yet. Open a student and choose "Add support plan".')}</div>`;
+};
+
+/* ---- Settings ---- */
+PAGES.settings=()=>{
+  const c=S.cfg,f=(k,l,h)=>`<label class="f">${l}<input type="number" id="cfg-${k}" value="${c[k]}" min="0" max="100"><span class="small muted" style="font-weight:400">${h}</span></label>`;
+  return head('Settings','Set by Administration for all three schools. These are the school\'s own levels for spotting students who need help. They are not NECTA grades. Report cards would use NECTA grades separately.')+
+  `<div class="panel"><div class="ph"><h2>Performance bands</h2></div><div class="pb stack"><div class="fgrid">
+    ${f('critical','Critical below (%)','Red band')}${f('target','Target (%)','Below this: needs improvement')}${f('good','Good from (%)','Between target and good: developing')}${f('excellent','Excellent from (%)','Top band')}</div>
+    <div>${bandLegend()}</div></div></div>
+  <div class="panel"><div class="ph"><h2>Warning rules</h2></div><div class="pb fgrid">
+    ${f('drop','Sudden drop (points)','Flag when the last set falls this much below the two before it')}
+    ${f('move','Year change (points)','Counts as improving or declining since the start of the year')}
+    ${f('weakTopic','Weak topic below (%)','A topic is weak when the student is under this in 2+ sets')}</div>
+    <div class="pb"><button class="btn primary" data-act="savecfg">Save settings</button></div></div>
+  <div class="panel"><div class="ph"><h2>Sample data</h2></div><div class="pb row"><span class="muted small">Undo everything you changed in this prototype (marks, questions, plans, settings).</span><button class="btn sm" data-act="reset">Start again with fresh sample data</button></div></div>`;
+};
+
+/* ================= render ================= */
+const NAV=[['home','Year progress','year'],['watch','Students to watch','watch'],['classes','Class progress','cls'],['sets','Exam sets and marks','sets'],['bank','Question bank','bank'],['support','Support plans','help'],['settings','Settings','gear']];
+function render(){
+  const u=USER();const nav=NAV.filter(n=>n[0]!=='settings'||u.kind==='admin');
+  const cur=S.page==='student'?'watch':S.page==='paper'?'sets':S.page;
+  const sup=classesInScope().flatMap(c=>studentsOf(c)).filter(s=>needsSupport(s.id)).length;
+  $('#app').innerHTML=`<div class="app"><div class="sw"><aside class="side"><div class="brand"><img src="${LOGO}" alt="Musabe Schools"><div><b>Musabe Schools</b><span>Academic progress</span></div></div>
+  <nav class="nav" aria-label="Menu">${nav.map(n=>`<button class="sn" data-act="nav" data-p="${n[0]}" ${n[0]===cur?'aria-current="page"':''}>${icon(n[2])}<span>${n[1]}</span>${n[0]==='watch'&&sup?`<span class="nb">${sup}</span>`:''}</button>`).join('')}</nav>
+  <div class="sfoot"><label>Signed in as (demo)<select id="userSel">${USERS.map(x=>`<option value="${x.id}" ${x.id===S.user?'selected':''}>${esc(x.name)} · ${esc(roleLabel(x))}</option>`).join('')}</select></label>
+  <button class="sn" data-act="theme">${icon('theme')}<span>Light or dark</span></button></div></aside></div>
+  <div class="col"><div class="bar"><div class="ctx"><span class="yr">2026 · Term 2</span><span class="muted small">Sample data for this prototype</span></div>
+  <div class="find">${icon('search')}<input id="find" placeholder="Find a student" autocomplete="off" aria-label="Find a student"><div class="sug" id="sug" hidden></div></div></div>
+  <main class="main" id="main">${PAGES[S.page]()}</main></div></div>`;
+  if(S.page==='paper'&&S.paperTab==='m')gridTotals();
+}
+function go(page,arg){S.page=page;S.arg=arg??null;S.editMarks=false;render();window.scrollTo(0,0)}
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)};
+const openDlg=(h,wide)=>{$('#dlg').style.maxWidth=wide?'920px':'';$('#dlg').innerHTML=h;$('#ov').hidden=false;const f=$('#dlg input,#dlg select,#dlg textarea');if(f)f.focus()};
+const closeDlg=()=>{$('#ov').hidden=true};
+const val=id=>($('#'+id)||{}).value||'';
+
+/* ---- marks grid logic ---- */
+function readGrid(){
+  const p=D.papers[S.arg],st=studentsOf(p.cls),out={},errs=[];
+  st.forEach((s,r)=>{
+    if($(`[data-ab="${s.id}"]`)?.checked){out[s.id]='AB';return}
+    const row=p.qs.map((qid,i)=>{const el=$(`input.mk[data-r="${r}"][data-c="${i}"]`);const t=el.value.trim();const q=Q(qid),opt=p.choose&&p.choose.from.includes(i);el.classList.remove('err');
+      if(t===''){if(opt)return null;errs.push([el,'empty']);return undefined}
+      if(t==='-')return null;
+      const n=Number(t);if(!Number.isFinite(n)||n<0||n>q.max||Math.round(n)!==n){el.classList.add('err');errs.push([el,'bad']);return undefined}
+      return n});
+    if(p.choose){const att=p.choose.from.filter(i=>row[i]!=null&&row[i]!==undefined).length;if(att>p.choose.n){p.choose.from.forEach(i=>$(`input.mk[data-r="${r}"][data-c="${i}"]`).classList.add('err'));errs.push([null,'choice'])}}
+    out[s.id]=row;
+  });
+  return {out,errs};
+}
+function gridTotals(){
+  const p=D.papers[S.arg];if(!p||!p.qs.length)return;const mx=pMax(p);
+  studentsOf(p.cls).forEach((s,r)=>{const el=$('#tot-'+r);if(!el)return;
+    if($(`[data-ab="${s.id}"]`)?.checked){el.textContent='Absent';return}
+    let t=0,any=false;p.qs.forEach((_,i)=>{const v=Number($(`input.mk[data-r="${r}"][data-c="${i}"]`).value);if(Number.isFinite(v)&&$(`input.mk[data-r="${r}"][data-c="${i}"]`).value.trim()!==''){t+=v;any=true}});
+    el.textContent=any?`${t}/${mx} · ${Math.round(t/mx*100)}%`:''});
+}
+
+/* ---- Excel: ready-made sheets out, filled sheets back in ---- */
+// Every sheet the system gives out carries a "Paper code" and the students' Reg no, so the upload always lands on the right paper and the right student.
+const IN_FRAME=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+const XLNOTE='Downloads are blocked in this online preview. In the copy on your computer (Claude outputs folder) this button downloads a real Excel file. Here is what is inside it:';
+function writeBook(name,sheets){ // sheets: [[sheetName, rows, colWidths?]]
+  if(!window.XLSX)return toast('Excel needs the internet once to load. Connect and try again.');
+  if(IN_FRAME)return previewBook(name,sheets);
+  const wb=XLSX.utils.book_new(),used=new Set();
+  sheets.forEach(([n,aoa,w])=>{let nm=n.replace(/[\\\/\?\*\[\]:]/g,'').slice(0,31),k=2;while(used.has(nm))nm=n.slice(0,28)+' '+(k++);used.add(nm);
+    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=(w||aoa.reduce((m,r)=>Math.max(m,r.length),0)&&Array.from({length:aoa.reduce((m,r)=>Math.max(m,r.length),0)},(_,i)=>({wch:Math.min(34,Math.max(8,...aoa.slice(0,60).map(r=>String(r[i]??'').length))+2)})));XLSX.utils.book_append_sheet(wb,ws,nm)});
+  XLSX.writeFile(wb,name.replace(/[^\w \-().,]+/g,'-').replace(/\s+/g,' ').trim()+'.xlsx');toast('Excel file downloaded');
+}
+function previewBook(name,sheets){
+  const first=sheets[0][1],w=first.reduce((m,r)=>Math.max(m,r.length),0);
+  openDlg(`<div class="row" style="justify-content:space-between"><h2>${esc(name)}.xlsx</h2><button class="btn sm ghost" data-act="close" aria-label="Close">${icon('x')}</button></div>
+  <p class="muted small">${XLNOTE}</p>
+  <div class="chips">${sheets.map((s,i)=>`<span class="chip" aria-pressed="${i===0}">${esc(s[0])}</span>`).join('')}</div>
+  <div class="tw" style="border:1px solid var(--line);border-radius:10px"><table class="xp"><tbody>${first.slice(0,16).map((r,ri)=>`<tr>${Array.from({length:w},(_,i)=>`<td class="${ri<1?'':'small'}" style="white-space:nowrap;${typeof r[i]==='number'?'text-align:right;font-family:var(--mono)':''}">${esc(r[i]??'')}</td>`).join('')}</tr>`).join('')}${first.length>16?`<tr><td colspan="${w}" class="muted small">… ${first.length-16} more rows</td></tr>`:''}</tbody></table></div>
+  ${sheets.length>1?`<p class="small muted">${sheets.length} sheets in this file.</p>`:''}
+  <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="close">Close</button></div>`,true);
+}
+async function readBook(file){ // -> [{name, rows}]
+  if(/\.csv$/i.test(file.name))return [{name:file.name,rows:(await file.text()).split(/\r?\n/).map(l=>l.split(/[,;\t]/))}];
+  if(!window.XLSX)throw new Error('Excel needs the internet once to load. Connect and try again, or save the sheet as CSV.');
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+  return wb.SheetNames.map(n=>({name:n,rows:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:''})}));
+}
+const cell=v=>String(v??'').trim();
+const shortSubj=sj=>({math:'Maths',eng:'English',sci:'Science',kis:'Kiswahili',bio:'Biology',chem:'Chemistry'})[sj];
+const paperName=p=>`${schoolOf(CL[p.cls].school).short} ${CL[p.cls].name} ${SUBJ[p.subj]} - ${SET(p.set).name}`;
+const sheetName=p=>`${CL[p.cls].name.replace('Standard','Std').replace('Form ','F')} ${shortSubj(p.subj)}${myClasses().some(c=>CL[c].school!==CL[p.cls].school)?' '+schoolOf(CL[p.cls].school).short.split(' ')[0]:''}`;
+
+/* marks sheet */
+function marksAoa(p,marks=p.marks){
+  const qs=p.qs.map(Q);
+  return [['MUSABE SCHOOLS · MARKS SHEET'],['Paper code',p.id],['School',schoolOf(CL[p.cls].school).name],['Class',CL[p.cls].name],['Subject',SUBJ[p.subj]],['Set',SET(p.set).name],['Teacher',teacherOf(p.cls,p.subj)],[],
+    ['Reg no','Student name','Absent',...qs.map((q,i)=>'Q'+(i+1)+(p.choose&&p.choose.from.includes(i)?' (choice)':''))],
+    ['','Topic','',...qs.map(q=>TOP[q.topic].name)],
+    ['','Out of','',...qs.map(q=>q.max)],
+    ...studentsOf(p.cls).map(s=>{const m=marks[s.id];return [s.reg,s.name,m==='AB'?'AB':'',...qs.map((q,i)=>Array.isArray(m)?(m[i]==null?'-':m[i]):'')]})];
+}
+const MARKS_HELP=[['How to fill the marks sheet'],['1. Type the marks for each question under Q1, Q2 and so on.'],['2. Type - if the student did not answer a question. Choice questions can be left empty.'],['3. Type AB in the Absent column if the student missed the paper.'],['4. Do not change the Reg no, the Paper code or the order of the questions.'],['5. Save the file, then upload it in the system. It checks every mark before saving.']];
+function xlDown(p){writeBook('Marks - '+paperName(p),[['Marks',marksAoa(p)],['How to fill',MARKS_HELP]])}
+function parseMarks(rows){
+  const code=rows.find(r=>cell(r[0]).toLowerCase()==='paper code');
+  const hi=rows.findIndex(r=>cell(r[0]).toLowerCase()==='reg no');if(hi<0)return null;
+  const qcols=rows[hi].map((h,i)=>[cell(h).match(/^Q(\d+)/i),i]).filter(x=>x[0]).map(x=>[+x[0][1]-1,x[1]]);
+  const abCol=rows[hi].findIndex(h=>/absent/i.test(cell(h)));
+  const data=rows.slice(hi+1).filter(r=>cell(r[0])).map(r=>({reg:cell(r[0]),name:cell(r[1]),ab:abCol>=0&&/^ab/i.test(cell(r[abCol])),vals:qcols.map(([qi,ci])=>[qi,cell(r[ci])])}));
+  return {code:code?cell(code[1]):null,qcols,data};
+}
+// check a parsed sheet against a paper without touching the screen
+function checkMarks(p,pm){
+  const st=studentsOf(p.cls),byReg={},out={},probs=[],unknown=[];st.forEach(s=>byReg[s.reg.toUpperCase()]=s);
+  if(pm.qcols.length!==p.qs.length)probs.push(`The sheet has ${pm.qcols.length} questions but the paper has ${p.qs.length}.`);
+  pm.data.forEach(r=>{const s=byReg[r.reg.toUpperCase()];if(!s){unknown.push(r.reg);return}
+    if(r.ab){out[s.id]='AB';return}
+    const row=p.qs.map((_,i)=>p.choose&&p.choose.from.includes(i)?null:undefined);
+    r.vals.forEach(([qi,t])=>{if(qi>=p.qs.length)return;const q=Q(p.qs[qi]),opt=p.choose&&p.choose.from.includes(qi);
+      if(t===''){if(!opt)probs.push(`${s.name}: Q${qi+1} is empty`);return}
+      if(t==='-'){row[qi]=null;return}
+      const n=Number(t);if(!Number.isInteger(n)||n<0||n>q.max){probs.push(`${s.name}: Q${qi+1} has "${t}" (allowed 0 to ${q.max})`);return}
+      row[qi]=n});
+    if(p.choose&&p.choose.from.filter(i=>row[i]!=null).length>p.choose.n)probs.push(`${s.name}: answered more than ${p.choose.n} choice questions`);
+    out[s.id]=row});
+  const missing=st.filter(s=>!(s.id in out)).map(s=>s.name);
+  return {out,probs,missing,unknown};
+}
+// one paper: put the sheet into the grid so the teacher sees it before saving
+function fillGridFrom(rows,fileName){
+  const p=D.papers[S.arg],pm=parseMarks(rows);
+  if(!pm)return toast('Could not find the "Reg no" heading. Use the sheet downloaded from this page.');
+  const warn=[];if(pm.code&&pm.code!==p.id)warn.push(`This file is for another paper (${pm.code}). Check before saving.`);
+  if(pm.qcols.length!==p.qs.length)warn.push(`The file has ${pm.qcols.length} questions but this paper has ${p.qs.length}.`);
+  const st=studentsOf(p.cls);let filled=0;const unknown=[];
+  pm.data.forEach(r=>{const ri=st.findIndex(s=>s.reg.toUpperCase()===r.reg.toUpperCase());if(ri<0){unknown.push(r.reg);return}
+    const cb=$(`[data-ab="${st[ri].id}"]`);cb.checked=r.ab;cb.closest('tr').classList.toggle('ab',r.ab);
+    r.vals.forEach(([qi,t])=>{const el=$(`input.mk[data-r="${ri}"][data-c="${qi}"]`);if(!el)return;el.disabled=r.ab;el.value=r.ab?'':t;el.classList.remove('err')});filled++});
+  gridTotals();readGrid(); // marks wrong cells in red
+  const bad=$$('input.mk.err').length,missing=st.length-filled;
+  $('#gridmsg').textContent=[`Loaded ${filled} students from ${fileName}.`,missing?`${missing} students are not in the file.`:'',unknown.length?`Reg no not in this class: ${unknown.slice(0,5).join(', ')}.`:'',bad?`${bad} marks need fixing (red).`:'',...warn,'Check, then press Save marks.'].filter(Boolean).join(' ');
+  toast(bad?`Loaded ${filled} students. ${bad} marks are wrong, shown in red.`:`Loaded ${filled} students. Check, then Save marks.`);
+}
+async function xlUp(file){try{const b=await readBook(file);fillGridFrom(b[0].rows,file.name)}catch(e){toast(e.message||'Could not read this file.')}}
+function sampleMarksRows(p){ // a filled sheet with two typing mistakes, for the demo
+  const m=genMarks(p,mulberry32(hash(p.id+'xl'))),aoa=marksAoa(p,m),hi=aoa.findIndex(r=>r[0]==='Reg no');
+  const r1=aoa[hi+3],r2=aoa[hi+6];if(r1&&r1[2]!=='AB')r1[3]=Q(p.qs[0]).max+2;if(r2&&r2[2]!=='AB')r2[4]='x';
+  return aoa;
+}
+
+/* whole set: one file, one sheet per paper */
+const setPapers=set=>myClasses().flatMap(c=>subjsFor(c).map(sj=>P(set,c,sj))).filter(p=>p&&canEdit(p)&&p.qs.length);
+function xlSetDown(set){
+  const ps=setPapers(set);if(!ps.length)return toast('No papers with questions to download in this set.');
+  writeBook(`Marks - ${SET(set).name} - ${USER().name}`,[...ps.map(p=>[sheetName(p),marksAoa(p)]),['How to fill',[...MARKS_HELP,['6. Each sheet is one paper. Fill all of them, then upload this one file.']]]]);
+}
+function takeSetBook(book,fileName){
+  const res=[];
+  book.forEach(({name,rows})=>{const pm=parseMarks(rows);if(!pm){if(!/how to fill/i.test(name))res.push({sheet:name,ok:false,msg:'Not a marks sheet (no "Reg no" heading). Skipped.'});return}
+    const p=D.papers[pm.code];
+    if(!p){res.push({sheet:name,ok:false,msg:'No paper code. Use the file downloaded from the system.'});return}
+    if(!canEdit(p)){res.push({sheet:name,p,ok:false,msg:'You cannot enter marks for this paper.'});return}
+    const filledAny=pm.data.some(r=>r.ab||r.vals.some(([,t])=>t!==''));
+    if(!filledAny){res.push({sheet:name,p,ok:false,skip:true,msg:'Empty. Nothing saved.'});return}
+    const c=checkMarks(p,pm);
+    if(c.probs.length||c.missing.length||c.unknown.length){res.push({sheet:name,p,ok:false,msg:[...c.probs.slice(0,3),c.probs.length>3?`and ${c.probs.length-3} more problems`:'',c.missing.length?`${c.missing.length} students missing`:'',c.unknown.length?`Unknown Reg no: ${c.unknown.slice(0,3).join(', ')}`:''].filter(Boolean).join(' · ')});return}
+    if(p.entered&&JSON.stringify(c.out)===JSON.stringify(p.marks)){res.push({sheet:name,p,ok:false,skip:true,msg:'Same as the marks already saved. No change.'});return}
+    const was=p.entered;p.marks=c.out;p.entered=true;savePaper(p);res.push({sheet:name,p,ok:true,fix:was,msg:`Saved ${Object.keys(c.out).length} students. Class average ${pct(avg(studentsOf(p.cls).map(s=>stuPct(p,s.id))))}.`});
+  });
+  render();
+  const ok=res.filter(r=>r.ok).length,bad=res.filter(r=>!r.ok&&!r.skip).length;
+  openDlg(`<h2>Upload results</h2><p class="muted small">${esc(fileName)} · ${ok} paper${ok===1?'':'s'} saved${bad?` · ${bad} need fixing`:''}. A paper with any problem is not saved, so nothing wrong reaches the reports.</p>
+  <div class="tw"><table><thead><tr><th>Sheet</th><th>Paper</th><th>Result</th></tr></thead><tbody>${res.map(r=>`<tr><td class="small">${esc(r.sheet)}</td><td class="small">${r.p?esc(clsLabel(r.p.cls)+' · '+SUBJ[r.p.subj]):'–'}</td><td><span class="flag ${r.ok?'':r.skip?'':'bad'}" ${r.ok?'style="background:var(--ok-soft);color:var(--ok)"':''}>${r.ok?(r.fix?'Corrected':'Saved'):r.skip?'Skipped':'Not saved'}</span><div class="small muted" style="margin-top:3px">${esc(r.msg)}</div>${!r.ok&&r.p&&!r.skip?`<button class="btn sm ghost" data-act="paperm" data-id="${r.p.id}">Open this paper</button>`:''}</td></tr>`).join('')}</tbody></table></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="close">Done</button></div>`,true);
+}
+async function xlSetUp(file){try{takeSetBook(await readBook(file),file.name)}catch(e){toast(e.message||'Could not read this file.')}}
+function sampleSetBook(set){ // waiting papers filled; one paper gets a mistake to show it is held back
+  const ps=setPapers(set).filter(p=>!p.entered);if(!ps.length)return null;
+  return ps.map((p,k)=>({name:sheetName(p),rows:k===ps.length-1&&ps.length>1?sampleMarksRows(p):marksAoa(p,genMarks(p,mulberry32(hash(p.id+'xl'))))}));
+}
+
+/* questions for a paper */
+function qAoa(p){
+  const L=LV[CL[p.cls].lv],rows=p.qs.length?p.qs.map((qid,i)=>{const q=Q(qid);return [i+1,TOP[q.topic].name,q.max,q.src,q.ref,p.choose&&p.choose.from.includes(i)?'yes':'',q.text||'']}):Array.from({length:L.choice?10:10},(_,i)=>[i+1,'','','','',L.choice&&i>=7?'yes':'','']);
+  return [['MUSABE SCHOOLS · QUESTIONS FOR ONE PAPER'],['Paper code',p.id],['Class',clsLabel(p.cls)],['Subject',SUBJ[p.subj]],['Set',SET(p.set).name],[],
+    ['No','Topic','Marks','Source (NECTA, BOOK or TEACHER)','Reference (e.g. '+L.exam+' 2021 Question 4)','Choice (yes)','Question text (optional)'],...rows];
+}
+function xlQDown(p){
+  const tps=topicsOf(CL[p.cls].lv,p.subj);
+  writeBook('Questions - '+paperName(p),[['Questions',qAoa(p)],['Topics',[['Topics for '+LV[CL[p.cls].lv].name+' '+SUBJ[p.subj]+' (copy the name exactly)'],...tps.map(t=>[t.name])]],
+    ['How to fill',[['How to fill the questions sheet'],['1. One row per question, in the order they appear on the paper.'],['2. Topic: copy a name from the Topics sheet.'],['3. Source: NECTA for past papers, BOOK for revision books, TEACHER for your own question.'],['4. Reference: the past paper and question number, or the book page. A NECTA question already in the bank is reused, so its history is kept.'],['5. Choice: type yes on the last 3 questions if students answer any 2 of them. They must have the same marks.']]]]);
+}
+const norm=s=>cell(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+function takeQuestions(rows,fileName){
+  const p=D.papers[S.arg],c=CL[p.cls],tps=topicsOf(c.lv,p.subj),errs=[],items=[];
+  const code=rows.find(r=>cell(r[0]).toLowerCase()==='paper code');if(code&&cell(code[1])!==p.id)errs.push(`This file is for another paper (${cell(code[1])}).`);
+  const hi=rows.findIndex(r=>cell(r[0]).toLowerCase()==='no');if(hi<0)return toast('Could not find the "No" heading. Use the questions sheet from this page.');
+  rows.slice(hi+1).forEach((r,k)=>{const tname=cell(r[1]);if(!tname&&!cell(r[2]))return;const line=hi+2+k;
+    const t=tps.find(x=>norm(x.name)===norm(tname))||tps.find(x=>norm(tname).length>3&&(norm(x.name).startsWith(norm(tname))||norm(tname).startsWith(norm(x.name))));
+    if(!t){errs.push(`Row ${line}: topic "${tname||'(empty)'}" is not in the ${SUBJ[p.subj]} topic list.`);return}
+    const max=Number(cell(r[2]));if(!Number.isInteger(max)||max<1||max>30){errs.push(`Row ${line}: marks must be a whole number from 1 to 30.`);return}
+    const s=cell(r[3]),src=/necta/i.test(s)?'NECTA':/book/i.test(s)?'BOOK':'TEACHER';
+    items.push({t,max,src,ref:cell(r[4]),choice:/^(y|yes|ndiyo)/i.test(cell(r[5])),text:cell(r[6])})});
+  if(!items.length)errs.push('No questions found in the file.');
+  const ch=items.map((x,i)=>x.choice?i:-1).filter(i=>i>=0);
+  if(ch.length&&(ch.length!==3||ch[0]!==items.length-3||new Set(ch.map(i=>items[i].max)).size>1))errs.push('Choice must be "yes" on exactly the last 3 questions, and they must have the same marks.');
+  if(errs.length)return openDlg(`<h2>Questions not added</h2><p class="muted small">${esc(fileName)}. Fix these rows in Excel and upload again. Nothing was changed.</p><ul class="why" style="margin:0">${errs.slice(0,12).map(e=>`<li class="small">${esc(e)}</li>`).join('')}</ul>${errs.length>12?`<p class="small muted">and ${errs.length-12} more</p>`:''}<div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="close">OK</button></div>`);
+  let reused=0,added=0;
+  p.qs=items.map(x=>{const ex=x.ref&&D.bank.find(q=>q.topic===x.t.id&&q.max===x.max&&q.src===x.src&&norm(q.ref)===norm(x.ref));if(ex){reused++;return ex.id}
+    const q={id:'u'+Date.now().toString(36)+Math.floor(Math.random()*1e4),lv:c.lv,subj:p.subj,topic:x.t.id,max:x.max,src:x.src,diff:0,added:true,text:x.text,ref:x.ref||(x.src==='TEACHER'?'Written by '+USER().name:x.src==='NECTA'?LV[c.lv].exam+' past paper':'Revision book')};
+    if(x.src==='TEACHER')q.by=USER().name;addBank(q);added++;return q.id});
+  p.choose=ch.length?{from:ch,n:2}:null;savePaper(p);S.paperTab='q';render();
+  toast(`${items.length} questions set. ${reused} found in the bank, ${added} new ones saved to the bank.`);
+}
+async function xlQUp(file){try{const b=await readBook(file);takeQuestions(b[0].rows,file.name)}catch(e){toast(e.message||'Could not read this file.')}}
+function sampleQRows(p){
+  const c=CL[p.cls],L=LV[c.lv],tps=topicsOf(c.lv,p.subj),r=mulberry32(hash(p.id+'q'));const rows=[];
+  const n10=L.choice?7:10;
+  for(let i=0;i<n10;i++){const t=tps[Math.floor(r()*tps.length)];const q=D.bank.find(x=>x.topic===t.id&&x.max===10&&x.src==='NECTA'&&!x.added);
+    rows.push(i===2?[i+1,t.name.toLowerCase(),10,'TEACHER','','','A short word problem written for this class']:[i+1,t.name,10,q?q.src:'BOOK',q?q.ref:'Revision book page 40','',''])}
+  if(L.choice)for(let i=0;i<3;i++){const t=tps[Math.floor(r()*tps.length)];const q=D.bank.find(x=>x.topic===t.id&&x.max===15);rows.push([n10+i+1,t.name,15,q?q.src:'NECTA',q?q.ref:L.exam+' 2023 Question 9','yes',''])}
+  return [...qAoa({...p,qs:[]}).slice(0,7),...rows];
+}
+
+/* reports to Excel */
+function xlClass(){
+  const c=CL[S.clsId],subjs=subjsFor(c.id),sel=S.clsSubj==='all'?subjs:[S.clsSubj],tSubj=S.clsSubj==='all'?subjs[0]:S.clsSubj;
+  const st=studentsOf(c.id).map(s=>[s,yearOf(s.id,sel)]);
+  const a=[['Reg no','Student','Gender',...SETS.map(x=>`S${x.id} ${x.name}`),'Start','Now','Change','Band now','Warnings'],
+    ...st.map(([s,y])=>[s.reg,s.name,s.gender==='M'?'Boy':'Girl',...y.v.map(v=>v==null?'':Math.round(v)),y.start==null?'':Math.round(y.start),y.now==null?'':Math.round(y.now),y.change==null?'':Math.round(y.change),y.latest==null?'':BANDS[band(y.latest)],flagsOf(s.id).map(f=>f.t).join('; ')])];
+  const tg=topicGrid(c.id,tSubj);
+  const b=[['Topic',...SETS.map(x=>'S'+x.id),'Change'],...topicsOf(c.lv,tSubj).filter(t=>tg[t.id]).map(t=>{const v=SETS.map(x=>tg[t.id][x.id]);const tv=v.filter(x=>x!=null);return [t.name,...v.map(x=>x==null?'':Math.round(x)),tv.length>1?Math.round(tv[tv.length-1]-tv[0]):'']})];
+  const subs=subjs.map(sj=>[SUBJ[sj],...SETS.map(x=>{const v=classSeries(c.id,[sj])[x.id-1];return v==null?'':Math.round(v)})]);
+  writeBook(`Class progress - ${clsLabel(c.id)} - 2026`,[['Students',a],['Subjects',[['Subject',...SETS.map(x=>'S'+x.id)],...subs]],['Topics '+shortSubj(tSubj),b]]);
+}
+function xlWatch(list,tab){
+  writeBook(`Students to watch - ${tab} - ${USER().name}`,[['Students',[['Reg no','Student','Class','Start','Now','Change','Band now','Warnings','Weak topics'],...list.map(id=>{const s=STU(id),y=yearOf(id);return [s.reg,s.name,clsLabel(s.cls),y.start==null?'':Math.round(y.start),y.now==null?'':Math.round(y.now),y.change==null?'':Math.round(y.change),y.latest==null?'':BANDS[band(y.latest)],flagsOf(id).map(f=>f.t).join('; '),weakTopics(id).slice(0,4).map(w=>TOP[w.tid].name+' ('+Math.round(w.score)+'%)').join('; ')]})]]]);
+}
+
+/* ---- dialogs ---- */
+function bankPicker(){
+  const p=D.papers[S.arg],c=CL[p.cls];
+  const f=S.pick||(S.pick={topic:'',src:''});
+  const list=D.bank.filter(q=>q.lv===c.lv&&q.subj===p.subj&&!p.qs.includes(q.id)&&(!f.topic||q.topic===f.topic)&&(!f.src||q.src===f.src));
+  openDlg(`<div class="row" style="justify-content:space-between"><h2>Add questions from the bank</h2><button class="btn sm ghost" data-act="close" aria-label="Close">${icon('x')}</button></div>
+  <div class="row"><label class="f" style="flex:1">Topic<select id="pkTopic"><option value="">All topics</option>${topicsOf(c.lv,p.subj).map(t=>`<option value="${t.id}" ${t.id===f.topic?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
+  <label class="f">Source<select id="pkSrc"><option value="">All</option><option ${f.src==='NECTA'?'selected':''} value="NECTA">NECTA</option><option ${f.src==='BOOK'?'selected':''} value="BOOK">Book</option><option ${f.src==='TEACHER'?'selected':''} value="TEACHER">Teacher</option></select></label></div>
+  <div class="tw"><table><tbody>${list.slice(0,80).map(q=>{const h=qHistory(q.id);return `<tr><td><span class="src src-${q.src}">${q.src}</span></td><td>${esc(TOP[q.topic].name)}<div class="small muted">${esc(q.ref)} · ${q.max} marks</div></td><td class="small muted">${h.length?'Avg '+pct(avg(h.map(x=>x.avg)))+' in '+h.length+' use'+(h.length>1?'s':''):'Not used'}</td><td class="r"><button class="btn sm" data-act="pickq" data-id="${q.id}">Add</button></td></tr>`}).join('')||'<tr><td class="empty">No more questions for this filter.</td></tr>'}</tbody></table></div>
+  <div class="row" style="justify-content:space-between"><span class="muted small">${p.qs.length} questions · ${pMax(p)} marks so far</span><button class="btn primary" data-act="close">Done</button></div>`);
+}
+function newQuestionDlg(forPaper){
+  const p=forPaper?D.papers[S.arg]:null;const lv=p?CL[p.cls].lv:S.bankF.lv,sj=p?p.subj:S.bankF.subj;
+  openDlg(`<h2>${p?'Write a new question':'Add a question to the bank'}</h2>
+  <p class="muted small">${esc(LV[lv].name)} · ${esc(SUBJ[sj])}. The question is saved in the bank so other teachers can use it too.</p>
+  <div class="stack">
+   <div class="fgrid"><label class="f">Topic<select id="nqTopic">${topicsOf(lv,sj).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></label>
+   <label class="f">Marks<input type="number" id="nqMax" value="10" min="1" max="30"></label>
+   <label class="f">Source<select id="nqSrc"><option value="TEACHER">My own question</option><option value="NECTA">NECTA past paper</option><option value="BOOK">Revision book</option></select></label></div>
+   <label class="f">Reference (for example "${LV[lv].exam} 2022 · Question 4", or a book page)<input type="text" id="nqRef" placeholder="Leave empty for your own question"></label>
+   <label class="f">Question text (optional)<textarea id="nqText" placeholder="Type the question, or leave empty and keep it on paper"></textarea></label>
+   <div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="saveq" data-p="${p?1:0}" data-lv="${lv}" data-subj="${sj}">Save question</button></div></div>`);
+}
+function planDlg(sid){
+  const s=STU(sid),subjs=subjsFor(s.cls),w=weakTopics(sid);
+  const sj0=(w[0]&&subjs.includes(w[0].subj))?w[0].subj:subjs[0];
+  const tlist=sj=>topicsOf(CL[s.cls].lv,sj).filter(t=>topicGrid(s.cls,sj,[sid])[t.id]).map(t=>{const sc=avg(Object.values(topicGrid(s.cls,sj,[sid])[t.id]).slice(-2));return `<label><input type="checkbox" name="pt" value="${t.id}" ${w.some(x=>x.tid===t.id)?'checked':''}> ${esc(t.name)} <span class="muted small">${pct(sc)}</span></label>`}).join('');
+  const last=lastEnteredSet(s.cls)||1;
+  openDlg(`<h2>Support plan for ${esc(s.name)}</h2><p class="muted small">${esc(clsLabel(s.cls))}. Weak topics are already ticked.</p>
+  <div class="stack"><label class="f">Subject<select id="plSubj">${subjs.map(sj=>`<option value="${sj}" ${sj===sj0?'selected':''}>${esc(SUBJ[sj])}</option>`).join('')}</select></label>
+  <div><div class="small muted" style="font-weight:600;margin-bottom:4px">Topics to work on (recent score)</div><div class="checks" id="plTopics">${tlist(sj0)}</div></div>
+  <label class="f">What will be done<textarea id="plPlan" placeholder="For example: Saturday remedial lessons for 4 weeks, then a short follow-up test."></textarea></label>
+  <div class="fgrid"><label class="f">Target score on these topics (%)<input type="number" id="plTarget" value="${S.cfg.target+5}" min="1" max="100"></label>
+  <label class="f">Measure from<select id="plStart">${SETS.map(x=>`<option value="${x.id}" ${x.id===last?'selected':''}>After ${esc(x.name)}</option>`).join('')}</select></label></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="saveplan" data-id="${sid}">Save plan</button></div></div>`);
+  $('#plSubj').addEventListener('change',e=>{$('#plTopics').innerHTML=tlist(e.target.value)});
+}
+
+/* ================= events ================= */
+const ACT={
+  nav:el=>go(el.dataset.p),
+  back:()=>history.length&&S.prev?go(S.prev.page,S.prev.arg):go('watch'),
+  set:el=>{S.setId=+el.dataset.id;go('sets')},
+  cls:el=>{S.clsId=el.dataset.id;if(el.dataset.subj)S.clsSubj=el.dataset.subj;go('classes')},
+  stu:el=>{S.prev={page:S.page,arg:S.arg};S.stuSubj=null;go('student',el.dataset.id)},
+  watch:el=>{S.watchTab=el.dataset.tab;go('watch')},
+  wtab:el=>{S.watchTab=el.dataset.tab;render()},
+  stusubj:el=>{S.stuSubj=el.dataset.subj;render()},
+  paper:el=>{S.paperTab='q';go('paper',el.dataset.id)},
+  ptab:el=>{S.paperTab=el.dataset.tab;S.editMarks=false;render()},
+  editmarks:()=>{S.editMarks=true;render()},
+  theme:()=>{const r=document.documentElement,d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=d?'light':'dark'},
+  close:()=>{closeDlg();if(S.page==='paper')render()},
+  addq:()=>{S.pick=null;bankPicker()},
+  pickq:el=>{const p=D.papers[S.arg],q=Q(el.dataset.id);
+    if(p.choose){const opt=p.qs.splice(p.choose.from[0]);p.qs.push(q.id,...opt);p.choose={from:[p.qs.length-3,p.qs.length-2,p.qs.length-1],n:2}}else p.qs.push(q.id);
+    savePaper(p);bankPicker();toast('Question added')},
+  rmq:el=>{const p=D.papers[S.arg];p.qs.splice(+el.dataset.i,1);if(p.choose&&p.qs.length<3)p.choose=null;else if(p.choose)p.choose={from:[p.qs.length-3,p.qs.length-2,p.qs.length-1],n:2};savePaper(p);render()},
+  newq:()=>newQuestionDlg(true),
+  newbank:()=>newQuestionDlg(false),
+  saveq:el=>{const max=Math.floor(+val('nqMax'));if(!(max>0&&max<=30))return toast('Marks must be between 1 and 30');
+    const src=val('nqSrc'),u=USER();const q={id:'u'+Date.now().toString(36),lv:el.dataset.lv,subj:el.dataset.subj,topic:val('nqTopic'),max,src,diff:0,added:true,text:val('nqText').trim()};
+    q.ref=val('nqRef').trim()||(src==='TEACHER'?'Written by '+u.name:src==='NECTA'?LV[q.lv].exam+' past paper':'Revision book');
+    if(src==='TEACHER')q.by=u.name;addBank(q);
+    if(el.dataset.p==='1'){const p=D.papers[S.arg];if(p.choose){const opt=p.qs.splice(p.choose.from[0]);p.qs.push(q.id,...opt);p.choose={from:[p.qs.length-3,p.qs.length-2,p.qs.length-1],n:2}}else p.qs.push(q.id);savePaper(p)}
+    closeDlg();render();toast('Question saved in the bank')},
+  savemarks:()=>{const p=D.papers[S.arg];const {out,errs}=readGrid();
+    if(errs.length){const e=errs.find(x=>x[0]);if(e){e[0].classList.add('err');e[0].focus()}
+      const empty=errs.filter(x=>x[1]==='empty').length,bad=errs.filter(x=>x[1]==='bad').length,ch=errs.filter(x=>x[1]==='choice').length;
+      $('#gridmsg').textContent=[empty&&`${empty} empty cells (type 0 or -)`,bad&&`${bad} marks above the question maximum or not a number`,ch&&`${ch} students answered more than ${p.choose?.n} choice questions`].filter(Boolean).join(' · ');return}
+    p.marks=out;p.entered=true;S.editMarks=false;savePaper(p);S.paperTab='q';render();toast('Marks saved. Reports and student progress are updated.')},
+  xldown:()=>xlDown(D.papers[S.arg]),
+  xlsample:()=>{const p=D.papers[S.arg];fillGridFrom(sampleMarksRows(p),'sample marks sheet.xlsx')},
+  xlsetdown:()=>xlSetDown(S.setId),
+  xlsetsample:()=>{const b=sampleSetBook(S.setId);if(!b)return toast('No waiting papers in this set.');takeSetBook(b,'sample marks file.xlsx')},
+  xlqdown:()=>xlQDown(D.papers[S.arg]),
+  xlqsample:()=>takeQuestions(sampleQRows(D.papers[S.arg]),'sample questions sheet.xlsx'),
+  xlclass:()=>xlClass(),
+  xlwatch:()=>xlWatch(S.watchList||[],{support:'need support',down:'declining',up:'improving',all:'all'}[S.watchTab]),
+  paperm:el=>{closeDlg();S.paperTab='m';go('paper',el.dataset.id)},
+  fillsample:()=>{const p=D.papers[S.arg];const m=genMarks(p,mulberry32(hash(p.id+'demo')));studentsOf(p.cls).forEach((s,r)=>{const v=m[s.id];const ab=$(`[data-ab="${s.id}"]`);ab.checked=v==='AB';
+    p.qs.forEach((_,i)=>{const el=$(`input.mk[data-r="${r}"][data-c="${i}"]`);el.disabled=v==='AB';el.value=v==='AB'?'':v[i]==null?'-':v[i];el.classList.remove('err')})});gridTotals();toast('Sample marks filled. Check them, then Save marks.')},
+  newplan:el=>planDlg(el.dataset.id),
+  saveplan:el=>{const topics=$$('input[name="pt"]:checked').map(x=>x.value);if(!topics.length)return toast('Tick at least one topic');
+    const plan=val('plPlan').trim();if(!plan)return toast('Write what will be done');
+    D.interventions.unshift({id:'iv'+Date.now().toString(36),stu:el.dataset.id,subj:val('plSubj'),topics,plan,target:+val('plTarget')||S.cfg.target,start:+val('plStart'),by:USER().name,status:'Active',created:'Nov 2026'});
+    SAVED.interventions=D.interventions;persist();closeDlg();render();toast('Support plan saved. The next sets will show if it works.')},
+  savecfg:()=>{const c={};for(const k of Object.keys(S.cfg)){const v=+val('cfg-'+k);if(!Number.isFinite(v)||v<0||v>100)return toast('Use numbers from 0 to 100');c[k]=v}
+    if(!(c.critical<c.target&&c.target<c.good&&c.good<c.excellent))return toast('Bands must go up: critical < target < good < excellent');
+    Object.assign(S.cfg,c);SAVED.cfg=S.cfg;persist();bust();render();toast('Settings saved. Every list is recalculated.')},
+  reset:()=>{try{localStorage.removeItem(KEY)}catch(e){}location.reload()},
+  bankmore:()=>{S.bankN+=60;render()},
+  scopeTo:el=>{S.scope=el.dataset.v;bust();render()},
+  pickstu:el=>{$('#sug').hidden=true;$('#find').value='';S.prev={page:S.page,arg:S.arg};S.stuSubj=null;go('student',el.dataset.id)}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(el&&ACT[el.dataset.act]){ACT[el.dataset.act](el,e);return}if(e.target.id==='ov'){closeDlg();if(S.page==='paper')render()}});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='scope'){S.scope=t.value;bust();render()}
+  else if(t.id==='userSel'){S.user=t.value;S.scope='all';persist();bust();go(S.page==='settings'&&!isAdmin()?'home':['paper','student'].includes(S.page)?'home':S.page)}
+  else if(t.id==='clsSel'){S.clsId=t.value;render()}
+  else if(t.id==='clsSubj'){S.clsSubj=t.value;render()}
+  else if(t.id==='bLv'){S.bankF.lv=t.value;S.bankF.topic='';S.bankN=60;render()}
+  else if(t.id==='bSubj'){S.bankF.subj=t.value;S.bankF.topic='';S.bankN=60;render()}
+  else if(t.id==='bTopic'){S.bankF.topic=t.value;render()}
+  else if(t.id==='bSrc'){S.bankF.src=t.value;render()}
+  else if(t.id==='pkTopic'){S.pick.topic=t.value;bankPicker()}
+  else if(t.id==='pkSrc'){S.pick.src=t.value;bankPicker()}
+  else if(t.id==='choose'){const p=D.papers[S.arg];if(t.checked){if(p.qs.length<4){t.checked=false;return toast('Add at least 4 questions first')}const L=p.qs.slice(-3).map(q=>Q(q).max);if(new Set(L).size>1){t.checked=false;return toast('The last 3 questions must have the same marks')}p.choose={from:[p.qs.length-3,p.qs.length-2,p.qs.length-1],n:2}}else p.choose=null;savePaper(p);render()}
+  else if(t.id==='xlup'){if(t.files[0])xlUp(t.files[0]);t.value=''}
+  else if(t.id==='xlsetup'){if(t.files[0])xlSetUp(t.files[0]);t.value=''}
+  else if(t.id==='xlqup'){if(t.files[0])xlQUp(t.files[0]);t.value=''}
+  else if(t.dataset.ab){const r=t.closest('tr');r.classList.toggle('ab',t.checked);r.querySelectorAll('input.mk').forEach(x=>x.disabled=t.checked);gridTotals()}
+});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.classList.contains('mk')){t.classList.remove('err');gridTotals()}
+  if(t.id==='find'){const q=t.value.trim().toLowerCase();const box=$('#sug');
+    if(!q){box.hidden=true;return}
+    const cs=myClasses();
+    S.sug=D.students.filter(s=>cs.includes(s.cls)&&q.split(/\s+/).every(w=>s.name.toLowerCase().includes(w))).slice(0,8);S.sugI=-1;
+    box.innerHTML=S.sug.map(s=>`<button data-act="pickstu" data-id="${s.id}"><span>${esc(s.name)}</span><span class="muted small">${esc(clsLabel(s.cls))}</span></button>`).join('')||'<div class="empty">No student found</div>';box.hidden=false}
+});
+document.addEventListener('keydown',e=>{const t=e.target;
+  if(e.key==='Escape'&&!$('#ov').hidden){closeDlg();if(S.page==='paper')render()}
+  if(t.id==='find'&&S.sug.length){if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();S.sugI=(S.sugI+(e.key==='ArrowDown'?1:-1)+S.sug.length)%S.sug.length;$$('#sug button').forEach((b,i)=>b.classList.toggle('on',i===S.sugI))}
+    else if(e.key==='Enter'){e.preventDefault();ACT.pickstu({dataset:{id:S.sug[Math.max(0,S.sugI)].id}})}}
+  if(t.classList.contains('mk')){const r=+t.dataset.r,c=+t.dataset.c;let nr=r,nc=c;
+    if(e.key==='Enter'||e.key==='ArrowDown')nr=r+1;else if(e.key==='ArrowUp')nr=r-1;else if(e.key==='ArrowRight'&&t.selectionStart===t.value.length)nc=c+1;else if(e.key==='ArrowLeft'&&t.selectionStart===0)nc=c-1;else return;
+    const n=$(`input.mk[data-r="${nr}"][data-c="${nc}"]`);if(n){e.preventDefault();n.focus();n.select()}}
+});
+document.addEventListener('focusout',e=>{if(e.target.id==='find')setTimeout(()=>{const b=$('#sug');if(b)b.hidden=true},150)});
+document.addEventListener('paste',e=>{const t=e.target;if(!t.classList||!t.classList.contains('mk'))return;
+  const txt=(e.clipboardData||window.clipboardData).getData('text');if(!/[\t\n]/.test(txt))return;e.preventDefault();
+  const rows=txt.replace(/\r/g,'').split('\n').filter(l=>l.length);const r0=+t.dataset.r,c0=+t.dataset.c;let n=0;
+  rows.forEach((line,dr)=>line.split('\t').forEach((v,dc)=>{const el=$(`input.mk[data-r="${r0+dr}"][data-c="${c0+dc}"]`);if(el&&!el.disabled){el.value=v.trim();n++}}));
+  gridTotals();toast(`Pasted ${n} marks`)});
+
+boot();render();
+})();
+</script>
+
+</body></html>
