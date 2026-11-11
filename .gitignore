@@ -1,0 +1,13 @@
+# Logs from running the dev servers
+*.log
+.backend.log
+.backend.err.log
+.frontend.log
+
+# Temporary bundles
+Claude outputs/
+
+# Secrets and installs
+.env
+node_modules/
+dist/
