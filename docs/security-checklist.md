@@ -1,6 +1,8 @@
 # Musabe Schools System — Security Verification Checklist
 
-Commit `f44a4f9` · branch `library-items-excel-notifications` · 11 November 2026
+Commit `f44a4f9` · branch `library-items-excel-notifications` · 11 November 2026 · **amended after Phase 1 fixes (working tree, not yet committed)**
+
+> Phase 1 changed rows 1.1, 1.10, 6.3, 7.4, 8.1, 9.2, 9.5, 10.1, 10.2, 10.5-note and 12.1. "Verified (test DB)" means the test was run on a throwaway PostgreSQL, not on the real database. Rows marked 🔍 still need checking on the real server after deployment.
 
 Reference: OWASP ASVS 5.0 (target Level 2) and OWASP API Security Top 10 (2023). Details and fixes for each finding are in `docs/architecture-audit.md`.
 
@@ -21,7 +23,7 @@ Update this file after every fix: change the status, add the PR number and the t
 
 | # | Requirement | Status | Evidence / note | Finding |
 |---|---|---|---|---|
-| 1.1 | No default or published credentials | ❌ Failed | `Musabe@2026` in seed line 19, `.env.example` 15, `README.md` 35 | S-01 |
+| 1.1 | No default or published credentials | ✅ Verified (test DB) | Phase 1: no fallback in the seed; password removed from README and `.env.example`; seed stops without a strong `SUPERADMIN_PASSWORD` (tested) | S-01 |
 | 1.2 | Passwords hashed with a strong adaptive algorithm | ✅ Verified | bcrypt cost 12 (`auth.js` 63, `users.js` 104, 170) | — |
 | 1.3 | Minimum length ≥ 12 (ASVS L2 recommendation), maximum ≥ 64, no composition rules | ❌ Failed | 8 characters + letter + digit (`util.js` 31–35) | S-13 |
 | 1.4 | Common / breached passwords blocked | ⛔ Not implemented | | S-13 |
@@ -30,7 +32,7 @@ Update this file after every fix: change the status, add the PR number and the t
 | 1.7 | Password change requires current password | ✅ Verified | `auth.js` 56 | — |
 | 1.8 | Password change signs out other sessions | ✅ Verified | `auth.js` 69 | — |
 | 1.9 | Brute-force protection per account | ✅ Verified (exists) / ❌ Failed (abusable) | 5 tries → 15 min lock (`auth.js` 14–31); can be used to lock others | S-04 |
-| 1.10 | Brute-force protection per client | ❌ Failed | Rate limit exists (`auth.js` 11) but IP can be faked | S-02 |
+| 1.10 | Brute-force protection per client | ✅ Verified (tests) / 🔍 production Nginx | Phase 1: forged `X-Forwarded-For` no longer resets the login limit (`test/proxy-ip*.test.js`). Per-account lockout abuse (1.9) still open | S-02 |
 | 1.11 | No account enumeration through messages | ❌ Failed | 423 "locked" reply only for real users (`auth.js` 22–23) | S-05 |
 | 1.12 | No account enumeration through timing | 🔍 Requires runtime verification | Code skips bcrypt for unknown users (`auth.js` 21) — likely fails | S-05 |
 | 1.13 | "Forgot password" does not reveal if user exists | ✅ Verified | Same reply always (`auth.js` 86) | — |
@@ -111,7 +113,7 @@ Update this file after every fix: change the status, add the PR number and the t
 |---|---|---|---|---|
 | 6.1 | HTTPS only, HTTP redirected | 🔍 Requires runtime verification | No code or deployment config in repo | S-08 |
 | 6.2 | TLS 1.2+ with modern ciphers | 🔍 Requires runtime verification | Proxy config not in repo | — |
-| 6.3 | Trusted proxy configured exactly | ❌ Failed | `trust proxy = 1` fixed; spoofing proven in test | S-02 |
+| 6.3 | Trusted proxy configured exactly | ✅ Verified (tests) / 🔍 production | Phase 1: `TRUST_PROXY` (default loopback); `true` and hop counts refused. Tests fail on the old setting and pass on the new | S-02 |
 | 6.4 | Node not reachable directly from the internet | 🔍 Requires runtime verification | | S-02 |
 | 6.5 | Database connection encrypted (if remote) | ⛔ Not implemented | No `ssl` option in `knexfile.js` | S-03 |
 
@@ -122,7 +124,7 @@ Update this file after every fix: change the status, add the PR number and the t
 | 7.1 | Generic errors to users for unexpected failures | ✅ Verified | `server.js` 44–45 | — |
 | 7.2 | No internal details on public endpoints | ❌ Failed | `/api/health` returns `e.message` | S-09 |
 | 7.3 | Business actions written to audit log in same transaction | ✅ Verified | `audit(..., trx)` across routes | — |
-| 7.4 | Audit log append-only at database level | ❌ Failed | App DB user can update/delete | S-12 |
+| 7.4 | Audit log append-only at database level | ✅ Verified for the app account (test DB) / ❌ Failed for the owner account / 🔍 production | Phase 1: app account has only SELECT, INSERT on `audit_log` and `item_price_changes` (tested). Owner can still change rows; no triggers yet | S-12 |
 | 7.5 | Price history cannot be deleted | ❌ Failed | `ON DELETE CASCADE` (`004` 45) | S-12 |
 | 7.6 | Failed logins logged | ❌ Failed | Only lockouts logged | S-14 |
 | 7.7 | Authorization failures logged | ⛔ Not implemented | | S-14 |
@@ -134,7 +136,7 @@ Update this file after every fix: change the status, add the PR number and the t
 
 | # | Requirement | Status | Evidence / note | Finding |
 |---|---|---|---|---|
-| 8.1 | Rate limit on login and forgot | ✅ Verified (exists) / ❌ Failed (bypassable) | `auth.js` 11; IP spoofable | S-02 |
+| 8.1 | Rate limit on login and forgot | ✅ Verified (tests) | Phase 1: limit keyed on the resolved client IP; cannot be bypassed with forged headers | S-02 |
 | 8.2 | General API rate limit | ⛔ Not implemented | | — |
 | 8.3 | Limits on list sizes | ✅ Verified (partly) | Audit max 1000 / export 20000; users and items unpaginated (small today) | — |
 | 8.4 | Real-time connection limits | ⛔ Not implemented | `realtime.js` 81–94 | S-11 |
@@ -145,17 +147,17 @@ Update this file after every fix: change the status, add the PR number and the t
 | # | Requirement | Status | Evidence / note | Finding |
 |---|---|---|---|---|
 | 9.1 | `.env` not committed (now or in history) | ✅ Verified | `.gitignore`; git history search found no `.env` | — |
-| 9.2 | No secrets in source or docs | ❌ Failed | Default admin password published | S-01 |
+| 9.2 | No secrets in source or docs | ✅ Verified | Phase 1: the published default password no longer appears in any tracked file (searched) | S-01 |
 | 9.3 | Configuration validated at start; unsafe production values refused | ⛔ Not implemented | Silent fallbacks in `knexfile.js`, seed, session | A-06 |
 | 9.4 | Secret scanning in CI | ⛔ Not implemented | No CI | Q |
-| 9.5 | Rotation of credentials used during development | 🔍 Requires runtime verification | Local `.env` holds the default admin password; confirm it was changed on every DB where the seed ran | S-01 |
+| 9.5 | Rotation of credentials used during development | 🔍 Requires runtime verification (owner action) | A count-only search (contents not shown) found the old default password still in the local `backend/.env`. Treat it as public: confirm the Super Admin password was changed on every database where the seed ran, and remove `SUPERADMIN_PASSWORD` from `.env` | S-01 |
 
 ## 10. Database security and integrity
 
 | # | Requirement | Status | Evidence / note | Finding |
 |---|---|---|---|---|
-| 10.1 | App uses a least-privilege DB role | ❌ Failed | Defaults to `postgres` | S-03 |
-| 10.2 | Separate migration role and runtime role | ⛔ Not implemented | | S-03 |
+| 10.1 | App uses a least-privilege DB role | ✅ Verified (test DB) / 🔍 production not yet applied | Phase 1: `musabe_app` with table-by-table rights (`backend/db/provision-roles.sql`); app refuses to start in production as superuser or table owner (tested) | S-03 |
+| 10.2 | Separate migration role and runtime role | ✅ Verified (test DB) / 🔍 production not yet applied | Phase 1: `musabe_owner` runs migrations (tested: roll back all + migrate); `musabe_app` is refused | S-03 |
 | 10.3 | Primary/foreign keys and core CHECK constraints | ✅ Verified | Migrations 001–005 | — |
 | 10.4 | Item price shape constraint | ⛔ Not implemented | | D-03 |
 | 10.5 | Migrations independent of app code | ❌ Failed | `001` imports `roles.js` | D-01 |
@@ -177,7 +179,7 @@ Update this file after every fix: change the status, add the PR number and the t
 
 | # | Requirement | Status | Evidence / note |
 |---|---|---|---|
-| 12.1 | Backend automated tests | ⛔ Not implemented | No test script or folder |
+| 12.1 | Backend automated tests | ✅ Verified (Phase 1 scope only) | `npm test`: proxy/IP and database-account tests. Everything else still untested |
 | 12.2 | Frontend automated tests | ⛔ Not implemented | No test script or folder |
 | 12.3 | Backend linting | ⛔ Not implemented | No ESLint config in `backend/` |
 | 12.4 | Frontend linting | ✅ Verified | `eslint .` passes with 0 problems |

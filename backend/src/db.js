@@ -1,4 +1,5 @@
 const knex = require('knex');
-const config = require('../knexfile');
+const { runtime } = require('../knexfile');
 
-module.exports = knex(config);
+// The app always uses the restricted runtime account (DATABASE_*), never the migration account.
+module.exports = knex(runtime);

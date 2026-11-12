@@ -4,9 +4,14 @@ const cookieParser = require('cookie-parser');
 const db = require('./db');
 const { loadUser, requireAuth } = require('./auth/session');
 const realtime = require('./realtime');
+const { parseTrustProxy } = require('./lib/proxy');
+const { checkDbRole } = require('./db-role');
 
 const app = express();
-app.set('trust proxy', 1);
+// Only the configured proxy (Nginx) may say what the client IP is. See src/lib/proxy.js.
+// req.ip is then the real client address; the rate limiter, audit log and sessions all use req.ip.
+const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
+app.set('trust proxy', trustProxy);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
@@ -45,10 +50,18 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Something went wrong on the server. Try again.' });
 });
 
-const port = Number(process.env.PORT) || 3001;
-if (require.main === module) {
+// Start the server. Both start files (src/server.js and backend/server.js) come here.
+async function start(defaultPort = 3001) {
+  await checkDbRole(); // refuses a PostgreSQL superuser in production (see src/db-role.js)
   realtime.listen();
-  app.listen(port, () => console.log(`Musabe API running on http://localhost:${port}`));
+  const port = Number(process.env.PORT) || defaultPort;
+  console.log(`Trusted proxy for client IP: ${trustProxy === false ? 'none' : trustProxy.join(', ')}`);
+  return app.listen(port, () => console.log(`Musabe API running on http://localhost:${port}`));
+}
+
+if (require.main === module) {
+  start().catch((e) => { console.error(e.message); process.exit(1); });
 }
 
 module.exports = app;
+module.exports.start = start;

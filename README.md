@@ -13,10 +13,12 @@ One system for Musabe English Medium School, Musabe Boys Secondary School and Mu
    ```sql
    CREATE DATABASE musabe_db;
    ```
+   Then create the two database accounts (restricted app account + migration account):
+   see [docs/database-roles.md](docs/database-roles.md).
 2. **Backend**
    ```powershell
    cd backend
-   copy .env.example .env      # then open .env and put your PostgreSQL password in DATABASE_PASSWORD
+   copy .env.example .env      # then fill in the database passwords and SUPERADMIN_PASSWORD (see below)
    npm install
    npm run setup               # creates the tables and the first Super Admin
    npm run dev
@@ -31,9 +33,10 @@ One system for Musabe English Medium School, Musabe Boys Secondary School and Mu
    Open http://localhost:5190
 
 ## First sign-in
-- Username: `superadmin`
-- Password: `Musabe@2026` (or what you set in `SUPERADMIN_PASSWORD` before `npm run setup`)
-- You must choose your own password straight away.
+- Before `npm run setup`, put a private password of your choice in `SUPERADMIN_PASSWORD` in `backend/.env`
+  (at least 12 characters, letters and numbers). There is **no default password**; the seed stops if it is missing.
+- Username: `superadmin` (or what you set in `SUPERADMIN_USERNAME`). Password: the one you chose.
+- You must choose a new password straight away. Then delete `SUPERADMIN_PASSWORD` from `backend/.env`.
 
 Then: **Staff accounts → New account** → create a School Admin for each school. The screen shows a temporary password once; give it to the person. They sign in, choose their own password, and create the staff of their school.
 

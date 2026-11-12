@@ -4,7 +4,7 @@
 
 | Part | Port | Where it is set |
 |---|---|---|
-| Backend API (Express) | **4310** | `backend/.env` (`PORT`), default in `backend/src/server.js` |
+| Backend API (Express) | **4310** | `backend/.env` (`PORT=4310`). Without it, `npm run dev`/`npm start` (`src/server.js`) use **3001** and `node server.js` uses 4310, so keep `PORT=4310` in `.env`. |
 | Frontend (Vite) | **5190** | `frontend/vite.config.js` (`server.port`, `strictPort: true`) |
 
 The frontend proxies every `/api` call to the backend (`http://localhost:4310`), so the browser only
@@ -16,6 +16,12 @@ message if 5190 is taken, instead of silently moving to another port.
 
 If a port is ever taken, pick another free one and change it in **both** places (the backend port in
 `backend/.env` and the proxy target in `frontend/vite.config.js`).
+
+## Database accounts
+
+The app should use the restricted `musabe_app` account and migrations the `musabe_owner` account.
+See [database-roles.md](database-roles.md). If you still use `postgres` locally, the app works but prints a warning.
+In production it refuses to start as `postgres`.
 
 ## Start
 

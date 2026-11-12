@@ -5,8 +5,8 @@
 | Repository | `Bijengwa/Musabe` |
 | Branch audited | `library-items-excel-notifications` |
 | Commit audited | `f44a4f9` |
-| Audit date | 11 November 2026 |
-| Audit type | Static code review of all 68 tracked files, plus small local proof tests. No application code, database records or migrations were changed. |
+| Audit date | 11 November 2026 (amended the same day after the Phase 1 fixes; see "Amendment" below) |
+| Audit type | Static code review of all 68 tracked files, plus small local proof tests. The audit itself changed no application code, database records or migrations. |
 | References | OWASP ASVS 5.0 (target: Level 2), OWASP API Security Top 10 (2023) |
 
 ### How to read this report
@@ -33,6 +33,80 @@ Line numbers refer to commit `f44a4f9`.
 | Proof test: ExcelJS writing a cell that starts with `=` | Saved as a **string** cell, not a formula (see S-18) |
 | Database / runtime tests | **Not run.** No database was touched. Items that need a live system are marked "Requires runtime verification" |
 
+
+## Amendment — Phase 1 fixes (11 November 2026)
+
+The three Phase 1 priorities were implemented on the working tree (not yet committed). Everything else in this
+report is **unchanged and still open**. "Verified" below means a test was actually run; where it was run only on a
+throwaway test database, the production database still needs the deployment steps in `docs/database-roles.md`.
+
+| Finding | Severity | Status after Phase 1 | Evidence |
+|---|---|---|---|
+| S-01 Default Super Admin password | Critical | **Fixed in code and docs. Verified on a test database.** Rotation of any place that used it is still required (owner action). | Seed with no password, or the old password, stops with a clear message; with a strong password it creates the admin; run again it leaves the existing admin untouched. The old password is no longer in any tracked file. |
+| S-02 Client IP spoofing | High | **Fixed in code. Verified by automated tests** (fail on the old setting, pass on the new). Production Nginx settings still need a runtime check. | `backend/test/proxy-ip.test.js`, `proxy-ip-explicit.test.js`, `db-roles-audit-ip.test.js` |
+| S-03 PostgreSQL superuser | High | **Fixed in code and scripts. Verified on a test database. Not yet applied to the real database** (controlled deployment step). | `backend/db/provision-roles.sql`, `backend/src/db-role.js`, test results below |
+| S-12 Audit log editable | Medium | **Partly fixed:** once the script is applied, the app account can only read and add audit and price-history rows (tested). Still open: the owner account can change them, no triggers, the `ON DELETE CASCADE` on price history. | `db-roles-audit-ip.test.js` |
+| A-05 Two start files | Low | **Partly fixed:** both start files now use one `start()` (database-account check, live-update listener). The two different default ports remain; `docs/running-locally.md` now states them correctly. | `backend/server.js`, `backend/src/server.js` |
+
+What changed:
+
+- **S-01:** the seed has no fallback password. If the first Super Admin must be created, `SUPERADMIN_PASSWORD` is
+  required: at least 12 characters, letters and numbers, not containing easy words such as the school name. The seed
+  never prints the password. An existing admin is never changed and no password is reset. The default was removed
+  from `README.md` and `.env.example`. `.env` is still ignored by Git.
+  A count-only search (contents not shown, not copied) found the old default password **still present in the local
+  `backend/.env`**. The owner must treat that password as public: confirm the Super Admin password was changed on
+  every database where the seed ran, change it if not, and remove `SUPERADMIN_PASSWORD` from `.env` after first sign-in.
+- **S-02:** `trust proxy` now comes from `TRUST_PROXY` (`backend/src/lib/proxy.js`). Default is `loopback`
+  (Nginx on the same server). An IP, a network or `false` can be given. `true`, `*` and hop counts are refused at
+  start-up. The rate limiter, audit log and sessions keep using `req.ip`, which is now the resolved client address.
+- **S-03:** two accounts: `musabe_owner` (migrations and seeds) and `musabe_app` (the running app, table-by-table
+  rights). `knexfile.js` now has a migration connection (`MIGRATION_DATABASE_*`) and a runtime connection
+  (`DATABASE_*`). At start-up the app checks its account and **refuses to start in production** if it is a
+  superuser, can create roles or databases, bypasses row security, owns the database or owns a table (or cannot be
+  checked). Outside production it only warns, so local development keeps working.
+
+Tests actually run for Phase 1 (on a throwaway PostgreSQL 18 started in a scratch folder; the real database was not
+touched):
+
+| Test | Result |
+|---|---|
+| Proxy/IP tests with the default setting, from a machine with a real network address | 8 of 8 passed |
+| Same tests on the Windows-linked VM (no external address) | 6 passed, 2 skipped (they need an external address) |
+| Same tests with the old `trust proxy 1` | 2 failed, as expected: the tests catch the old bug |
+| Database tests as `musabe_app` (restricted account, sign-in, audit IP, normal pages) | 6 of 6 passed |
+| Provisioning script run twice | Both runs passed; row counts identical before and after; 9 tables now owned by `musabe_owner` |
+| Migrations as `musabe_owner` (roll back all, migrate again) | Passed. As `musabe_app`: refused (`permission denied for schema public`) |
+| Start-up in production as `postgres`, as `musabe_owner`, with database down, with `TRUST_PROXY=true` | Refused to start in all four cases |
+| Start-up in production as `musabe_app` | Started; `/api/health` 200 |
+| Start-up in development as `postgres` | Started with a warning |
+
+### Corrected severity assessments (kept from the original audit, restated)
+
+| Topic | Rating | Reason |
+|---|---|---|
+| CSRF | **Medium** | `SameSite=Lax`, JSON-only bodies and no CORS block cross-site requests in current browsers. Remaining risk: any other site on the same registrable domain (`*.musabeschools.ac.tz`) counts as "same-site" and can send the cookie; and the Excel import accepts any content type. |
+| Spreadsheet formula injection | **Low / not demonstrated** | Tested: ExcelJS saves text starting with `=` as a plain string cell, so the current `.xlsx` exports did not produce a formula. Becomes real only with CSV export or formula cells. |
+| Excel upload resource use | **Medium** | Real zip-bomb risk, but only the Finance Manager role can upload today. |
+| School list exposure | **Low** | Exposes school names, staff counts and School Admin names to signed-in staff; no student or money data. |
+
+### Architecture recommendations (unchanged, restated)
+
+- No API Gateway. Nginx as reverse proxy (TLS, limits, client IP) is enough for this deployment.
+- No institution or campus tables until there is a real business need (a second campus or institution).
+- Do not create controller/service/repository/validator folders for every module in advance. Keep the current
+  modular structure and refactor one module at a time, adding a layer only where it removes real duplication.
+- Keep bcrypt (cost 12). No password-hashing migration now.
+
+### Other engineering findings (restated)
+
+- Migration 001 imports `src/auth/roles.js`, so a change to roles changes what the old migration means (D-01, A-07). **Open.**
+- Two start files with different default ports (A-05). **Partly fixed** (see above).
+- `docs/running-locally.md` stated the wrong default port. **Fixed.**
+- No automated tests, CI, backup plan or deployment guide were found by the audit. **Now:** a first backend test suite
+  (`npm test`) and a database-accounts deployment guide (`docs/database-roles.md`) exist. CI, backup plan and a full
+  deployment guide are **still missing**.
+
 ---
 
 ## 1. Executive summary
@@ -50,9 +124,9 @@ Musabe is a **small, clean and readable early-stage system**. About 1,900 lines 
 
 But the system is **not ready for production or for real student and money data yet**. The main problems:
 
-1. **Critical:** a default Super Admin password (`Musabe@2026`) is published in the README, `.env.example` and the seed code. Your own local `backend/.env` still contains it.
-2. **High:** the client IP address can be faked (`trust proxy = 1`), which defeats the login rate limit and corrupts audit IPs.
-3. **High:** the app connects to PostgreSQL as the `postgres` superuser by default.
+1. **Critical:** a default Super Admin password was published in the README, `.env.example` and the seed code. A count-only search found it in the local `backend/.env` too. *(Fixed in Phase 1; rotation still required.)*
+2. **High:** the client IP address can be faked (`trust proxy = 1`), which defeats the login rate limit and corrupts audit IPs. *(Fixed in Phase 1.)*
+3. **High:** the app connects to PostgreSQL as the `postgres` superuser by default. *(Fixed in code; database change pending deployment.)*
 4. Many **Medium** issues: account lockout can be abused, accounts can be guessed (enumeration), missing CSP/HSTS, TLS not enforced, health endpoint leaks database errors, audit log can be edited by the app's database user, unlimited live connections, weak password policy, Excel upload memory risk.
 5. **No automated tests, no CI, no backup plan, no deployment guide, no error monitoring.**
 
@@ -233,7 +307,7 @@ Untracked local files seen (correctly ignored): `backend/.env`, `.backend.log`, 
 | A-03 | **No validation layer.** Every route hand-parses `req.body` with `String(...)`, regexes and `Number(...)`. | e.g. `users.js` 84–96, `schools.js` 27–37, `items.js` 21–26 | Inconsistent rules; `Number('abc')` → `NaN` reaches SQL and causes a 500 (e.g. `users.js` 50 `Number(school)`). | Adopt one schema library (Zod or Joi) with a `validate(schema)` middleware. |
 | A-04 | **Database errors are not mapped.** Unique-constraint violations become HTTP 500. | Check-then-insert in `users.js` 99–108, `schools.js` 42–46, `items.js` 63 | Under two simultaneous requests the second gets "Something went wrong" instead of 409. | In the error handler, map PostgreSQL code `23505` → 409, `23514` → 400. |
 | A-05 | **Two entry points with different defaults.** `backend/server.js` (port 4310, **does not call `realtime.listen()`**) and `src/server.js` (port **3001**, calls `listen()`). `docs/running-locally.md` says the default in `src/server.js` is 4310 — it is 3001. | `backend/server.js` 1–4; `src/server.js` 48–52 | Started the "other" way, live updates silently fall back to in-process only, and the port does not match the Vite proxy. | Keep one entry: `src/server.js` (process start) + `src/app.js` (Express app, for tests). Read `PORT` from validated config with one default. Fix the doc. |
-| A-06 | **No configuration validation.** `process.env` is read in 6 places with silent fallbacks (`DATABASE_USER` → `postgres`, `DATABASE_PASSWORD` → `''`, admin password → `Musabe@2026`). | `knexfile.js` 5–11; seed 16–19; `session.js` 15 | Production can start with dangerous defaults and nobody notices. | One `config/env.js` that validates with a schema and **refuses to start** in production when a required value is missing. |
+| A-06 | **No configuration validation.** `process.env` is read in 6 places with silent fallbacks (`DATABASE_USER` → `postgres`, `DATABASE_PASSWORD` → `''`, admin password → a published default). | `knexfile.js` 5–11; seed 16–19; `session.js` 15 | Production can start with dangerous defaults and nobody notices. | One `config/env.js` that validates with a schema and **refuses to start** in production when a required value is missing. |
 | A-07 | **Migrations import application code.** | `migrations/20261110_001_core_accounts.js` line 2 imports `src/auth/roles.js` | If someone adds or renames a role in `roles.js`, a fresh database built from migration 001 gets a different CHECK constraint than the existing production database. Migrations must be frozen history. | Copy the role list as a literal inside the migration. New roles → new migration that replaces the CHECK. |
 | A-08 | **Duplicated role data in the frontend.** `ADMIN_ROLES` and `ROLE_LABELS` are hard-coded again. | `frontend/src/nav.js` 43–49 vs `backend/src/auth/roles.js` | Adding a role needs two edits; they will drift. The API already returns `roleLabel` and `scope`. | Send a `roles` list from `/api/auth/me` (or a `/api/meta` endpoint) and delete the frontend copy. |
 | A-09 | **Hard-coded role checks in pages** instead of permissions. | `Home.jsx` 20, 43, 45, 54, 68; `Staff.jsx` 36; `Audit.jsx` 46 (`user.role === 'super'`) | Other "all schools" roles (Director, Manager) do not get the school filter on Home. Permissions become scattered. | Use `can()` or `user.scope === 'all'`. |
@@ -269,20 +343,20 @@ Summary:
 
 ---
 
-### S-01 — Default Super Admin password is public · **Critical** · Confirmed
+### S-01 — Default Super Admin password is public · **Critical** · Confirmed · **Phase 1: fixed, verified on test DB; rotation pending**
 
-- **Where:** `backend/seeds/01_schools_and_super_admin.js` `exports.seed`, line 19 (`|| 'Musabe@2026'`); `backend/.env.example` line 15; `README.md` line 35. Your local `backend/.env` also contains this value (checked by search only; value not copied).
+- **Where:** `backend/seeds/01_schools_and_super_admin.js` `exports.seed`, line 19 (a hard-coded fallback password); `backend/.env.example` line 15; `README.md` line 35. The local `backend/.env` also contains this value (checked by a count-only search; value not shown or copied).
 - **Problem:** anyone who reads the repository knows the first administrator password. `must_change_password = true` does **not** protect you, because whoever signs in first chooses the new password.
-- **Exploitation:** the system is deployed to a server reachable on the internet. Before the school's administrator signs in, an attacker opens the login page, enters `superadmin` / `Musabe@2026`, chooses their own password, and now owns every account, school and price. The real administrator is locked out.
+- **Exploitation:** the system is deployed to a server reachable on the internet. Before the school's administrator signs in, an attacker opens the login page, enters `superadmin` and the published password, chooses their own password, and now owns every account, school and price. The real administrator is locked out.
 - **Fix:**
   1. Remove the fallback. The seed must stop with an error if `SUPERADMIN_PASSWORD` is not set, or better: generate a random password, print it once to the console, never store it.
   2. Remove the password from `README.md` and `.env.example` (use `SUPERADMIN_PASSWORD=` with a comment "required, at least 14 characters").
   3. Add an expiry for the first temporary password (see S-13).
   4. On any server where the seed already ran with the default, confirm the password was changed, and check `audit_log` for `auth.login` by `superadmin` from unknown IPs.
   5. Consider the value compromised in git history: never reuse it.
-- **Verification test:** run the seed with no `SUPERADMIN_PASSWORD` → it must fail or print a random password. `grep -r "Musabe@2026"` over the repo returns nothing. Integration test: login with `Musabe@2026` on a fresh seed returns 401.
+- **Verification test:** run the seed with no `SUPERADMIN_PASSWORD` → it must fail or print a random password. A search for the old password over the tracked files returns nothing. Integration test: login with the old password on a fresh seed returns 401.
 
-### S-02 — Client IP can be faked through `X-Forwarded-For` · **High** · Confirmed (proof test)
+### S-02 — Client IP can be faked through `X-Forwarded-For` · **High** · Confirmed (proof test) · **Phase 1: fixed, verified by tests**
 
 - **Where:** `backend/src/server.js` line 9 `app.set('trust proxy', 1)`. Used by `express-rate-limit` in `routes/auth.js` line 11, `audit()` in `lib/util.js` line 54, and `startSession` in `auth/session.js` line 27.
 - **Problem:** `trust proxy = 1` tells Express "the last hop is a trusted proxy, believe the `X-Forwarded-For` header". If the API is reachable **directly** (no proxy, or a proxy that appends rather than replaces the header, or two proxies), the client controls `req.ip`. I tested this: a request with `X-Forwarded-For: 6.6.6.6` produced `req.ip = 6.6.6.6`.
@@ -290,7 +364,7 @@ Summary:
 - **Fix:** read the proxy setting from config. In production set it to the exact proxy address (e.g. `'loopback'` when Nginx runs on the same server) and make Nginx **overwrite** the header (`proxy_set_header X-Forwarded-For $remote_addr;`). Bind Node to `127.0.0.1` so it cannot be reached directly. In development, set `trust proxy` to `false`.
 - **Verification test:** automated test: with production config, a request with a fake `X-Forwarded-For` must be rate-limited after 30 attempts. Runtime check: `curl` the server's public IP on the Node port must fail to connect.
 
-### S-03 — Application connects as the PostgreSQL superuser · **High** · Potential risk (configuration)
+### S-03 — Application connects as the PostgreSQL superuser · **High** · Potential risk (configuration) · **Phase 1: fixed in code, verified on test DB; deployment pending**
 
 - **Where:** `backend/knexfile.js` line 8 (`DATABASE_USER || 'postgres'`); `.env.example` line 8; your local `.env` has no `DATABASE_USER`, so it uses `postgres`.
 - **Problem:** the running app, the migrations and the seeds all use one account with full power over the whole PostgreSQL server. No SQL injection was found today, but any future injection, or a leaked `.env`, gives total control: read every database on the server, drop tables, or run operating-system commands through `COPY ... PROGRAM`.
@@ -662,7 +736,7 @@ No behaviour changes in these steps unless marked **(security fix)**. Each step 
 | Phase | Goal | Work items | Done when |
 |---|---|---|---|
 | **0 — Audit** | (this report) | — | Reviewed and agreed by the team |
-| **1 — Security hardening** (≈1–2 weeks) | Close Critical/High; quick Mediums | S-01, S-02, S-03, S-09, S-07 (helmet + CSP), S-08, S-05, S-04, S-06, S-11, S-12 (DB permissions + triggers), S-13 (expiry + length), D-01 | All tests in section 12 "Phase 1 gate" pass in CI |
+| **1 — Security hardening** (≈1–2 weeks) | Close Critical/High; quick Mediums | **Done (pending deployment): S-01, S-02, S-03.** Still to do: S-09, S-07 (helmet + CSP), S-08, S-05, S-04, S-06, S-11, S-12 (DB permissions + triggers), S-13 (expiry + length), D-01 | All tests in section 12 "Phase 1 gate" pass in CI |
 | **1b — Test and CI foundation** (in parallel) | Safety net before refactoring | Vitest/Jest + supertest backend tests; Playwright smoke tests; GitHub Actions running lint, build, tests, `npm audit --omit=dev`, gitleaks secret scan; Dependabot | CI is required for merging to `main` |
 | **2 — Architecture refactoring** (≈2–3 weeks) | Clean module boundaries, no behaviour change | `app.js`/`server.js`, config validation, logger, validation middleware, error mapping, `items` split, `util.js` split, frontend feature folders, single role source, named permissions, docs (architecture, API with OpenAPI, environment variables) | Same tests pass; no route over ~150 lines; services unit-tested |
 | **3 — Database engineering** | Ready for students and money | D-03 … D-08; backup + tested restore; least-privilege roles finalised; academic year / term / class / stream tables designed; RLS design for sensitive tables; data-protection decisions (retention, access) | Restore drill recorded; schema review signed off |
@@ -679,9 +753,9 @@ No behaviour changes in these steps unless marked **(security fix)**. Each step 
 
 ### Phase 1 gate (must pass before any production deployment)
 
-1. No string `Musabe@2026` anywhere in the repository; seed without admin password fails or prints a random one.
-2. With production config, faked `X-Forwarded-For` does not change rate-limit identity.
-3. App database role cannot `UPDATE`/`DELETE` `audit_log`, cannot `CREATE` tables, and is not a superuser.
+1. The old default password appears nowhere in the repository; seed without admin password fails or prints a random one. *(Passed in Phase 1.)*
+2. With production config, faked `X-Forwarded-For` does not change rate-limit identity. *(Passed in Phase 1 tests.)*
+3. App database role cannot `UPDATE`/`DELETE` `audit_log`, cannot `CREATE` tables, and is not a superuser. *(Passed on test DB; must be re-checked on production after deployment.)*
 4. Login: unknown user, wrong password and locked account return identical status, body and (within 20 ms median) timing.
 5. 20 failed logins from an attacker do not stop the real user signing in.
 6. Non-GET request with foreign `Origin` → 403.
