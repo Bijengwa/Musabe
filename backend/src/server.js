@@ -56,7 +56,18 @@ async function start(defaultPort = 3001) {
   realtime.listen();
   const port = Number(process.env.PORT) || defaultPort;
   console.log(`Trusted proxy for client IP: ${trustProxy === false ? 'none' : trustProxy.join(', ')}`);
-  return app.listen(port, () => console.log(`Musabe API running on http://localhost:${port}`));
+  const server = app.listen(port, () => console.log(`Musabe API running on http://localhost:${port}`));
+  // Node closes idle keep-alive sockets after 5 s. A proxy (Vite, Nginx) that reuses such a socket gets
+  // ECONNRESET. Keep them open longer than any proxy's idle timeout.
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
+  // Stop cleanly (node --watch restart, PM2, Ctrl+C): end the live connections so browsers reconnect
+  // quietly, and free the port before the new process starts.
+  const stop = () => { realtime.closeAll(); server.close(() => process.exit(0)); setTimeout(() => process.exit(0), 3000).unref(); };
+  process.once('SIGTERM', stop); process.once('SIGINT', stop);
+  // One bad request must not take the whole API down.
+  process.on('unhandledRejection', (e) => console.error('Unhandled rejection:', e));
+  return server;
 }
 
 if (require.main === module) {

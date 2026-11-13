@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, Route, Routes, useNavigate } from 'react-router-dom';
+import ItemReview from './ItemReview';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
@@ -7,13 +9,26 @@ import { Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, SchoolPill
 
 const digits = (v) => String(v ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 8);
 
-// Items & prices. Finance Manager adds and changes them; others look.
+// /items = the list, /items/review/:id = check an Excel upload before it is saved.
 export default function Items() {
+  return (
+    <Routes>
+      <Route index element={<ItemList />} />
+      <Route path="review/:id" element={<ItemReview />} />
+      <Route path="*" element={<ItemList />} />
+    </Routes>
+  );
+}
+
+// Items & prices. Finance Manager adds and changes them; others look.
+function ItemList() {
   const { user, can } = useAuth();
   const allSchools = useSchools();
   const [scope] = useScope();
   const toast = useToast();
   const canEdit = can('items', 'f');
+  const canUpload = can('itemsupload', 'f');
+  const navigate = useNavigate();
   const [rows, setRows] = useState(null);
   const [cats, setCats] = useState([]);
   const [error, setError] = useState('');
@@ -51,10 +66,12 @@ export default function Items() {
         ? 'Everything the libraries sell. Each school has its own price, or does not sell the item.'
         : 'What the library sells and the price for each school.'}>
         <ExcelButton href="/api/items/export.xlsx" />
-        {canEdit && <button className="btn" onClick={() => setModal({ kind: 'upload' })}><Icon name="upload" /> Upload Excel</button>}
+        {canUpload && <button className="btn" onClick={() => setModal({ kind: 'upload' })}><Icon name="upload" /> Upload Excel</button>}
         {canEdit ? <button className="btn p" onClick={() => setModal({ kind: 'edit' })}><Icon name="plus" /> New item</button>
           : <span className="pill"><Icon name="eye" /> View only</span>}
       </PageHead>
+
+      {canUpload && <Waiting />}
 
       <div className="filters">
         <div className="seg">
@@ -73,14 +90,15 @@ export default function Items() {
         {!shown ? <Empty>Loading…</Empty> : !shown.length ? <Empty>{status === 'archived' ? 'No stopped items.' : 'No items match.'}</Empty> : (
           <div className="tw"><table className="itemtable">
             <thead><tr>
-              <th>Item</th><th>Category</th>
+              <th className="sn">S/N</th><th>Item</th><th>Category</th>
               {schools.map((s) => <th key={s.id} className="n"><SchoolPill code={s.code} name={s.shortName} /></th>)}
               <th />
             </tr></thead>
             <tbody>
-              {shown.map((i) => (
+              {shown.map((i, n) => (
                 <tr key={i.id} className={i.active ? '' : 'off'}>
-                  <td><b>{i.name}</b>{i.genderPriced && <div className="small muted">Price by gender</div>}</td>
+                  <td className="sn" data-l="S/N">{n + 1}</td>
+                  <td className="nm"><b>{i.name}</b>{i.genderPriced && <div className="small muted">Price by gender</div>}</td>
                   <td data-l="Category">{i.categoryLabel}</td>
                   {schools.map((s) => <td key={s.id} className="n" data-l={s.shortName}><Price p={i.prices[s.id]} /></td>)}
                   <td className="acts-cell"><div className="row nowrap">
@@ -100,7 +118,7 @@ export default function Items() {
 
       {modal?.kind === 'edit' && <ItemForm item={modal.item} cats={cats} onClose={() => setModal(null)} onSaved={(name) => { setModal(null); toast(`${name} saved`); load(); }} />}
       {modal?.kind === 'history' && <History item={modal.item} onClose={() => setModal(null)} />}
-      {modal?.kind === 'upload' && <Upload onClose={() => setModal(null)} onSaved={(n) => { setModal(null); toast(`Saved ${n} change${n === 1 ? '' : 's'} from Excel`); load(); }} />}
+      {modal?.kind === 'upload' && <Upload onClose={() => setModal(null)} onUploaded={(id) => navigate(`/items/review/${id}`)} />}
     </>
   );
 }
@@ -213,66 +231,56 @@ function History({ item, onClose }) {
   );
 }
 
-// Upload items and prices from Excel: choose file -> see what will change (mistakes in red) -> save.
-function Upload({ onClose, onSaved }) {
-  const [file, setFile] = useState(null);
-  const [res, setRes] = useState(null);
+// Uploads waiting for approval: shown above the list so they are not forgotten.
+function Waiting() {
+  const [rows, setRows] = useState([]);
+  const load = useCallback(() => api.get('/items/imports').then((d) => setRows(d.pending)).catch(() => {}), []);
+  useEffect(() => { load(); }, [load]);
+  useLive(['itemimport', 'item'], load);
+  if (!rows.length) return null;
+  return (
+    <div className="waitbox">
+      <b><Icon name="clock" /> {rows.length} Excel upload{rows.length === 1 ? '' : 's'} waiting for approval</b>
+      <span className="small muted">Items and prices in an upload are not in the list until it is approved.</span>
+      {rows.map((u) => (
+        <div key={u.id} className="row waitrow">
+          <span><b>{u.fileName}</b> <span className="small muted">by {u.mine ? 'you' : u.uploadedBy}, {fmtWhen(u.createdAt)} · {u.summary?.changes ?? 0} change{u.summary?.changes === 1 ? '' : 's'}{u.summary?.errors ? ` · ${u.summary.errors} mistake${u.summary.errors === 1 ? '' : 's'}` : ''}</span></span>
+          <Link className="btn sm p" to={`/items/review/${u.id}`}>Review</Link>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Upload items and prices from Excel. The file is kept as "waiting" and opens on the review page; nothing is saved yet.
+function Upload({ onClose, onUploaded }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [all, setAll] = useState(false);
 
-  const send = async (check, f = file) => {
+  const send = async (f) => {
+    if (!f) return;
     setBusy(true); setError('');
     try {
-      const r = await fetch(`/api/items/import${check ? '?check=1' : ''}`, { method: 'POST', credentials: 'include', body: f });
-      const d = await r.json();
+      const r = await fetch('/api/items/imports', { method: 'POST', credentials: 'include', headers: { 'X-File-Name': encodeURIComponent(f.name).slice(0, 200) }, body: f });
+      const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'Upload failed.');
-      if (d.saved) return onSaved(d.changes);
-      setRes(d);
+      onUploaded(d.id);
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   };
-  const pick = (f) => { if (!f) return; setFile(f); setRes(null); send(true, f); };
 
-  const rows = res ? res.rows.filter((r) => all || r.error || r.change !== 'No change') : [];
   return (
-    <Modal wide title="Upload items and prices from Excel" onClose={onClose}
-      footer={<>
-        <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn p" disabled={!res || res.errors > 0 || !res.changes || busy} onClick={() => send(false)}>
-          {busy ? 'Working…' : res?.changes ? `Save ${res.changes} change${res.changes === 1 ? '' : 's'}` : 'Save'}
-        </button>
-      </>}>
+    <Modal title="Upload items and prices from Excel" onClose={onClose} footer={<button className="btn" onClick={onClose}>Cancel</button>}>
       <ol className="steps">
         <li>Download the template. It already has today's items and prices. <a className="linkbtn" href="/api/items/template.xlsx" download>Download template</a></li>
-        <li>Change prices or add rows in Excel. Leave a price empty if the school does not sell the item.</li>
-        <li>Choose the file. Nothing is saved until you press Save.</li>
+        <li>Change prices or add rows in Excel. Not sure how? <a className="linkbtn" href="/api/items/sample.xlsx" download>See a sample</a> — it shows each kind of row and explains it.</li>
+        <li>One school or all three: put only the rows you want to change. Rows not in the file are not changed.</li>
+        <li>Choose the file. A review page opens. Nothing is saved until you check it and press <b>Approve</b>.</li>
       </ol>
       <label className="filepick">
-        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => pick(e.target.files[0])} />
-        <Icon name="excel" /> {file ? file.name : 'Choose Excel file (.xlsx)'}
+        <input type="file" disabled={busy} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => send(e.target.files[0])} />
+        <Icon name="excel" /> {busy ? 'Checking the file…' : 'Choose Excel file (.xlsx)'}
       </label>
       <ErrorNote error={error} />
-      {busy && !res && <Empty>Checking the file…</Empty>}
-      {res && (
-        <>
-          <div className="row">
-            {res.errors > 0 ? <span className="pill bad">{res.errors} mistake{res.errors === 1 ? '' : 's'} to fix in Excel</span> : <span className="pill ok">No mistakes</span>}
-            <span className="pill info">{res.changes} change{res.changes === 1 ? '' : 's'}</span>
-            <label className="chk" style={{ marginLeft: 'auto' }}><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> Show unchanged rows too</label>
-          </div>
-          <div className="tw upl"><table>
-            <thead><tr><th>Row</th><th>Item</th><th>School</th><th>Change</th><th>Price</th></tr></thead>
-            <tbody>{rows.map((r) => (
-              <tr key={r.row} className={r.error ? 'bad' : ''}>
-                <td className="n">{r.row}</td><td><b>{r.item || '—'}</b></td><td>{r.school}</td>
-                <td>{r.error ? <span className="pill bad">Mistake</span> : <span className={`pill ${r.change === 'No change' ? '' : 'info'}`}>{r.change}</span>}</td>
-                <td>{r.error ? <span className="err-t">{r.error}</span> : r.change === 'No change' ? r.to : <>{r.from} → <b>{r.to}</b></>}</td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-          {res.errors > 0 && <p className="small muted" style={{ margin: 0 }}>Fix the rows in red in Excel, save the file, and choose it again.</p>}
-        </>
-      )}
     </Modal>
   );
 }

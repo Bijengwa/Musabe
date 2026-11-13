@@ -100,4 +100,6 @@ setInterval(() => {
   if (++tick % 2 === 0) checkSessions().catch(() => {});
 }, 30000).unref();
 
-module.exports = { listen, publish, stream, clientCount: () => clients.size };
+function closeAll() { for (const c of clients) { try { c.res.end(); } catch { /* closed */ } } clients.clear(); }
+
+module.exports = { listen, publish, stream, closeAll, clientCount: () => clients.size };

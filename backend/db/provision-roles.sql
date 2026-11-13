@@ -87,6 +87,7 @@ DECLARE
     "items":                "SELECT, INSERT, UPDATE",
     "item_prices":          "SELECT, INSERT, UPDATE, DELETE",
     "item_price_changes":   "SELECT, INSERT",
+    "item_imports":         "SELECT, INSERT, UPDATE",
     "knex_migrations":      "",
     "knex_migrations_lock": ""
   }';

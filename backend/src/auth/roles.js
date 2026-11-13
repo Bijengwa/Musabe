@@ -42,8 +42,9 @@ const ACCESS = {
   // - Accountant: runs the items after they are created: sends stock, handles requests, watches bursar receipts live
   //   with alerts, confirms each bursar's daily money, approves damaged/lost, reports and Excel.
   // - Assistant Accountant: view and reports.
-  fm:        parse('home students:v items stockin requests receipts:v stock:v damage reports audit:v'),
-  afm:       parse('home students:v items:v stockin requests receipts:v stock:v damage:v reports audit:v'),
+  // - itemsupload: upload items and prices from Excel. The uploader checks them on a review page and approves.
+  fm:        parse('home students:v items itemsupload stockin requests receipts:v stock:v damage reports audit:v'),
+  afm:       parse('home students:v items:v itemsupload stockin requests receipts:v stock:v damage:v reports audit:v'),
   acc:       parse('home students:v items:v stockin requests receipts:v stock:v damage reports audit:v'),
   aacc:      parse('home students:v items:v receipts:v stock:v damage:v reports audit:v'),
   sadmin:    parse('home staff students classes:v reports audit:v'),

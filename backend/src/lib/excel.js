@@ -55,6 +55,7 @@ async function readExcel(buffer, need) {
   try { await wb.xlsx.load(buffer); } catch { throw new HttpError(400, 'This is not an Excel file (.xlsx). In Excel, use File → Save As → Excel Workbook.'); }
   const ws = wb.worksheets[0];
   if (!ws) throw new HttpError(400, 'The Excel file is empty.');
+  if (/^sample/i.test(ws.name)) throw new HttpError(400, 'This is the sample file. It only shows how to arrange the rows. Download the template, put your items in it, and upload that file.');
   const text = (v) => {
     if (v == null) return '';
     if (typeof v === 'object') return String(v.result ?? v.text ?? (v.richText ? v.richText.map((t) => t.text).join('') : '')).trim();

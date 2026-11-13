@@ -324,7 +324,8 @@ input.bad { border-color: var(--warn) }
 /* ---------- library: items & prices ---------- */
 .money { font-variant-numeric: tabular-nums; font-weight: 600 }
 .itemtable tr.off td { opacity: .6 }
-.itemtable td:first-child { min-width: 170px }
+.itemtable td.nm { min-width: 170px }
+.itemtable .sn { width: 1%; white-space: nowrap; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums }
 .gp { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px }
 .gp span { white-space: nowrap }
 .gp i { font-style: normal; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 999px; color: #fff }
@@ -345,7 +346,8 @@ input.bad { border-color: var(--warn) }
   .itemtable tr { border-bottom: 1px solid var(--line); padding: 10px 4px }
   .itemtable td { border: 0; padding: 4px 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: right }
   .itemtable td[data-l]::before { content: attr(data-l); color: var(--muted); font-size: 12.5px; text-align: left }
-  .itemtable td:first-child { display: block; font-size: 15px; text-align: left; min-width: 0 }
+  .itemtable td.nm { display: block; font-size: 15px; text-align: left; min-width: 0 }
+  .itemtable td.sn { width: 100%; text-align: right; font-size: 12.5px }
   .itemtable .acts-cell { display: block; padding-top: 8px }
   .itemtable .acts-cell .row { flex-wrap: wrap }
 }
@@ -391,3 +393,24 @@ input.bad { border-color: var(--warn) }
 .bi.new { background: color-mix(in srgb, var(--primary-soft) 55%, transparent) }
 .ball { padding: 10px; text-align: center; color: var(--primary); font-weight: 600; text-decoration: none; font-size: 13px }
 @media (max-width: 520px) { .bdrop { position: fixed; left: 12px; right: 12px; top: 58px; width: auto } }
+
+/* Excel uploads waiting for approval, and the review page */
+.waitbox { display: flex; flex-direction: column; gap: 8px; background: var(--warn-soft); border: 1px solid var(--warn); border-radius: var(--r); padding: 12px 14px }
+.waitbox > b { display: flex; align-items: center; gap: 8px; color: var(--warn) }
+.waitrow { justify-content: space-between; gap: 10px; flex-wrap: wrap; background: var(--surface); border-radius: 8px; padding: 8px 10px }
+.reviewbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--primary-soft); border: 1px solid var(--primary); border-radius: var(--r); padding: 12px 14px }
+.reviewbar.bad { background: var(--bad-soft); border-color: var(--bad) }
+.reviewbar .grow { flex: 1 }
+.reviewtable tr.bad td { background: var(--bad-soft) }
+.reviewtable tr.same td { opacity: .6 }
+.reviewtable td .pill.sm { margin-left: 6px; font-size: 11px; padding: 1px 6px }
+.kpi.bad .v { color: var(--bad) } .kpi.ok .v { color: var(--ok) }
+@media (max-width: 720px) {
+  .reviewtable thead { display: none }
+  .reviewtable, .reviewtable tbody, .reviewtable tr, .reviewtable td { display: block; width: 100% }
+  .reviewtable tr { border-bottom: 1px solid var(--line); padding: 8px 4px }
+  .reviewtable td { border: 0; padding: 3px 12px; display: flex; justify-content: space-between; gap: 12px; text-align: right }
+  .reviewtable td[data-l]::before { content: attr(data-l); color: var(--muted); font-size: 12.5px; text-align: left }
+  .reviewtable td:nth-child(2) { display: block; text-align: left; font-size: 15px }
+  .reviewtable td.err-t { display: block; text-align: left }
+}
