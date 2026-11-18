@@ -1,19 +1,18 @@
 // Notifications: the bell in the top bar.
-// Built from the activity log: each person is told about what concerns their role and school
-// (lib/activity.js), never about their own actions, and not about everyday sign-ins.
+// Built from the activity log: each person is told only about what concerns their role and school
+// (rules in lib/notify.js), never about their own actions.
 const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../auth/session');
 const { ROLES } = require('../auth/roles');
-const { QUIET, groupOf, visible } = require('../lib/activity');
+const { groupOf } = require('../lib/activity');
+const { forUser, linkFor } = require('../lib/notify');
 
 const router = express.Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {
-  const base = () => visible(db('audit_log as a'), req.user)
-    .whereNotIn('a.action', QUIET)
-    .andWhere((w) => w.whereNull('a.user_id').orWhereNot('a.user_id', req.user.id));
+  const base = () => forUser(db('audit_log as a'), req.user);
   const seen = req.user.notif_seen_at || new Date(0);
   const [rows, [{ n }]] = await Promise.all([
     base().leftJoin('users as u', 'u.id', 'a.user_id').leftJoin('schools as s', 's.id', 'a.school_id')
@@ -24,7 +23,7 @@ router.get('/', async (req, res) => {
   res.json({
     unread: Number(n),
     items: rows.map((r) => ({ id: r.id, at: r.at, group: groupOf(r.action), summary: r.summary, school: r.school,
-      by: r.by, byRole: ROLES[r.role]?.label, unread: new Date(r.at) > new Date(seen) })),
+      by: r.by, byRole: ROLES[r.role]?.label, unread: new Date(r.at) > new Date(seen), link: linkFor(r.action, req.user.role) })),
   });
 });
 

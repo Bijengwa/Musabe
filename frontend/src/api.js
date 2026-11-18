@@ -1,6 +1,6 @@
 // Small wrapper around fetch. Cookies carry the session; errors come back as { error }.
 export class ApiError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
+  constructor(status, message, data) { super(message); this.status = status; this.data = data || {}; }
 }
 
 async function request(method, path, body) {
@@ -19,7 +19,7 @@ async function request(method, path, body) {
   try { data = await res.json(); } catch { /* empty body */ }
   if (!res.ok) {
     if (res.status === 401 && path !== '/auth/login' && path !== '/auth/me') window.dispatchEvent(new Event('musabe:signed-out'));
-    throw new ApiError(res.status, data.error || `Request failed (${res.status}).`);
+    throw new ApiError(res.status, data.error || `Request failed (${res.status}).`, data);
   }
   return data;
 }

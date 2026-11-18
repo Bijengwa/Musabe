@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!liveUser) return undefined;
     connectLive({
-      onSignedOut: () => { setMe(null); navigate('/', { replace: true }); toast('You were signed out. Your account was changed or signed out from another device.'); },
+      onSignedOut: () => { setMe(null); navigate('/', { replace: true }); toast('You were signed out. Your account was changed by your administrator.'); },
       onRefused: () => refresh(),
     });
     return () => disconnectLive();
@@ -49,11 +49,16 @@ export function AuthProvider({ children }) {
     setMe((m) => (m ? { ...m, user: { ...m.user, preferences: r.preferences } } : m));
   };
 
+  // Returns { needsCode, challenge, phoneHint } when the account is in use on another device: the owner types the SMS code.
+  const finish = async () => { navigate('/', { replace: true }); await refresh(); }; // every sign-in starts at Home
   const login = async (username, password, remember) => {
-    await api.post('/auth/login', { username, password, remember });
-    navigate('/', { replace: true }); // every sign-in starts at Home
-    await refresh();
+    const r = await api.post('/auth/login', { username, password, remember });
+    if (r.needsCode) return r;
+    await finish();
+    return r;
   };
+  const verifyCode = async (challenge, code) => { await api.post('/auth/verify-code', { challenge, code }); await finish(); };
+  const resendCode = (challenge) => api.post('/auth/resend-code', { challenge });
   // Every "Sign out" button asks first, so nobody is signed out by a wrong tap.
   const [asking, setAsking] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -73,7 +78,7 @@ export function AuthProvider({ children }) {
     return !!a && (level === 'v' || a === 'f');
   };
 
-  return <AuthCtx.Provider value={{ me, user: me?.user, refresh, login, logout, askLogout, can, savePrefs }}>
+  return <AuthCtx.Provider value={{ me, user: me?.user, refresh, login, verifyCode, resendCode, logout, askLogout, can, savePrefs }}>
       {children}
       {asking && (
         <Modal title="Sign out?" onClose={() => !leaving && setAsking(false)} footer={<>

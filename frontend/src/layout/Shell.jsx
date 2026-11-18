@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { NAV, ALL_PAGES, MY_PAGES } from '../nav';
+import { NAV, ALL_PAGES, MY_PAGES, navAccess } from '../nav';
 import { Avatar, Icon, SchoolPill } from '../components/ui';
 import { useSchools, useScope } from './scope';
 import { useLiveStatus } from '../live';
@@ -14,6 +14,8 @@ const readMini = () => { try { return localStorage.getItem('musabe-side-mini') =
 export default function Shell() {
   const { me, user } = useAuth();
   const { pathname } = useLocation();
+  const contentRef = useRef(null);
+  usePinnedLayout(contentRef, pathname);
   const [open, setOpen] = useState(false);     // phone drawer
   const [mini, setMini] = useState(readMini);  // desktop icon rail
   const schools = useSchools();
@@ -34,7 +36,10 @@ export default function Shell() {
     else setMini((m) => { try { localStorage.setItem('musabe-side-mini', m ? '' : '1'); } catch { /* ignore */ } return !m; });
   };
 
-  const current = [...MY_PAGES, ...ALL_PAGES].find((p) => (p.path === '/' ? pathname === '/' : pathname.startsWith(p.path)));
+  // The page we are on: the longest sidebar path that matches (e.g. /students/new is "Add student", /students/12 is "Students").
+  const matches = (p) => (p.path === '/' ? pathname === '/' : pathname === p.path || pathname.startsWith(`${p.path}/`));
+  const current = [...MY_PAGES, ...ALL_PAGES.filter((p) => navAccess(me.pages, p, me.role))].filter(matches).sort((a, b) => b.path.length - a.path.length)[0];
+  const activeKey = current?.key;
   const allScope = user.scope === 'all';
 
   return (
@@ -53,15 +58,15 @@ export default function Shell() {
         </NavLink>
         <nav className="sidenav">
         {NAV.map((g) => {
-          const items = g.items.filter((i) => me.pages[i.key]);
+          const items = g.items.filter((i) => navAccess(me.pages, i, me.role));
           if (!items.length) return null;
           return (
             <div className="navg" key={g.group || 'main'}>
               {g.group && <h4>{g.group}</h4>}
               {items.map((i) => (
-                <NavLink key={i.key} to={i.path} end={i.path === '/'} title={i.label} onClick={() => setOpen(false)} className={({ isActive }) => `nav${isActive ? ' on' : ''}`}>
+                <NavLink key={i.key} to={i.path} end={i.path === '/'} title={i.label} onClick={() => setOpen(false)} className={`nav${i.key === activeKey ? ' on' : ''}${i.sub ? ' subnav' : ''}`}>
                   <Icon name={i.icon} /><span>{i.label}</span>
-                  {me.pages[i.key] === 'v' && <span className="vo">view</span>}
+                  {navAccess(me.pages, i, me.role) === 'v' && <span className="vo">view</span>}
                 </NavLink>
               ))}
             </div>
@@ -96,7 +101,7 @@ export default function Shell() {
             <UserMenu />
           </div>
         </header>
-        <main className="content"><Outlet /></main>
+        <main className="content" ref={contentRef}><Outlet /></main>
       </div>
     </div>
   );
@@ -143,4 +148,45 @@ function LiveDot() {
       <i />{live ? 'Live' : 'Reconnecting…'}
     </span>
   );
+}
+
+// Page layout: the page (.content) is the one thing that scrolls. Cards and headings scroll away; the filter bar stays at
+// the top, and the main table (the last block on the page) fills the rest of the screen and scrolls inside itself,
+// so its header row stays under the filter bar. Nothing here knows about any one page: it looks at what the page drew.
+// (A sticky header cannot work inside a box that scrolls sideways unless that box also scrolls up and down, so the
+// table box gets a real height here.)
+function usePinnedLayout(ref, route) {
+  useLayoutEffect(() => {
+    const c = ref.current;
+    if (!c) return undefined;
+    let raf = 0;
+    const clear = (els) => els.forEach((e) => { e.classList.remove('pinbar', 'pinpanel'); e.style.top = ''; e.style.maxHeight = ''; });
+    const run = () => {
+      raf = 0;
+      let root = c;
+      // A page wrapped in one plain <div>: look inside it.
+      while (root.children.length === 1 && root.firstElementChild.tagName === 'DIV' && !/\b(panel|filters|kpis|ph1)\b/.test(root.firstElementChild.className)) root = root.firstElementChild;
+      const kids = [...root.children].filter((k) => k.tagName !== 'P'); // a short note under the table does not count
+      clear([...c.querySelectorAll('.pinbar, .pinpanel')]);
+      const last = kids[kids.length - 1];
+      if (!last || !last.classList.contains('panel')) return;
+      let top = 0;
+      kids.slice(0, -1).filter((k) => k.classList.contains('filters')).forEach((k) => {
+        k.classList.add('pinbar'); k.style.top = `calc(${top}px - var(--cpt))`; top += k.offsetHeight;
+      });
+      if (last.querySelector(':scope > .bd > .tw, :scope > .tw')) {
+        last.classList.add('pinpanel');
+        last.style.top = `calc(${top}px - var(--cpt))`;
+        last.style.maxHeight = `${Math.max(240, c.clientHeight - top - 20)}px`;
+      }
+    };
+    const soon = () => { if (!raf) raf = requestAnimationFrame(run); };
+    const mo = new MutationObserver(soon);
+    mo.observe(c, { childList: true, subtree: true });
+    const ro = new ResizeObserver(soon);
+    ro.observe(c);
+    window.addEventListener('resize', soon);
+    run();
+    return () => { mo.disconnect(); ro.disconnect(); window.removeEventListener('resize', soon); if (raf) cancelAnimationFrame(raf); };
+  }, [ref, route]);
 }

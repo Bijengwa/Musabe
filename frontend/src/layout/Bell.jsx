@@ -101,10 +101,11 @@ export default function Bell() {
           {!data ? <Empty>Loading…</Empty> : !data.items.length ? <Empty>Nothing yet. New activity will show here.</Empty> : (
             <div className="blist">
               {data.items.map((i) => (
-                <div key={i.id} className={`bi${i.unread ? ' new' : ''}`}>
+                <Wrap key={i.id} to={i.link} className={`bi${i.unread ? ' new' : ''}${i.link ? ' blink' : ''}`} onClick={() => setOpen(false)}>
                   <span className={`gic g-${i.group}`}><Icon name={ICON[i.group] || 'list'} /></span>
                   <div className="grow"><b>{i.summary}</b><span>{i.by || 'System'}{i.byRole ? ` · ${i.byRole}` : ''}{i.school ? ` · ${i.school}` : ''} · {fmtWhen(i.at)}</span></div>
-                </div>
+                  {i.link && <Icon name="chev" />}
+                </Wrap>
               ))}
             </div>
           )}
@@ -113,4 +114,10 @@ export default function Bell() {
       )}
     </div>
   );
+}
+
+// A notification that has a page opens it; others are plain rows.
+function Wrap({ to, children, ...rest }) {
+  if (!to) { const { onClick, ...r } = rest; void onClick; return <div {...r}>{children}</div>; }
+  return <Link to={to} {...rest}>{children}</Link>;
 }

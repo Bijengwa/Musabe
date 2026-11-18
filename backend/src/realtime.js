@@ -12,6 +12,8 @@ const db = require('./db');
 const { ROLES } = require('./auth/roles');
 
 const CHANNEL = 'musabe_events';
+const MAX_PER_USER = Number(process.env.LIVE_MAX_PER_USER) || 8;
+const MAX_TOTAL = Number(process.env.LIVE_MAX_TOTAL) || 2000;
 const clients = new Set(); // { res, user, sessionId }
 let listener = null;
 let ready = false;
@@ -88,6 +90,10 @@ function stream(req, res) {
   res.flushHeaders();
   res.write('retry: 3000\n\n');
   const c = { res, user: req.user, sessionId: req.user.session_id };
+  // Limits: a few open tabs per person (the oldest closes), and a ceiling for the whole server.
+  const mine = [...clients].filter((x) => x.user.id === req.user.id);
+  if (mine.length >= MAX_PER_USER) { const old = mine[0]; try { old.res.end(); } catch { /* closed */ } clients.delete(old); }
+  if (clients.size >= MAX_TOTAL) { res.write('retry: 30000\n\n'); res.end(); return; }
   clients.add(c);
   send(c, 'hello', { at: Date.now() });
   req.on('close', () => clients.delete(c));

@@ -90,7 +90,7 @@ function ItemList() {
         {!shown ? <Empty>Loading…</Empty> : !shown.length ? <Empty>{status === 'archived' ? 'No stopped items.' : 'No items match.'}</Empty> : (
           <div className="tw"><table className="itemtable">
             <thead><tr>
-              <th className="sn">S/N</th><th>Item</th><th>Category</th>
+              <th className="sn">S/N</th><th className="stick">Item</th><th>Category</th>
               {schools.map((s) => <th key={s.id} className="n"><SchoolPill code={s.code} name={s.shortName} /></th>)}
               <th />
             </tr></thead>
@@ -98,7 +98,7 @@ function ItemList() {
               {shown.map((i, n) => (
                 <tr key={i.id} className={i.active ? '' : 'off'}>
                   <td className="sn" data-l="S/N">{n + 1}</td>
-                  <td className="nm"><b>{i.name}</b>{i.genderPriced && <div className="small muted">Price by gender</div>}</td>
+                  <td className="nm stick"><b>{i.name}</b>{i.genderPriced && <div className="small muted">Price by gender</div>}</td>
                   <td data-l="Category">{i.categoryLabel}</td>
                   {schools.map((s) => <td key={s.id} className="n" data-l={s.shortName}><Price p={i.prices[s.id]} /></td>)}
                   <td className="acts-cell"><div className="row nowrap">
@@ -114,7 +114,6 @@ function ItemList() {
           </table></div>
         )}
       </Panel>
-      <p className="small muted" style={{ margin: 0 }}>Prices are in Tanzanian shillings (TSh). A changed price is used for new receipts only; old receipts keep the price they were paid at.</p>
 
       {modal?.kind === 'edit' && <ItemForm item={modal.item} cats={cats} onClose={() => setModal(null)} onSaved={(name) => { setModal(null); toast(`${name} saved`); load(); }} />}
       {modal?.kind === 'history' && <History item={modal.item} onClose={() => setModal(null)} />}

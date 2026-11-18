@@ -3,11 +3,54 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
+import { IdCardPanel } from '../components/idcard';
+import { SignPad } from '../components/signing';
 import { Avatar, Empty, ErrorNote, Icon, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
 
 // My profile: who I am in the system.
 // Name, username, role and school are set by the administrator and are locked here,
 // because they appear on receipts, reports and the audit log. Phone and email are mine to change.
+
+// The drawn signature and the signing PIN. Both need the account password. Used to sign requisitions, vouchers and other papers.
+function SigningPanel({ user, refresh }) {
+  const toast = useToast();
+  const [image, setImage] = useState(null);
+  const [pin, setPin] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [padKey, setPadKey] = useState(0);
+  const [current, setCurrent] = useState(null);
+  useEffect(() => { if (user.hasSignature) api.get('/me/signature').then((d) => setCurrent(d.image)).catch(() => {}); }, [user.hasSignature]);
+  const save = async () => {
+    setBusy(true); setError('');
+    try {
+      if (image) await api.put('/me/signature', { image, password });
+      if (pin) await api.put('/me/pin', { pin, password });
+      toast('Your signing details are saved');
+      setImage(null); setPin(''); setPassword(''); setPadKey((k) => k + 1);
+      await refresh();
+    } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  return (
+    <Panel title="My signature and PIN" sub="Used to sign papers in the system">
+      <div className="stack">
+        <div className="row"><span className={`pill ${user.hasSignature ? 'ok' : 'warn'}`}>{user.hasSignature ? 'Signature saved' : 'No signature yet'}</span>
+          <span className={`pill ${user.hasPin ? 'ok' : 'warn'}`}>{user.hasPin ? 'PIN set' : 'No PIN yet'}</span></div>
+        {current && <img src={current} alt="My saved signature" style={{ maxHeight: 70, alignSelf: 'flex-start', border: '1px dashed var(--line)', borderRadius: 8, background: '#fff' }} />}
+        <p className="muted small" style={{ margin: 0 }}>{user.hasSignature ? 'Draw again only if you want to change it.' : 'Draw your signature:'}</p>
+        <SignPad key={padKey} onChange={setImage} />
+        <label>{user.hasPin ? 'New signing PIN (leave empty to keep it)' : 'Signing PIN (4 to 6 digits, not 1234)'}
+          <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} /></label>
+        <label>Your account password (to confirm)
+          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+        <ErrorNote error={error} />
+        <button className="btn p" disabled={busy || !password || (!image && !pin)} onClick={save}>Save</button>
+      </div>
+    </Panel>
+  );
+}
+
 export default function Profile() {
   const { user, refresh } = useAuth();
   const toast = useToast();
@@ -41,6 +84,8 @@ export default function Profile() {
         </div>
         <Link className="btn" to="/settings"><Icon name="gear" /> Settings</Link>
       </section>
+
+      <IdCardPanel me />
 
       <div className="g-wide">
         <div className="stack">
@@ -77,6 +122,8 @@ export default function Profile() {
               </div>
             )}
           </Panel>
+
+          <SigningPanel user={user} refresh={refresh} />
 
           <Panel title="My recent activity" flush>
             {!info ? <Empty>Loading…</Empty> : !info.activity.length ? <Empty>Nothing yet.</Empty> : (

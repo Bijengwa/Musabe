@@ -70,7 +70,7 @@ export default function Settings() {
 
       <div id="security" className="anchor" />
       <Panel title="Password" right={<button className="btn sm" onClick={() => setPwOpen(true)}><Icon name="key" /> Change password</button>}>
-        <p style={{ margin: 0 }} className="muted">Use a password only you know, with at least 8 characters, letters and numbers. When you change it, your other devices are signed out.</p>
+        <p style={{ margin: 0 }} className="muted">Use a password only you know: at least 12 characters, not your name. A short sentence is easiest, e.g. “mama neema 2026”. When you change it, your other devices are signed out.</p>
       </Panel>
 
       <Devices />
@@ -198,7 +198,7 @@ function PasswordModal({ onClose }) {
         <label>Current password<input id="cp-cur" type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required autoFocus /></label>
         <label>New password<input id="cp-new" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required /></label>
         <label>Type it again<input id="cp-new2" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required /></label>
-        <p className="small muted" style={{ margin: 0 }}>At least 8 characters, with letters and numbers.</p>
+        <p className="small muted" style={{ margin: 0 }}>At least 12 characters, not your name or username. A short sentence is easiest, e.g. “mama neema 2026”.</p>
         <ErrorNote error={error} />
         <div className="row">
           <button className="btn p" disabled={busy}>{busy ? 'Saving…' : 'Save new password'}</button>

@@ -1,3 +1,4 @@
+import { IdCardPanel } from '../components/idcard';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import { useLive } from '../live';
@@ -94,11 +95,14 @@ export default function Staff() {
                     : u.resetRequested ? <span className="pill warn">Asked for password</span>
                       : u.tempPassword ? <span className="pill info">Temporary password</span>
                         : <span className="pill ok">Active</span>}</td>
-                  <td className="acts-cell">{u.canManage && (
+                  <td className="acts-cell">{(u.canManage || can('idcards')) && (
                     <div className="row nowrap">
+                      {can('idcards') && <button className="btn sm" onClick={() => setModal({ kind: 'card', user: u })}><Icon name="tag" /> ID card</button>}
+                      {u.canManage && <>
                       <button className="btn sm" onClick={() => setModal({ kind: 'edit', user: u })}><Icon name="edit" /> Edit</button>
                       <button className={`btn sm${u.resetRequested ? ' p' : ''}`} onClick={() => setModal({ kind: 'reset', user: u })}>Reset password</button>
                       <button className={`btn sm${u.active ? ' danger' : ''}`} onClick={() => (u.active ? setModal({ kind: 'off', user: u }) : toggle(u))}>{u.active ? 'Switch off' : 'Switch on'}</button>
+                      </>}
                     </div>
                   )}</td>
                 </tr>
@@ -108,6 +112,8 @@ export default function Staff() {
         )}
       </Panel>
 
+      {modal?.kind === 'card' && <Modal wide title={`ID card · ${modal.user.fullName}`} onClose={() => setModal(null)} footer={<button className="btn" onClick={() => setModal(null)}>Close</button>}>
+        <IdCardPanel kind="staff" id={modal.user.id} flush /></Modal>}
       {modal?.kind === 'new' && <NewAccount onClose={() => setModal(null)} onDone={(d) => { setModal({ kind: 'creds', data: d }); load(); }} />}
       {modal?.kind === 'edit' && <EditAccount u={modal.user} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); toast('Saved'); }} />}
       {modal?.kind === 'off' && (
@@ -125,7 +131,7 @@ export default function Staff() {
       {modal?.kind === 'creds' && (
         <Modal title={modal.data.reset ? 'Temporary password' : 'Account created'} onClose={() => setModal(null)}
           footer={<button className="btn p" onClick={() => setModal(null)}>Done</button>}>
-          <p>Give these to <b>{modal.data.fullName}</b> in person. The password is shown only now. They will choose their own password the first time they sign in.</p>
+          <p>Give these to <b>{modal.data.fullName}</b> in person. The password is shown only now. They will choose their own password the first time they sign in. It works for 3 days only; after that, give a new one.</p>
           <CopyBox label="Username" value={modal.data.username} />
           <CopyBox label="Temporary password" value={modal.data.password} />
           <p className="small muted">The system never sends passwords by SMS or email.</p>

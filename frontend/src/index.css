@@ -75,7 +75,7 @@ a { color: inherit }
 }
 
 /* ---------- shell ---------- */
-.app { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100%; transition: grid-template-columns .22s ease }
+.app { display: grid; grid-template-columns: 252px minmax(0, 1fr); height: 100vh; height: 100dvh; transition: grid-template-columns .22s ease }
 .side { background: var(--side); color: var(--side-ink); border-right: 1px solid var(--side-line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; height: 100dvh; overflow: hidden }
 /* Only the menu list scrolls. Logo, name card and the bottom buttons always stay in view. */
 .sidenav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid var(--side-line); border-bottom: 1px solid var(--side-line); padding: 4px 0 }
@@ -96,7 +96,7 @@ a { color: inherit }
 .sidefoot { margin-top: auto; padding: 12px }
 .sidefoot button { width: 100%; background: none; border: 1px solid var(--side-line); color: var(--side-ink); border-radius: 8px; padding: 8px; display: flex; gap: 8px; align-items: center; justify-content: center }
 .sidefoot button:hover { color: var(--side-hi) }
-.main { min-width: 0; display: flex; flex-direction: column }
+.main { min-width: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden }
 .top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; padding: 10px max(20px, env(safe-area-inset-right)) 10px 20px }
 .top .menu { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex: none; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 0 }
 .top .menu:hover { border-color: var(--primary) }
@@ -106,7 +106,9 @@ a { color: inherit }
 .seg button { border: 0; background: none; padding: 5px 11px; border-radius: 999px; font-size: 12.5px; color: var(--muted) }
 .seg button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow) }
 .scope-sel { display: none; width: auto; max-width: 170px; padding: 6px 8px }
-.content { padding: 22px 20px 48px; display: flex; flex-direction: column; gap: 18px; max-width: 1280px; width: 100% }
+.content { --cpad: 20px; --cpt: 22px; padding: var(--cpt) var(--cpad) 20px; display: flex; flex-direction: column; gap: 18px; width: 100%; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden }
+/* Everything on a page keeps its own height: a bar with its own scrolling must not be squeezed to nothing. */
+.content > * { flex: none }
 .scrim { display: none }
 @media (min-width: 901px) {
   .app.mini { grid-template-columns: 72px minmax(0, 1fr) }
@@ -126,7 +128,7 @@ a { color: inherit }
   .top { padding-left: 16px; padding-right: 16px }
   .top .seg { display: none }
   .scope-sel { display: block }
-  .content { padding: 18px 16px 40px }
+  .content { --cpad: 16px; --cpt: 18px }
 }
 
 /* ---------- blocks ---------- */
@@ -136,6 +138,16 @@ a { color: inherit }
 .ph1 p { margin: 4px 0 0; color: var(--muted); max-width: 70ch }
 .ph1 .acts { display: flex; gap: 8px; flex-wrap: wrap }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-width: 0 }
+/* A panel that holds a scrollable table grows to fill whatever room is left on the page, so the table (not the
+   whole page) is what scrolls, and its sticky header has a real box to stick inside. Panels without a table
+   (forms, small cards) are untouched. */
+/* The page's main table (set by layout/Shell.jsx): a sticky box as tall as the room left on the screen. */
+.panel.pinpanel { position: sticky; z-index: 3; display: flex; flex-direction: column; overflow: hidden }
+.pinpanel > .hd { flex: none }
+.pinpanel > .bd { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden }
+.pinpanel .tw { flex: 1 1 auto; min-height: 0; max-height: none }
+/* The filter bar above it stays at the top while the cards scroll away. */
+.filters.pinbar { position: sticky; z-index: 4; background: var(--bg); margin: 0 calc(-1 * var(--cpad)); padding: 6px var(--cpad) }
 .panel > .hd { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap }
 .panel > .hd h2 { font-size: 15px }
 .panel > .hd .sub { color: var(--muted); font-size: 12.5px }
@@ -154,7 +166,20 @@ a { color: inherit }
 .kpi.hi { background: var(--primary); border-color: var(--primary); color: var(--primary-ink) }
 .kpi.hi .l, .kpi.hi .s { color: inherit; opacity: .85 }
 .kpi.warn { border-color: var(--warn); background: var(--warn-soft) }
-.tw { overflow-x: auto }
+.tw { overflow: auto; -webkit-overflow-scrolling: touch; max-height: 72vh; max-height: 72dvh }
+/* A table that is not the page's main one (a second table, a table in a window) is a box of its own with a limit, so its
+   header row stays in view while its rows scroll. */
+.tw thead th, .tw th { position: sticky; top: 0; z-index: 2; background: var(--soft) }
+/* Tables stay tables on every screen: on a phone they keep their columns and scroll sideways. */
+@media (max-width: 720px) {
+  .tw > table { min-width: 640px }
+  .tw td, .tw th { white-space: nowrap }
+  .tw td .err-t, .tw td .warn-t, .tw td .small { white-space: normal; min-width: 220px }
+  /* The name (or number) stays on the left while the rest scrolls. */
+  .tw .stick { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--line) }
+  .tw th.stick { background: var(--soft) }
+  .tw tr.bad td.stick { background: var(--bad-soft) } .tw tr.lateRow td.stick { background: var(--bad-soft) }
+}
 table { width: 100%; border-collapse: collapse; font-size: 13.5px }
 th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--soft) }
 td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle }
@@ -195,27 +220,15 @@ input:disabled, select:disabled { background: var(--soft) }
 .li .grow { flex: 1; min-width: 0 }
 .li .grow b { display: block; font-weight: 600 }
 .li .grow span { color: var(--muted); font-size: 12.5px }
-.filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
+.filters { display: flex; gap: 10px; align-items: center; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px }
 .filters select { width: auto }
-.searchbox { position: relative; flex: 1 1 220px; max-width: 320px }
+.searchbox { position: relative; flex: 0 1 220px; max-width: 320px; min-width: 160px }
 .searchbox .ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 16px; height: 16px }
 .searchbox input { padding-left: 32px }
 .copybox { display: flex; flex-direction: column; gap: 6px; background: var(--soft); border-radius: 10px; padding: 12px }
 .copybox .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em }
 .copybox code { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 20px; font-weight: 600; flex: 1; user-select: all; overflow-wrap: anywhere }
 
-/* staff table becomes cards on phones */
-@media (max-width: 720px) {
-  .stafftable thead { display: none }
-  .stafftable, .stafftable tbody, .stafftable tr, .stafftable td { display: block; width: 100% }
-  .stafftable tr { border-bottom: 1px solid var(--line); padding: 10px 4px }
-  .stafftable td { border: 0; padding: 3px 12px; display: flex; justify-content: space-between; gap: 12px }
-  .stafftable td[data-l]::before { content: attr(data-l); color: var(--muted); font-size: 12px }
-  .stafftable td:first-child { display: block; font-size: 15px }
-  .stafftable td:first-child::before { content: none }
-  .stafftable .acts-cell { display: block; padding-top: 8px }
-  .stafftable .acts-cell .row { flex-wrap: wrap }
-}
 
 /* modal + toast */
 .mwrap { position: fixed; inset: 0; z-index: 50; background: rgba(5, 20, 13, .45); display: grid; place-items: center; padding: 16px }
@@ -339,18 +352,6 @@ input.bad { border-color: var(--warn) }
 .money-in input { padding-right: 46px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600 }
 .money-in em { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted) }
 .hist .li { align-items: flex-start }
-/* items table becomes cards on phones: name, then one line per school */
-@media (max-width: 720px) {
-  .itemtable thead { display: none }
-  .itemtable, .itemtable tbody, .itemtable tr, .itemtable td { display: block; width: 100% }
-  .itemtable tr { border-bottom: 1px solid var(--line); padding: 10px 4px }
-  .itemtable td { border: 0; padding: 4px 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: right }
-  .itemtable td[data-l]::before { content: attr(data-l); color: var(--muted); font-size: 12.5px; text-align: left }
-  .itemtable td.nm { display: block; font-size: 15px; text-align: left; min-width: 0 }
-  .itemtable td.sn { width: 100%; text-align: right; font-size: 12.5px }
-  .itemtable .acts-cell { display: block; padding-top: 8px }
-  .itemtable .acts-cell .row { flex-wrap: wrap }
-}
 
 /* Excel buttons */
 .btn.xl { color: #1d6f42; border-color: color-mix(in srgb, #1d6f42 35%, var(--line)) }
@@ -405,12 +406,335 @@ input.bad { border-color: var(--warn) }
 .reviewtable tr.same td { opacity: .6 }
 .reviewtable td .pill.sm { margin-left: 6px; font-size: 11px; padding: 1px 6px }
 .kpi.bad .v { color: var(--bad) } .kpi.ok .v { color: var(--ok) }
-@media (max-width: 720px) {
-  .reviewtable thead { display: none }
-  .reviewtable, .reviewtable tbody, .reviewtable tr, .reviewtable td { display: block; width: 100% }
-  .reviewtable tr { border-bottom: 1px solid var(--line); padding: 8px 4px }
-  .reviewtable td { border: 0; padding: 3px 12px; display: flex; justify-content: space-between; gap: 12px; text-align: right }
-  .reviewtable td[data-l]::before { content: attr(data-l); color: var(--muted); font-size: 12.5px; text-align: left }
-  .reviewtable td:nth-child(2) { display: block; text-align: left; font-size: 15px }
-  .reviewtable td.err-t { display: block; text-align: left }
+
+/* ---------- Sell, receipts, give (Library step 2) ---------- */
+.pad { padding: 12px 16px }
+.lab { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--muted) }
+.lab em { font-style: normal; color: var(--warn) }
+.lab .seg { align-self: flex-start }
+.sellgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 18px; align-items: start }
+.cartcol { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 72px }
+@media (max-width: 960px) { .sellgrid { grid-template-columns: 1fr } .cartcol { position: static } }
+.itemgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 16px 16px }
+.itembtn { position: relative; display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); min-height: 64px; font-size: 12.5px }
+.itembtn b { font-weight: 600; font-size: 12.5px; line-height: 1.25; padding-right: 22px }
+.itembtn .money { color: var(--muted) }
+.itembtn:hover { border-color: var(--primary) }
+.itembtn.on { border-color: var(--primary); background: var(--primary-soft) }
+.itembtn .badge { position: absolute; top: 6px; right: 6px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--primary); color: var(--primary-ink); font-style: normal; font-weight: 700; font-size: 12px; display: grid; place-items: center; padding: 0 5px }
+.cartline { gap: 10px }
+.cartline .amt { min-width: 70px; text-align: right }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex: none }
+.stepper button { border: 0; background: var(--soft); width: 30px; height: 32px; font-size: 16px; font-weight: 600 }
+.stepper input { width: 42px; border: 0; border-radius: 0; text-align: center; padding: 6px 2px; font-variant-numeric: tabular-nums }
+.carttotal { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 16px; border-top: 2px solid var(--line); font-weight: 600 }
+.carttotal b { font-family: var(--f-head); font-size: 24px }
+.kvgrid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 13.5px; margin-top: 8px }
+.kvgrid > span { color: var(--muted) }
+.kvgrid > b { font-weight: 500; overflow-wrap: anywhere }
+.rcard { border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px }
+.rnum { margin: 0; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 20px; color: var(--bad); letter-spacing: .02em }
+.rnum.sm { font-size: 13px; font-weight: 700 }
+table.lines td, table.lines th { padding: 7px 10px }
+table.lines tfoot td { font-weight: 700; border-top: 2px solid var(--line) }
+td.n, th.n { text-align: right }
+.givebox { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 8px; background: var(--ok-soft) }
+.libtn { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer }
+.libtn:hover, .clickrow:hover td { background: var(--soft) }
+.clickrow { cursor: pointer }
+.lateRow td { background: color-mix(in srgb, var(--bad-soft) 60%, transparent) }
+.lateli { background: color-mix(in srgb, var(--bad-soft) 60%, transparent) }
+.list.bordered { border: 1px solid var(--line); border-radius: var(--r) }
+.list.bordered .li:last-child { border-bottom: 0 }
+.warnnote { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--ink) }
+.warnnote .ic { color: var(--warn); flex: none; margin-top: 2px }
+.givesearch { position: relative; display: flex; align-items: center }
+.givesearch > .ic { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--muted) }
+.givesearch input { font-size: 17px; padding: 14px 44px; border-radius: 12px }
+.givesearch .iconbtn { position: absolute; right: 8px }
+@media (max-width: 720px) { .rtable .rnum.sm { font-size: 15px } }
+
+/* The receipt, laid out like the school's paper receipt book (A5 landscape, blue ink, red number).
+   Sizes follow the width of the box (cqw), so the same layout shows on screen and on paper. */
+.bkwrap { container-type: inline-size; width: 100% }
+.bk { --ink: #24569e; --red: #c62828; font: 700 2.05cqw/1.35 'Times New Roman', Times, serif; color: var(--ink); background: #fbfbf6;
+  aspect-ratio: 210 / 148; padding: 2.6cqw 3.2cqw 2cqw; display: flex; flex-direction: column; justify-content: space-between; gap: .25em; box-sizing: border-box; border-radius: 4px }
+.bk-head { display: flex; align-items: center; gap: 1em; position: relative }
+.bk-head img { width: 5.4em; height: 5.4em; object-fit: contain; flex: none }
+.bk-title { flex: 1; text-align: center; padding-right: 5.4em }
+.bk-title h1 { margin: 0; font: 900 2.05em/1.1 'Rockwell', 'Rockwell Extra Bold', 'Bookman Old Style', Georgia, serif; letter-spacing: .02em; white-space: nowrap }
+.bk-title h1.long { font-size: 1.6em } .bk-title h1.longer { font-size: 1.35em }
+.bk-title p { margin: 0; font: 700 .92em/1.25 Arial, Helvetica, sans-serif }
+.bk-row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 1em; margin-top: .2em }
+.bk-no { font-size: 1.3em }
+.bk-no b { color: var(--red); font: 600 1.15em 'Courier New', monospace; letter-spacing: .03em; margin-left: .3em }
+.bk-rt { font: 900 1.25em 'Bookman Old Style', Georgia, serif; text-decoration: underline; text-underline-offset: .15em }
+.bk-line { display: flex; align-items: baseline; gap: .4em; white-space: nowrap }
+.bk-fill { display: inline-block; border-bottom: .09em solid var(--ink); min-width: 3em; padding: 0 .3em; color: #1a1a1a;
+  font: 700 1em Arial, Helvetica, sans-serif; text-align: center; overflow: hidden; text-overflow: ellipsis }
+.bk-fill.grow { flex: 1 } .bk-fill.cls { width: 26% }
+.bk-dots { display: inline-block; border-bottom: .14em dotted var(--ink); min-height: 1.3em; padding: 0 .3em; color: #1a1a1a;
+  font: 700 .95em Arial, Helvetica, sans-serif; overflow: hidden; text-overflow: ellipsis }
+.bk-dots.grow { flex: 1 } .bk-dots.half { width: 50% }
+.bk-being { text-align: center; margin-top: -.1em }
+.bk-table { width: 100%; border-collapse: collapse; border: .14em solid var(--ink); font-size: 1em; table-layout: fixed; background: none }
+.bk-table th { background: none; color: var(--ink); font: 700 1em Arial, Helvetica, sans-serif; text-transform: none; letter-spacing: 0; text-align: left; padding: .25em .5em; border: .09em solid var(--ink) }
+.bk-table th:nth-child(1) { width: 42% } .bk-table th:nth-child(2) { width: 30%; text-align: center } .bk-table th:nth-child(3) { text-align: center }
+.bk-table td { border: 0; border-left: .09em solid var(--ink); border-right: .09em solid var(--ink); border-top: .09em solid var(--ink); padding: .12em .5em; height: 1.45em;
+  color: #1a1a1a; font: 700 .9em Arial, Helvetica, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.bk-table td:nth-child(2) { text-align: center } .bk-table td:nth-child(3) { text-align: right }
+.bk-thanks { font: italic 700 .95em 'Times New Roman', serif; padding-left: 1em }
+.bk-foot { display: flex; align-items: center; gap: .6em; margin-top: .2em }
+.bk-tsh { font-size: 1.3em }
+.bk-box { border: .16em double var(--ink); outline: .09em solid var(--ink); outline-offset: .15em; border-radius: .5em; min-width: 9em; padding: .2em .6em;
+  color: #1a1a1a; font: 700 1.2em Arial, Helvetica, sans-serif; text-align: center }
+.bk-sign { margin-left: auto; display: flex; flex-direction: column; align-items: stretch; width: 45%; text-align: center }
+.bk-sign .bk-dots { font-size: .9em; text-align: center }
+.bk-sign > span:last-child { font: 700 1em Arial, Helvetica, sans-serif; margin-top: .15em }
+.bk-note { text-align: center; font: italic 700 1.3em 'Times New Roman', serif }
+.rpreview { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow) }
+
+/* Printing: only the receipt goes on paper, A5 landscape. */
+.print-root { display: none }
+@media print {
+  @page { size: A5 landscape; margin: 5mm }
+  html, body { background: #fff !important }
+  body > *:not(.print-root) { display: none !important }
+  .print-root { display: block; width: 200mm }
+  .print-root .bk { background: #fff; aspect-ratio: auto; height: 136mm; overflow: hidden; border-radius: 0; font-size: 1.9cqw; padding: 1.5cqw 2.4cqw 1cqw; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+  .print-root { break-inside: avoid; page-break-after: avoid }
 }
+
+/* Phone: total always in view while choosing items */
+.cartbar { display: none }
+@media (max-width: 960px) {
+  .cartbar { display: flex; position: sticky; bottom: 10px; z-index: 5; align-items: center; justify-content: space-between; gap: 10px;
+    border: 0; border-radius: 12px; padding: 12px 16px; background: var(--primary); color: var(--primary-ink); box-shadow: var(--shadow); font-weight: 600 }
+  .cartbar b { font-family: var(--f-head); font-size: 18px }
+  .cartbar span { display: inline-flex; align-items: center; gap: 4px }
+}
+
+/* Students */
+.classchips { display: flex; gap: 6px; flex-wrap: wrap }
+.classchips button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 500 }
+.classchips button em { font-style: normal; color: var(--muted); margin-left: 4px; font-size: 11.5px }
+.classchips button.on { background: var(--primary); border-color: var(--primary); color: var(--primary-ink) }
+.classchips button.on em { color: inherit; opacity: .8 }
+.filters .grow { flex: 1 }
+.mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace }
+.pill.sm { margin-left: 6px; font-size: 11px; padding: 1px 6px }
+tr.off td { opacity: .55 }
+fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0 }
+.filepick.off { opacity: .55; pointer-events: none }
+.warn-t { color: var(--warn) }
+.reviewtable .err-t, .reviewtable .warn-t { font-weight: 500; margin-top: 2px }
+/* Student picker (Sell) */
+.picker { position: relative }
+.searchbox.wide { max-width: none }
+.searchbox.wide input { font-size: 15px; padding-top: 10px; padding-bottom: 10px }
+.pickdrop { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); max-height: 340px; overflow-y: auto }
+.pickdrop button { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 9px 12px }
+.pickdrop button:last-child { border-bottom: 0 }
+.pickdrop button.on { background: var(--primary-soft) }
+.pickdrop button b { font-weight: 600 }
+.pickdrop button mark { background: none; color: var(--primary); text-decoration: underline; text-underline-offset: 2px }
+.pickdrop button span { font-size: 12px; color: var(--muted) }
+.pickempty { padding: 12px; color: var(--muted); font-size: 13px }
+.pickedcard { display: flex; gap: 12px; align-items: center; border: 1px solid var(--primary); background: var(--primary-soft); border-radius: 10px; padding: 10px 12px }
+.pickedcard .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px }
+.pickedcard span { font-size: 12.5px; color: var(--muted) }
+.reviewtable td[data-l="Phone"], .stafftable td[data-l="Phone"] { white-space: nowrap }
+
+/* Student page and the Students sidebar group */
+.nav.subnav { padding-left: 22px; font-size: 13px }
+.nav.subnav .ic { width: 16px; height: 16px }
+.app.mini .nav.subnav { padding-left: 0 }
+.crumbs { font-size: 13px }
+.crumbs a { color: var(--primary); text-decoration: none; font-weight: 500 }
+.stuhead { display: flex; gap: 16px; align-items: center; flex-wrap: wrap }
+.stuhead h1 { margin: 0 0 6px; font-size: 24px }
+.stuhead .grow { flex: 1; min-width: 220px }
+.stuav { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; font-family: var(--f-head); font-weight: 700; font-size: 20px; flex: none; background: var(--primary-soft); color: var(--primary) }
+.stuav.f { background: color-mix(in srgb, #d6336c 14%, var(--surface)); color: #b02a5b }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr } }
+.movelist { max-height: 60vh; overflow-y: auto }
+.movelist .li { cursor: pointer }
+.libtn:disabled { cursor: default }
+
+/* Home pages: charts */
+.sectionh { margin: 8px 0 0; font-size: 16px }
+.bigsell { align-self: flex-start; padding: 12px 22px; font-size: 15px }
+.chart svg { width: 100%; height: auto; display: block }
+.chart .grid { stroke: var(--line); stroke-width: 1 }
+.chart .ax { fill: var(--muted); font-size: 11px }
+.chart .bar { fill: var(--primary); opacity: .85 }
+.chart .bar.on { opacity: 1 }
+.charttip { font-size: 12.5px; min-height: 18px; margin-top: 4px }
+.barlist { display: flex; flex-direction: column; gap: 10px }
+.bl { display: grid; grid-template-columns: minmax(110px, 40%) 1fr auto; gap: 10px; align-items: center }
+.bl-l { display: flex; flex-direction: column; min-width: 0 }
+.bl-l b { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.bl-l span { font-size: 11.5px; color: var(--muted) }
+.bl-t { height: 10px; background: var(--soft); border-radius: 5px; overflow: hidden }
+.bl-t i { display: block; height: 100%; background: var(--primary); border-radius: 0 4px 4px 0; min-width: 2px }
+.bl-v { font-size: 13px; font-variant-numeric: tabular-nums; text-align: right }
+
+/* Stock, control numbers, money (2026-11-14) */
+.err-t { color: var(--bad) }
+.block { display: block }
+.li .grow span.block { margin-top: 2px }
+.qtyin { width: 84px; text-align: right; padding: 6px 8px; font-variant-numeric: tabular-nums }
+.lineseditor { display: flex; flex-direction: column; gap: 12px }
+.itemchips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 210px; overflow-y: auto; padding: 2px }
+.itemchips button { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; font-weight: 500 }
+.itemchips button .ic { width: 13px; height: 13px }
+.itemchips button.on { background: var(--primary); border-color: var(--primary); color: var(--primary-ink) }
+.dlv { border-bottom: 1px solid var(--line) }
+.dlv:last-child { border-bottom: 0 }
+.dlv > .li { border-bottom: 0 }
+.dlv > .pad { padding-top: 0 }
+.reqli { flex-wrap: wrap }
+.paybox { border: 1px solid var(--line); border-radius: var(--r); padding: 12px; background: var(--soft) }
+input.bad { border-color: var(--bad) }
+label.filepick { cursor: pointer }
+
+/* Control number slip: on screen and printed (A5 landscape, like the receipt) */
+.cnslip { background: #fff; color: #1b2a41; padding: 18px 22px; font-size: 13.5px; container-type: inline-size }
+.cn-head { display: flex; gap: 14px; align-items: center; border-bottom: 2px solid #24569e; padding-bottom: 8px }
+.cn-head img { width: 58px; height: 58px; object-fit: contain }
+.cn-head h2 { margin: 0; color: #24569e; font: 700 20px/1.2 'Times New Roman', Times, serif }
+.cn-head p { margin: 0; font-size: 11.5px; white-space: pre-line }
+.cnslip h3 { text-align: center; margin: 10px 0 4px; letter-spacing: .08em; font-size: 13px; color: #24569e }
+.cn-no { text-align: center; font: 700 30px/1.2 ui-monospace, 'Cascadia Mono', Consolas, monospace; letter-spacing: .06em; color: #c62828; margin-bottom: 8px }
+.cn-grid { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin-bottom: 8px }
+.cn-grid span { color: #5b6b80 }
+.cn-lines { width: 100%; border-collapse: collapse; font-size: 12.5px }
+.cn-lines th, .cn-lines td { border: 1px solid #b9c4d4; padding: 3px 8px; text-align: left }
+.cn-lines td:nth-child(n+2), .cn-lines th:nth-child(n+2) { text-align: right }
+.cn-how { font-size: 12px; margin: 8px 0 2px }
+.cn-foot { font-size: 11px; color: #5b6b80; margin: 0 }
+@media print {
+  .print-root .cnslip { height: 136mm; overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+}
+a.bi.blink { color: inherit; text-decoration: none }
+a.bi.blink:hover { background: var(--soft) }
+a.bi.blink > .ic { width: 14px; height: 14px; color: var(--muted); flex: none; align-self: center }
+/* Home "To do" */
+.todo { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px }
+.tdi { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); text-decoration: none; background: var(--surface) }
+.tdi:hover { border-color: var(--primary) }
+.tdi b { font-family: var(--f-head); font-size: 20px; min-width: 28px; text-align: center }
+.tdi span { flex: 1; font-size: 13px }
+.tdi em { font-style: normal; color: var(--muted) }
+.tdi > .ic { width: 15px; height: 15px; color: var(--muted) }
+.tdi.bad b { color: var(--bad) } .tdi.warn b { color: var(--warn) } .tdi.info b { color: var(--primary) }
+a.li.libtn { color: inherit; text-decoration: none }
+
+/* ---------- Barcodes, scanning, labels and ID cards (2026-11-16) ---------- */
+.barcode { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1 }
+.barcode svg { display: block; width: 100%; min-width: 150px; max-width: 240px; height: auto; background: #fff }
+.barcode .bc-text { font: 600 11px ui-monospace, 'Cascadia Mono', Consolas, monospace; letter-spacing: 1.5px; color: #000; background: #fff; padding: 0 4px }
+.scanbox form { display: flex; gap: 8px; align-items: center; position: relative }
+.scanbox form > .ic { position: absolute; left: 12px; width: 20px; height: 20px; color: var(--primary) }
+.scanbox input { flex: 1; min-width: 0; font-size: 16px; padding: 12px 12px 12px 40px; border: 2px solid var(--primary); font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace }
+.camview { width: 100%; border-radius: var(--r); background: #000; max-height: 60vh }
+.personcard { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line) }
+.personcard .grow { flex: 1; min-width: 0 } .personcard .grow b { display: block; font-size: 15px }
+.personcard .grow span { color: var(--muted); font-size: 12.5px } .personcard .grow span.block { display: block; color: var(--warn) }
+.okline { display: inline-flex; gap: 6px; align-items: center; margin: 10px 0 0; color: var(--ok); font-weight: 500 }
+.okline .ic { width: 16px; height: 16px }
+label.checkline { display: inline-flex; flex-direction: row; gap: 6px; align-items: center; font-size: 13px; font-weight: 400 }
+label.checkline input { width: auto; margin: 0 }
+button.li.pick { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer }
+button.li.pick:hover { background: var(--soft) }
+.callout { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border-radius: var(--r); font-weight: 500 }
+.callout > span { flex: 1; min-width: 180px } .callout > .ic { width: 18px; height: 18px }
+.callout.ok { background: var(--ok-soft); color: var(--ok) } .callout.warn { background: var(--warn-soft); color: var(--warn) }
+/* Printed sheets: A4, 3 labels across (63.5 x 38.1 mm) or 2 ID cards across (85.6 x 54 mm) */
+.labelgrid { display: grid; grid-template-columns: repeat(3, 63.5mm); gap: 0 2.5mm; justify-content: center }
+.label { height: 38.1mm; padding: 2.5mm 3mm; display: flex; align-items: center; gap: 2.5mm; overflow: hidden; break-inside: avoid; color: #000 }
+.label .qr { width: 30mm; height: 30mm; flex: none }
+.label-t { display: flex; flex-direction: column; gap: 1mm; min-width: 0 } .label-t img { width: 7mm; height: 7mm; object-fit: contain }
+.label-t b { font-size: 8.5pt; line-height: 1.1; max-height: 3.3em; overflow: hidden } .label-t .code { font: 700 8pt ui-monospace, Consolas, monospace; letter-spacing: .5px }
+.label-t .sub { font-size: 6.5pt; color: #333 }
+/* ID card in the layout of the national ID card, 85.6 x 54 mm, front and back. Colours per school and for staff. */
+.idt-pre-student { --c: #15803d; --c2: #0b4f27; --soft: #dcfce7; --accent: #f59e0b }
+.idt-pre-staff { --c: #0f766e; --c2: #064e47; --soft: #ccfbf1; --accent: #eab308 }
+.idt-boys-student { --c: #1d4ed8; --c2: #172e7a; --soft: #dbeafe; --accent: #f59e0b }
+.idt-boys-staff { --c: #1e3a8a; --c2: #0f1d4a; --soft: #e0e7ff; --accent: #d4a017 }
+.idt-girls-student { --c: #be185d; --c2: #7a0f3b; --soft: #fce7f3; --accent: #f59e0b }
+.idt-girls-staff { --c: #6d28d9; --c2: #3b137f; --soft: #ede9fe; --accent: #eab308 }
+.idt-admin-staff { --c: #374151; --c2: #111827; --soft: #f3f4f6; --accent: #b8860b }
+.nid { position: relative; width: 85.6mm; height: 54mm; flex: none; border-radius: 3.2mm; overflow: hidden; color: #111; background: #fff; border: 0.25mm solid var(--c2);
+  font-family: Arial, Helvetica, sans-serif; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+.nid-guilloche { position: absolute; inset: 0; z-index: 0; opacity: .9;
+  background: repeating-radial-gradient(circle at 78% 62%, transparent 0 1.4mm, color-mix(in srgb, var(--soft) 80%, transparent) 1.4mm 1.7mm),
+    repeating-linear-gradient(115deg, transparent 0 2.2mm, color-mix(in srgb, var(--soft) 70%, transparent) 2.2mm 2.5mm), linear-gradient(160deg, #fff 0%, var(--soft) 100%) }
+.nid > *:not(.nid-guilloche) { position: relative; z-index: 1 }
+.nid-head { display: flex; align-items: center; gap: 1.6mm; padding: 1.3mm 2mm; background: linear-gradient(90deg, var(--c2), var(--c)); color: #fff; border-bottom: 0.6mm solid var(--accent) }
+.nid-emblem { width: 8.5mm; height: 8.5mm; object-fit: contain; background: #fff; border-radius: 50%; padding: .4mm }
+.nid-titles { flex: 1; display: flex; flex-direction: column; align-items: center; line-height: 1.05; text-align: center }
+.nid-titles .t1 { font-size: 4.6pt; letter-spacing: .3px } .nid-titles .t2 { font-size: 6.6pt; letter-spacing: .2px } .nid-titles .t3 { font-size: 4.8pt; letter-spacing: .6px; opacity: .95 }
+.nid-badge { font-size: 4.3pt; font-weight: 700; background: #fff; color: var(--c2); padding: .6mm 1.1mm; border-radius: 1mm; max-width: 17mm; text-align: center; line-height: 1.1 }
+.nid-no { font: 700 10.5pt 'Courier New', ui-monospace, monospace; letter-spacing: 1.2px; padding: .8mm 2.6mm 0; color: var(--c2) }
+.nid-body { display: flex; gap: 2mm; padding: .4mm 2.6mm 0 }
+.nid-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .35mm }
+.idf { display: flex; flex-direction: column; line-height: 1.05 } .idf-row { display: flex; gap: 3mm }
+.idf-l { font-size: 4.3pt; color: #333 } .idf-l b { font-weight: 700 } .idf-l i { color: #555 }
+.idf-v { font-size: 6.6pt; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #000 }
+.idf.sig { flex-direction: row; align-items: flex-end; gap: 1.5mm } .idf-sigline { flex: 1; border-bottom: .2mm solid #444; height: 2.6mm; max-width: 24mm }
+.nid-photo { width: 21mm; height: 26mm; flex: none; border: .3mm solid var(--c2); border-radius: 1mm; background: var(--soft); display: grid; place-items: center; overflow: hidden; margin-top: -.6mm }
+.nid-photo img { width: 100%; height: 100%; object-fit: cover } .nid-photo span { font-size: 15pt; font-weight: 700; color: var(--c) }
+.nid-backhead { text-align: center; font-size: 6pt; font-weight: 700; letter-spacing: .6px; padding: 1.4mm 2mm; color: #fff; background: linear-gradient(90deg, var(--c2), var(--c)); border-bottom: .6mm solid var(--accent) }
+.nid-backmain { display: flex; gap: 2.4mm; padding: 1.8mm 2.6mm .6mm; align-items: flex-start }
+.nid-qr { width: 23mm; height: 23mm; flex: none; background: #fff; padding: .8mm; border-radius: .8mm } .nid-qr .qr { width: 100%; height: 100%; display: block }
+.nid-backtext { flex: 1; min-width: 0 } .nid-bigno { display: block; font: 700 10pt 'Courier New', ui-monospace, monospace; letter-spacing: 1px; color: var(--c2); margin-bottom: .6mm }
+.nid-backtext p { margin: 0 0 .6mm; font-size: 4.6pt; line-height: 1.22; text-align: justify } .nid-backtext p.en { color: #333 }
+.nid-backfoot { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 2.6mm; position: absolute !important; left: 0; right: 0; bottom: 1.6mm }
+.nid-facts { display: flex; flex-direction: column; gap: .3mm; font-size: 4.8pt } .nid-facts b { font-size: 5.4pt }
+.nid-director { display: flex; flex-direction: column; align-items: center; font-size: 4.3pt; font-weight: 700; line-height: 1.15 } .nid-director .line { width: 24mm; border-top: .25mm solid #222; margin-bottom: .5mm }
+.nid-empty { width: 85.6mm; height: 54mm }
+.cardpage { display: grid; grid-template-columns: repeat(2, 85.6mm); gap: 2mm 6mm; justify-content: center; break-after: page }
+.idpanel { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap }
+.idfaces { display: flex; gap: 14px; flex-wrap: wrap; zoom: 1.2 } .idside { flex: 1; min-width: 220px }
+.personcard.boxed { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.nostock { display: block; color: var(--warn); font-size: 11.5px; font-weight: 500 } span.nostock { display: inline }
+.itembtn .nostock { display: block; margin-top: 2px }
+/* Printed papers: delivery note, goods received note, requisition form (A4) */
+.paper { width: 186mm; margin: 0 auto; color: #111; font-size: 10pt; break-after: page }
+.pp-head { display: flex; gap: 4mm; align-items: center; border-bottom: 0.6mm solid #16794a; padding-bottom: 3mm }
+.pp-head .grow { flex: 1 }
+.pp-head img { width: 16mm; height: 16mm; object-fit: contain }
+.pp-head b { display: block; font-size: 15pt; letter-spacing: 1px } .pp-head span { display: block; font-size: 9pt; color: #333 }
+.pp-no { text-align: right } .pp-no span { display: block; font-size: 10pt; font-weight: 700; letter-spacing: 1px } .pp-no b { font-size: 16pt; color: #b91c1c; font-family: ui-monospace, Consolas, monospace }
+.pp-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 6mm; margin: 4mm 0 }
+.pp-meta div { display: flex; gap: 2mm } .pp-meta dt { color: #555; min-width: 28mm } .pp-meta dd { margin: 0; font-weight: 600 }
+.pp-table { width: 100%; border-collapse: collapse; font-size: 9.5pt }
+.pp-table th, .pp-table td { border: 0.25mm solid #444; padding: 1.5mm 2mm; text-align: left } .pp-table th { background: #eef4f0 }
+.pp-table .n { text-align: right } .pp-table tfoot td { font-weight: 700 }
+.pp-signs { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm 8mm; margin-top: 8mm }
+.pp-sign { display: flex; flex-direction: column; gap: 1.5mm; font-size: 9pt; break-inside: avoid }
+.pp-role { font-weight: 700; text-transform: uppercase; font-size: 8.5pt; letter-spacing: .5px } .pp-note { color: #444; font-style: italic }
+.pp-line { border-top: 0.3mm solid #111; margin-top: 9mm; padding-top: 1mm; color: #555; width: 70mm }
+.pp-foot { margin-top: 6mm; font-size: 8.5pt; color: #444 }
+/* Steps of a purchase / requisition */
+.steps3, .steps6 { display: grid; gap: 6px } .steps3 { grid-template-columns: repeat(3, 1fr) } .steps6 { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) }
+.steps3 > div, .steps6 > div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--surface) }
+.steps3 b, .steps6 b { font-size: 12.5px } .steps3 span, .steps6 span { font-size: 11.5px; color: var(--muted) }
+.steps3 .done, .steps6 .done { border-color: var(--ok); background: var(--ok-soft) } .steps3 .now, .steps6 .now { border-color: var(--warn); background: var(--warn-soft) }
+.sigdots { display: inline-flex; gap: 4px } .sigdots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface) }
+.sigdots i.on { background: var(--ok); border-color: var(--ok) } .sigdots i.off { background: var(--bad); border-color: var(--bad) }
+th.ck, td.ck { width: 34px; text-align: center } th.ck input, td.ck input { width: auto; margin: 0 }
+.seg.wrap { flex-wrap: wrap }
+@page sheet { size: A4 portrait; margin: 8mm 6mm }
+@media print {
+  .print-root.sheet { page: sheet; width: auto; break-inside: auto; page-break-after: auto; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+}
+
+/* signing: drawn signature box, seal QR under a paper */
+.signpad { display: flex; flex-direction: column; gap: 6px }
+.signpad canvas { background: #fff; border: 1px dashed var(--line); border-radius: 8px; cursor: crosshair }
+.sealqr { display: flex; gap: 12px; align-items: center; margin: 10px 0 }
+.sealqr-box { width: 88px; flex: none }
+.sealqr-box .qr { width: 100%; height: auto }

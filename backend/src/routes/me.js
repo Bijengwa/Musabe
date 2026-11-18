@@ -4,6 +4,7 @@ const express = require('express');
 const db = require('../db');
 const { publish } = require('../realtime');
 const { HttpError, audit, tzPhone } = require('../lib/util');
+const bcrypt = require('bcryptjs');
 const { requireAuth, publicUser } = require('../auth/session');
 
 const router = express.Router();
@@ -69,6 +70,35 @@ router.patch('/', async (req, res) => {
   });
   publish({ topics: ['me'], userIds: [req.user.id], onlyUsers: true });
   res.json({ ok: true, changed: changes });
+});
+
+
+// Signing: the drawn signature and the signing PIN (lib/seal.js). Both need the account password, so a borrowed screen cannot change them.
+const PNG = /^data:image\/png;base64,[A-Za-z0-9+/=]{800,150000}$/;
+async function needPassword(req) {
+  const row = await db('users').where({ id: req.user.id }).first('password_hash');
+  if (!(await bcrypt.compare(String(req.body?.password ?? ''), row.password_hash))) throw new HttpError(403, 'Your password is wrong.');
+}
+router.put('/signature', async (req, res) => {
+  const image = String(req.body?.image || '');
+  if (!PNG.test(image)) throw new HttpError(400, 'Draw your signature in the box first.');
+  await needPassword(req);
+  await db('users').where({ id: req.user.id }).update({ signature_image: image });
+  await audit(req, 'sign.signature_set', `${req.user.full_name} saved a new drawn signature`);
+  res.json({ ok: true });
+});
+router.put('/pin', async (req, res) => {
+  const pin = String(req.body?.pin ?? '');
+  if (!/^\d{4,6}$/.test(pin)) throw new HttpError(400, 'The signing PIN is 4 to 6 digits.');
+  if (/^(\d)\1+$/.test(pin) || '0123456789'.includes(pin) || '9876543210'.includes(pin)) throw new HttpError(400, 'Choose a PIN that is not easy to guess (not 1111 or 1234).');
+  await needPassword(req);
+  await db('users').where({ id: req.user.id }).update({ signing_pin_hash: await bcrypt.hash(pin, 12), pin_fails: 0, pin_locked_until: null });
+  await audit(req, 'sign.pin_set', `${req.user.full_name} set a new signing PIN`);
+  res.json({ ok: true });
+});
+router.get('/signature', async (req, res) => {
+  const u = await db('users').where({ id: req.user.id }).first('signature_image');
+  res.json({ image: u?.signature_image || null });
 });
 
 router.put('/preferences', async (req, res) => {

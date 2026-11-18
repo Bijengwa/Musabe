@@ -9,11 +9,12 @@ const { ROLES } = require('../auth/roles');
 const { publish } = require('../realtime');
 const { sendExcel, readExcel } = require('../lib/excel');
 
+const { uploadLimit } = require('../lib/guard');
 const router = express.Router();
 router.use(requireAuth);
 
-const CATEGORIES = ['uniform', 'book', 'exercise_book', 'stationery', 'other']; // same list as migration 004
-const LABEL = { uniform: 'Uniform', book: 'Book', exercise_book: 'Exercise book', stationery: 'Stationery', other: 'Other' };
+const CATEGORIES = ['uniform', 'book', 'exercise_book', 'stationery', 'laboratory', 'food', 'cleaning', 'equipment', 'other']; // same list as migration 014
+const LABEL = { uniform: 'Uniform', book: 'Book', exercise_book: 'Exercise book', stationery: 'Stationery', laboratory: 'Laboratory', food: 'Food', cleaning: 'Cleaning', equipment: 'Equipment', other: 'Other' };
 const money = (n) => `TSh ${Number(n).toLocaleString('en-GB')}`;
 const allSchools = (u) => ROLES[u.role]?.scope === 'all';
 
@@ -28,6 +29,9 @@ function amount(v, what) {
 const priceOf = (p) => (p ? { price: p.price, boys: p.price_boys, girls: p.price_girls } : null);
 const describe = (p) => (!p ? 'not sold' : p.price != null ? money(p.price) : [p.boys != null && `boys ${money(p.boys)}`, p.girls != null && `girls ${money(p.girls)}`].filter(Boolean).join(', '));
 
+// The store-keeper only picks an existing item and sends it — never sees what it costs. Everyone else sees the real price.
+const SEES_NO_PRICE = ['storekeeper'];
+
 async function list(user, { q, category, status, id } = {}) {
   let query = db('items as i').select('i.*');
   if (id) query = query.where('i.id', id);
@@ -38,8 +42,9 @@ async function list(user, { q, category, status, id } = {}) {
   const items = await query.orderBy('i.category').orderBy('i.name');
   let prices = await db('item_prices').whereIn('item_id', items.map((i) => i.id));
   if (!allSchools(user)) prices = prices.filter((p) => p.school_id === user.school_id);
+  const hidePrice = SEES_NO_PRICE.includes(user.role);
   const by = {};
-  for (const p of prices) (by[p.item_id] ||= {})[p.school_id] = priceOf(p);
+  for (const p of prices) (by[p.item_id] ||= {})[p.school_id] = hidePrice ? {} : priceOf(p); // {} stays truthy: "sold here", with no number in it
   return items
     .filter((i) => allSchools(user) || by[i.id]) // school staff: only items sold in their school
     .map((i) => ({
@@ -119,7 +124,7 @@ router.post('/', requirePage('items', 'f'), async (req, res) => {
     const [{ id: newId }] = await trx('items').insert({ ...fields, created_by: req.user.id }).returning('id');
     const changes = await savePrices(trx, newId, prices, req.user.id, false);
     const where = changes.length ? changes.map((c) => `${nameOf(schools, c.schoolId)} ${c.to}`).join('; ') : 'not sold anywhere yet';
-    await audit(req, 'item.create', `Added item ${fields.name} (${where})`, { detail: { itemId: newId } }, trx);
+    await audit(req, 'item.create', `Added item ${fields.name} (${where})`, { detail: { itemId: newId, schoolIds: changes.map((c) => c.schoolId) } }, trx);
     tellSchools(changes.map((c) => c.schoolId), trx);
     return newId;
   });
@@ -143,8 +148,9 @@ router.patch('/:id', requirePage('items', 'f'), async (req, res) => {
         { schoolId: c.schoolId, detail: { itemId: item.id } }, trx);
     }
     if (edits.length) {
-      await audit(req, 'item.update', `Changed item ${fields.name}: ${edits.join(', ')}`, { detail: { itemId: item.id } }, trx);
-      tellSchools((await trx('item_prices').where({ item_id: item.id }).pluck('school_id')), trx);
+      const schoolIds = await trx('item_prices').where({ item_id: item.id }).pluck('school_id');
+      await audit(req, 'item.update', `Changed item ${fields.name}: ${edits.join(', ')}`, { detail: { itemId: item.id, schoolIds } }, trx);
+      tellSchools(schoolIds, trx);
     }
   });
   res.json({ item: (await list(req.user, { id: item.id, status: 'all' }))[0] });
@@ -158,8 +164,9 @@ router.post('/:id/active', requirePage('items', 'f'), async (req, res) => {
   if (active !== item.active) {
     await db.transaction(async (trx) => {
       await trx('items').where({ id: item.id }).update({ active, updated_at: trx.fn.now() });
-      await audit(req, active ? 'item.restore' : 'item.archive', active ? `Started selling ${item.name} again` : `Stopped selling ${item.name}`, { detail: { itemId: item.id } }, trx);
-      tellSchools(await trx('item_prices').where({ item_id: item.id }).pluck('school_id'), trx);
+      const schoolIds = await trx('item_prices').where({ item_id: item.id }).pluck('school_id');
+      await audit(req, active ? 'item.restore' : 'item.archive', active ? `Started selling ${item.name} again` : `Stopped selling ${item.name}`, { detail: { itemId: item.id, schoolIds } }, trx);
+      tellSchools(schoolIds, trx);
     });
   }
   res.json({ item: (await list(req.user, { id: item.id, status: 'all' }))[0] });
@@ -345,6 +352,7 @@ async function checkFile(buffer) {
 // Save a checked plan. Returns how many items were added and prices changed.
 async function applyPlan(trx, plan, req) {
   let added = 0, priced = 0;
+  const schoolIds = new Set();
   for (const p of Object.values(plan)) {
     let id = p.item?.id;
     if (!id && !Object.values(p.prices).some(Boolean)) continue; // new item with no price in any school: nothing to add
@@ -356,9 +364,10 @@ async function applyPlan(trx, plan, req) {
     }
     const ch = await savePrices(trx, id, p.prices, req.user.id, !!p.item && p.item.gender_priced !== p.gender);
     priced += ch.length;
+    ch.forEach((c) => schoolIds.add(Number(c.schoolId)));
     tellSchools(ch.map((c) => c.schoolId), trx);
   }
-  return { added, priced };
+  return { added, priced, schoolIds: [...schoolIds] };
 }
 
 const IMPORT_COLS = ['m.id', 'm.file_name', 'm.status', 'm.summary', 'm.created_at', 'm.decided_at', 'm.uploaded_by',
@@ -380,7 +389,7 @@ const mayDecide = (m, user) => {
 };
 
 // Upload: keep the file as waiting, and show its review page.
-router.post('/imports', requirePage('itemsupload', 'f'), express.raw({ type: () => true, limit: '5mb' }), async (req, res) => {
+router.post('/imports', requirePage('itemsupload', 'f'), uploadLimit, express.raw({ type: () => true, limit: '5mb' }), async (req, res) => {
   const { summary } = await checkFile(req.body);
   if (!summary.changes && !summary.errors) throw new HttpError(400, 'Nothing to change: every row in this file is the same as the items list today.');
   let rawName = req.get('X-File-Name') || 'items.xlsx';
@@ -422,7 +431,7 @@ router.post('/imports/:id/approve', requirePage('itemsupload', 'f'), async (req,
       .update({ status: 'approved', decided_at: trx.fn.now(), decided_by: req.user.id, summary: JSON.stringify(summary) });
     if (!n) throw new HttpError(409, 'This upload was already approved or discarded.');
     const r = await applyPlan(trx, plan, req);
-    await audit(req, 'item.import', `Approved ${m.file_name}: ${r.added} new item${r.added === 1 ? '' : 's'}, ${r.priced} price change${r.priced === 1 ? '' : 's'}`, { detail: { importId: m.id } }, trx);
+    await audit(req, 'item.import', `Approved ${m.file_name}: ${r.added} new item${r.added === 1 ? '' : 's'}, ${r.priced} price change${r.priced === 1 ? '' : 's'}`, { detail: { importId: m.id, schoolIds: r.schoolIds } }, trx);
     publish({ topics: ['item', 'itemimport'] }, trx);
     return r;
   });
@@ -439,3 +448,6 @@ router.post('/imports/:id/discard', requirePage('itemsupload', 'f'), async (req,
 });
 
 module.exports = router;
+
+module.exports.CATEGORIES = CATEGORIES;
+module.exports.CATEGORY_LABEL = LABEL;

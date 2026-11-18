@@ -3,23 +3,23 @@
 const { ROLES } = require('../auth/roles');
 
 const GROUPS = {
-  library: { label: 'Library & sales', prefixes: ['item', 'stock', 'receipt', 'sale', 'give', 'damage', 'request', 'money'] },
-  accounts: { label: 'Accounts & sign-in', prefixes: ['user', 'auth', 'profile'] },
+  library: { label: 'Library & sales', prefixes: ['item', 'stock', 'receipt', 'sale', 'give', 'damage', 'request', 'money', 'delivery', 'bill', 'issue', 'purchase', 'count', 'store', 'requisition', 'payment'] },
+  accounts: { label: 'Accounts & sign-in', prefixes: ['user', 'auth', 'profile', 'idcard'] },
   schools: { label: 'Schools', prefixes: ['school'] },
-  academic: { label: 'Academic', prefixes: ['student', 'class', 'exam', 'mark', 'topic', 'support'] },
+  academic: { label: 'Academic', prefixes: ['student', 'parent', 'class', 'exam', 'mark', 'topic', 'support'] },
 };
 const ALL = Object.keys(GROUPS);
 
 // Which groups each role may see (on the Activity page and in notifications).
 const SEE = {
   super: ALL, director: ALL, adirector: ALL, manager: ALL,
-  fm: ['library'], afm: ['library'], acc: ['library'], aacc: ['library'],
+  fm: ['library'], afm: ['library'], acc: ['library'], aacc: ['library'], storekeeper: ['library'],
   sadmin: ['accounts', 'schools', 'academic'], head: ALL, acad: ['academic'], teacher: ['academic'],
   bursar: ['library'], librarian: ['library'],
 };
 
 // Everyday actions that would only be noise as notifications (still shown on the Activity page).
-const QUIET = ['auth.login', 'auth.password_change', 'auth.session_end', 'profile.update'];
+const QUIET = ['auth.login', 'auth.login_failed', 'auth.denied', 'auth.password_change', 'auth.session_end', 'profile.update'];
 
 const groupOf = (action) => ALL.find((g) => GROUPS[g].prefixes.includes(String(action).split('.')[0])) || 'other';
 const prefixesFor = (groups) => groups.flatMap((g) => GROUPS[g]?.prefixes || []);

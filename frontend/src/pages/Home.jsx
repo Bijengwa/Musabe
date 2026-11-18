@@ -5,9 +5,10 @@ import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
 import { useSchools, useScope } from '../layout/scope';
 import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
-import { CopyBox, Empty, Kpi, Modal, Panel, SchoolPill, fmtWhen } from '../components/ui';
+import { CopyBox, Empty, Icon, Kpi, Modal, Panel, SchoolPill, fmtWhen } from '../components/ui';
+import { AcademicHome, AccountantHome, BursarHome, CashierHome, DirectorHome, FinanceHome, HeadHome, LibrarianHome, ManagerHome, MapokeziHome, SchoolAdminHome, SuperHome, ToDo, useDashboard, StoreHome } from './home/RoleHomes';
 
-const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian'];
+const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'];
 
 function greeting(name) {
   const h = new Date().getHours();
@@ -15,18 +16,25 @@ function greeting(name) {
   return `${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, ${first}`;
 }
 
+// Each role has its own home page (see ./home/RoleHomes.jsx). Super Admin and School Admin also get the accounts part.
+const HOMES = { super: SuperHome, director: DirectorHome, adirector: DirectorHome, manager: ManagerHome, fm: FinanceHome, afm: FinanceHome,
+  acc: AccountantHome, aacc: AccountantHome, sadmin: SchoolAdminHome, head: HeadHome, bursar: BursarHome, librarian: LibrarianHome, storekeeper: StoreHome,
+  mapokezi: MapokeziHome, cashier: CashierHome };
+
 export default function Home() {
   const { user, can } = useAuth();
-  const isAccountAdmin = user.role === 'super' || user.role === 'sadmin';
+  const { d, error, reload } = useDashboard();
+  const Role = HOMES[user.role] || AcademicHome;
+  const isAccountAdmin = (user.role === 'super' || user.role === 'sadmin') && can('staff', 'f');
   return (
     <>
       <div className="ph1"><div className="t"><h1>{greeting(user.fullName)}</h1>
-        <p>{user.roleLabel}{user.school ? ` · ${user.school.name}` : ' · Administration (all schools)'}</p></div></div>
-      {isAccountAdmin && can('staff', 'f') ? <AccountsHome /> : (
-        <Panel>
-          <p style={{ margin: 0 }}>Your home page will show the numbers for your work as each module is built: sales and stock in Step 2, results and marks in Step 3.</p>
-        </Panel>
-      )}
+        <p>{user.roleLabel}{user.school ? ` · ${user.school.name}` : ' · Administration (all schools)'} · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div></div>
+      {error && !d ? (
+        <div className="warnnote" role="alert"><Icon name="alert" /><span><b>The home page could not load.</b> {error}{' '}
+          <button className="linkbtn" onClick={reload}>Try again</button></span></div>
+      ) : !d ? <Empty>Loading…</Empty> : <><ToDo items={d.todo} /><Role d={d} /></>}
+      {isAccountAdmin && <><h2 className="sectionh">Staff accounts</h2><AccountsHome /></>}
     </>
   );
 }

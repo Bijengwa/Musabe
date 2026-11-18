@@ -11,6 +11,9 @@ const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage } = require('../aut
 const router = express.Router();
 router.use(requireAuth);
 
+// A temporary password works for TEMP_PASSWORD_HOURS (72 by default). After that the administrator gives a new one.
+const tempExpiry = () => new Date(Date.now() + (Number(process.env.TEMP_PASSWORD_HOURS) || 72) * 3600000);
+
 const COLS = ['u.id', 'u.full_name', 'u.username', 'u.phone', 'u.role', 'u.school_id', 'u.active', 'u.must_change_password',
   'u.reset_requested_at', 'u.last_login_at', 'u.created_at', 'sc.short_name as school_short', 'cb.full_name as created_by_name'];
 
@@ -101,7 +104,7 @@ router.post('/', requirePage('staff', 'f'), async (req, res) => {
     else if (await trx('users').whereRaw('lower(username) = ?', [username]).first()) throw new HttpError(409, `Username "${username}" is taken. Try another.`);
     const [row] = await trx('users').insert({
       full_name: fullName, username, phone, role, school_id: schoolId,
-      password_hash: await bcrypt.hash(temp, 12), must_change_password: true, created_by: actor.id,
+      password_hash: await bcrypt.hash(temp, 12), must_change_password: true, temp_password_expires_at: tempExpiry(), created_by: actor.id,
     }).returning('id');
     await audit(req, 'user.create', `Created account for ${fullName} (${ROLES[role].label})`, { schoolId, detail: { userId: row.id, role, username } }, trx);
     return row.id;
@@ -167,7 +170,7 @@ router.post('/:id/reset-password', requirePage('staff', 'f'), async (req, res) =
   const temp = tempPassword();
   await db.transaction(async (trx) => {
     await trx('users').where({ id: t.id }).update({
-      password_hash: await bcrypt.hash(temp, 12), must_change_password: true,
+      password_hash: await bcrypt.hash(temp, 12), must_change_password: true, temp_password_expires_at: tempExpiry(),
       reset_requested_at: null, failed_logins: 0, locked_until: null, updated_at: trx.fn.now(),
     });
     await endAllSessions(t.id, trx);
