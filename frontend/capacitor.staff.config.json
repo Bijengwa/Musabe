@@ -1,0 +1,13 @@
+{
+  "appId": "tz.musabe.staff",
+  "appName": "Musabe Staff",
+  "webDir": "dist-staff",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#0a2f23",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}

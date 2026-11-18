@@ -1,0 +1,13 @@
+{
+  "appId": "tz.musabe.parents",
+  "appName": "Musabe Parents",
+  "webDir": "dist-parents",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#0f5a3a",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}
