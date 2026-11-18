@@ -1,0 +1,75 @@
+/* The requisition looks like the paper "PAYMENT REQUISITION FORM" people already know: blue lines, red number, signature lines.
+   The sheet is always white, like paper, in both themes. */
+.rq-wrap { width: 100%; display: flex; flex-direction: column; gap: 14px }
+.rq-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px }
+.rq-bar .grow { flex: 1 }
+.rq-sheet { background: #fff; color: #0f2347; border: 1px solid #b9c6e4; border-radius: 6px; padding: 18px clamp(12px, 3vw, 30px) 22px; box-shadow: 0 2px 14px rgba(20, 40, 90, .12); width: 100%; max-width: 1180px; margin: 0 auto }
+.rq-sheet input, .rq-sheet select { color: #0f2347; background: transparent; font: inherit }
+.rq-top { display: flex; align-items: center; gap: 14px; justify-content: center; text-align: center }
+.rq-top img { width: 64px; height: 64px; object-fit: contain }
+.rq-top h2 { margin: 0; font-size: clamp(22px, 3.6vw, 34px); letter-spacing: .03em; color: #1b3fa0; font-weight: 900 }
+.rq-top small { display: block; font-size: 12.5px; color: #1b3fa0; line-height: 1.35 }
+.rq-title { text-align: center; margin: 8px 0 12px; font-size: clamp(16px, 2.4vw, 21px); font-weight: 800; color: #1d4ed8; letter-spacing: .04em; text-transform: uppercase }
+.rq-line { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; justify-content: space-between; margin-bottom: 6px }
+.rq-no { font-size: 13px; font-weight: 800; text-transform: uppercase }
+.rq-no b { color: #c1121f; font-size: 24px; margin-left: 6px; letter-spacing: .02em }
+.rq-field { display: flex; align-items: baseline; gap: 8px; flex: 1 1 300px; min-width: 0 }
+.rq-field > span { font-size: 12px; font-weight: 800; text-transform: uppercase; white-space: nowrap }
+.rq-field > input, .rq-field > b, .rq-field > .rq-val { flex: 1; min-width: 0; border: 0; border-bottom: 1.5px dotted #2745a8; padding: 3px 4px; font-size: 16px; font-weight: 600; outline: 0 }
+.rq-field > input:focus { border-bottom: 1.5px solid #1d4ed8; background: #eef3ff }
+.rq-t { width: 100%; border-collapse: collapse; margin-top: 8px; border: 2px solid #2745a8 }
+.rq-t th, .rq-t td { border: 1px solid #2745a8; padding: 0 6px; height: 33px; font-size: 14.5px; vertical-align: middle }
+.rq-t th { height: 30px; font-size: 11.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; text-align: center; background: #f4f7ff; color: #1b3fa0 }
+.rq-t th.sch { background: #f1f1f1; color: #555 }
+.rq-t td.n { text-align: right; font-variant-numeric: tabular-nums }
+.rq-t td.c { text-align: center; width: 44px; color: #1b3fa0; font-weight: 700 }
+.rq-t td input { width: 100%; height: 31px; border: 0; outline: 0; padding: 0 2px; font-size: 14.5px }
+.rq-t td input.n { text-align: right }
+.rq-t td input:focus { background: #eef3ff; box-shadow: inset 0 0 0 2px #1d4ed8 }
+.rq-t td input.fill { background: #fff7d6 }
+.rq-t td.sch { background: #fafafa }
+.rq-t tfoot td { font-weight: 800; height: 36px; background: #f4f7ff }
+.rq-t tfoot td.r { text-align: right; padding-right: 14px; letter-spacing: .06em; color: #1b3fa0 }
+.rq-t tr.void td { opacity: .45; text-decoration: line-through }
+.rq-small { font-size: 11.5px; color: #5a6a8c; font-weight: 500 }
+.rq-signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 28px; margin-top: 18px }
+@media (max-width: 760px) { .rq-signs { grid-template-columns: 1fr } }
+.rq-sig { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0 }
+.rq-sigline { width: 100%; min-height: 54px; border-bottom: 1.5px dotted #2745a8; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px }
+.rq-ink { font-family: 'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive; font-size: 21px; color: #1c3d9b; line-height: 1.1; transform: rotate(-2deg) }
+.rq-sig b { font-size: 13px; font-style: italic; color: #1b3fa0 }
+.rq-sig .who { font-size: 12px; color: #31446c; min-height: 16px }
+.rq-sig .dt { font-size: 12px; color: #31446c }
+.rq-sig .btn { margin-bottom: 4px }
+.rq-sec { margin: 16px 0 -6px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5a6a8c }
+.rq-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 1180px; margin: 0 auto }
+.rq-actions .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.rq-note { padding: 9px 12px; border-radius: 10px; font-size: 14px; margin: 0 }
+.rq-note.bad { background: var(--bad-soft); color: var(--bad) }
+.rq-note.info { background: var(--info-soft, #e8f1ff); color: var(--ink) }
+/* The "Waiting for you" cards: their own look, not a table */
+.rq-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px }
+.rq-card { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #fff; color: #0f2347; border: 1px solid #b9c6e4; border-left: 5px solid #1d4ed8; border-radius: 8px; box-shadow: 0 1px 8px rgba(20, 40, 90, .1); text-decoration: none }
+.rq-card:hover { box-shadow: 0 3px 16px rgba(29, 78, 216, .25) }
+.rq-card .no { font-weight: 900; color: #c1121f; font-size: 18px }
+.rq-card .what { font-size: 14px; line-height: 1.4 }
+.rq-card .tot { font-weight: 800; color: #1b3fa0 }
+.rq-card.back { border-left-color: #c1121f }
+@media print { .rq-actions, .rq-bar { display: none } .rq-sheet { box-shadow: none; border: 0 } }
+
+/* ---- The sheet is paper: white with blue ink in BOTH themes (fixes unreadable dark rows and headers) ---- */
+.rq-sheet { --bg: #fff; --surface: #fff; --soft: #f4f7ff; --ink: #0f2347; --muted: #5a6a8c; --line: #b9c6e4; color-scheme: light; color: #0f2347 }
+.rq-sheet .rq-t th { background: #f4f7ff; color: #1b3fa0; border: 1px solid #2745a8; position: static }
+.rq-sheet .rq-t th.sch { background: #f1f1f1; color: #555 }
+.rq-sheet .rq-t td { background: #fff; color: #0f2347; border: 1px solid #2745a8; white-space: normal }
+.rq-sheet .rq-t td.sch { background: #fafafa }
+.rq-sheet .rq-t tfoot td { background: #f4f7ff }
+.rq-sheet .rq-t td.c { color: #1b3fa0 }
+.rq-sheet .rq-t td input.fill { background: #fff7d6 }
+.rq-sheet .rq-field > b, .rq-sheet .rq-field > .rq-val, .rq-sheet .rq-field > input { color: #0f2347; opacity: 1 }
+.rq-sheet .rq-field > span { color: #0f2347 }
+.rq-sheet .rq-sig .btn { color: #fff }
+.rq-sheet .rq-small { color: #5a6a8c }
+/* Notes above the sheet: readable on dark and light */
+.rq-note.info { background: rgba(59, 130, 246, .16); color: var(--ink); border: 1px solid rgba(59, 130, 246, .35) }
+.rq-note.bad { border: 1px solid rgba(220, 38, 38, .35) }
