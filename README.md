@@ -4,6 +4,7 @@ One system for Musabe English Medium School, Musabe Boys Secondary School and Mu
 
 - `backend/` — Node.js + Express 5 + Knex + PostgreSQL (API on port 4310)
 - `frontend/` — React 19 + Vite (opens on port 5190, sends `/api` to the backend)
+- `Parents/` — parents' mobile app (Expo). Sign-in by SMS code; see the top of `backend/src/routes/parent.js`
 - `docs/roadmap.md` — the plan · `docs/progress.md` — where we are
 - `musabe_schools_system.html` — clickable prototype of the full system
 
@@ -55,6 +56,9 @@ Then: **Staff accounts → New account** → create a School Admin for each scho
 | Sign-in, sessions, page checks | `backend/src/auth/session.js` |
 | Staff accounts API | `backend/src/routes/users.js` |
 | Database tables | `backend/migrations/` |
+| Barcodes, scanning, issuing, main store | `backend/src/routes/store.js`, `backend/src/lib/codes.js` |
+| ID cards (issued / not issued) · school requisitions | `backend/src/routes/idcards.js` · `backend/src/routes/requisitions.js` |
+| Purchases · weekly check and ledger | `backend/src/routes/purchases.js` · `backend/src/routes/counts.js` |
 | Sidebar items | `frontend/src/nav.js` |
 | Sidebar + hamburger | `frontend/src/layout/Shell.jsx` |
 | Staff accounts screen | `frontend/src/pages/Staff.jsx` |

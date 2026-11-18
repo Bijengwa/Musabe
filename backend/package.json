@@ -6,7 +6,7 @@
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "node dev.js",
     "start": "node src/server.js",
     "migrate": "knex migrate:latest",
     "rollback": "knex migrate:rollback",
