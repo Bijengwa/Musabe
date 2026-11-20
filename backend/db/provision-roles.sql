@@ -127,6 +127,8 @@ DECLARE
     "parent_requests":      "SELECT, INSERT, UPDATE",
     "payment_requests":     "SELECT, INSERT, UPDATE",
     "payment_lines":        "SELECT, INSERT",
+    "orders":"SELECT, INSERT, UPDATE",
+    "order_lines":"SELECT, INSERT, UPDATE",
     "login_codes":          "SELECT, INSERT, UPDATE, DELETE",
     "student_guardians":    "SELECT, INSERT, UPDATE",
     "knex_migrations":      "",
