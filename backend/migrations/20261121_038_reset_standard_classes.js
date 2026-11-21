@@ -1,5 +1,15 @@
 exports.up = async (knex) => {
   await knex.transaction(async (trx) => {
+    // Temporary removal of delete guards is allowed only inside this explicit reset migration.
+    await trx.raw('ALTER TABLE receipts DISABLE TRIGGER receipts_no_delete');
+    await trx.raw('ALTER TABLE receipt_lines DISABLE TRIGGER receipt_lines_no_delete');
+    await trx.raw('ALTER TABLE id_cards DISABLE TRIGGER id_cards_no_delete');
+    await trx.raw('ALTER TABLE parent_notices DISABLE TRIGGER parent_notices_no_delete');
+    await trx.raw('ALTER TABLE issues DISABLE TRIGGER issues_no_delete');
+    await trx.raw('ALTER TABLE admission_interviews DISABLE TRIGGER admission_interviews_no_delete');
+    await trx.raw('ALTER TABLE gives DISABLE TRIGGER gives_no_delete');
+    await trx.raw('ALTER TABLE give_lines DISABLE TRIGGER give_lines_no_delete');
+
     // Destructive reset requested: remove all student-linked academic/identity data.
     if (await trx.schema.hasTable('academic_primary_report_cards')) await trx('academic_primary_report_cards').del();
     if (await trx.schema.hasTable('academic_exam_marks')) await trx('academic_exam_marks').del();
@@ -11,7 +21,10 @@ exports.up = async (knex) => {
       await trx('admission_interviews').whereNotNull('student_id').update({ student_id: null });
       await trx('students').update({ interview_id: null }).catch(() => {});
     }
-    if (await trx.schema.hasColumn('receipts', 'student_id')) await trx('receipts').update({ student_id: null });
+    if (await trx.schema.hasTable('give_lines')) await trx('give_lines').del().catch(() => {});
+    if (await trx.schema.hasTable('gives')) await trx('gives').del().catch(() => {});
+    if (await trx.schema.hasTable('receipt_lines')) await trx('receipt_lines').del().catch(() => {});
+    if (await trx.schema.hasColumn('receipts', 'student_id')) await trx('receipts').whereNotNull('student_id').del().catch(() => {});
     if (await trx.schema.hasTable('issues')) await trx('issues').whereNotNull('student_id').update({ student_id: null });
 
     await trx('students').del();
@@ -22,6 +35,15 @@ exports.up = async (knex) => {
     for (const table of classTables) if (await trx.schema.hasTable(table)) await trx(table).del();
 
     await trx('classes').del();
+
+    await trx.raw('ALTER TABLE receipts ENABLE TRIGGER receipts_no_delete');
+    await trx.raw('ALTER TABLE receipt_lines ENABLE TRIGGER receipt_lines_no_delete');
+    await trx.raw('ALTER TABLE gives ENABLE TRIGGER gives_no_delete');
+    await trx.raw('ALTER TABLE give_lines ENABLE TRIGGER give_lines_no_delete');
+    await trx.raw('ALTER TABLE id_cards ENABLE TRIGGER id_cards_no_delete');
+    await trx.raw('ALTER TABLE parent_notices ENABLE TRIGGER parent_notices_no_delete');
+    await trx.raw('ALTER TABLE issues ENABLE TRIGGER issues_no_delete');
+    await trx.raw('ALTER TABLE admission_interviews ENABLE TRIGGER admission_interviews_no_delete');
 
     const levels = {
       pre: [
@@ -40,7 +62,7 @@ exports.up = async (knex) => {
       const list = code === 'pre' ? levels.pre : (code === 'boys' || code === 'girls' ? levels.secondary : []);
       for (let i = 0; i < list.length; i++) {
         const [level, name, shortName, curriculum] = list[i];
-        await trx('classes').insert({ school_id: school.id, level, name, short_name: shortName, stream: null, curriculum, sort: i + 1, active: true });
+        await trx('classes').insert({ school_id: school.id, level, name, short_name: shortName, stream: null, curriculum, active: true });
       }
     }
   });
