@@ -88,6 +88,15 @@ Flow: parent pays at the bursar → receipt → library gives items.
 4. Results: averages, bands, topic scores, students to watch (rules in Settings)
 5. Support plans; question bank (NECTA + teachers)
 
+#### Step 3 — ideas agreed 2026-11-19 (build later, after inventory is closed)
+- The **Academic Master** creates the classes and the streams of own school (today the School Admin does it).
+- **Curriculum built in**: classes (levels) and their subjects/topics come from the TIE curricula already in `docs/curriculum/`. Handle the change period: some classes still on the old curriculum while others are on the new one (curriculum version per class level and year).
+- **AI question reader**: teachers upload exams as PDF or DOCX; AI reads the questions and saves them in the question bank, each linked to subject, topic (syllabus) and question type.
+- **Question types stored like the real exam**: multiple choice, matching items, true/false, fill in the blank, short answer, long answer/essay, sections and marks per question.
+- Performance per student, per topic and per class: exams + syllabus together show where students are weak.
+- **Teaching timetable** per class/stream (day × period: subject, teacher, room), like the paper timetable. From it: remind teachers of their lessons, show "my timetable" to each teacher, load per teacher.
+- **Academic Master order book**: orders lesson items (exercise books, chalk...) from the store-keeper (see inventory flow).
+
 ### Step 4 — Dashboards and reports
 - Each role's Home as in the prototype.
 - Reports with Excel export; Settings (warning rules, current exam set).

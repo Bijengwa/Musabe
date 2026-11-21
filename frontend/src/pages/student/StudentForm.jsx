@@ -8,12 +8,12 @@ import { classOption } from './shared';
 
 const EMPTY = { admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', classId: '', parentName: '', parentPhone: '', note: '' };
 
-export default function StudentForm({ student, classes, school, defaultClass, id = 'stform', onSaved, onBusy }) {
+export default function StudentForm({ student, classes, school, defaultClass, initial, extra, id = 'stform', onSaved, onBusy }) {
   const s = student;
   const [f, setF] = useState(() => (s ? {
     admissionNo: s.admissionNo, firstName: s.firstName, middleName: s.middleName || '', lastName: s.lastName,
     sex: s.sex, classId: String(s.classId || ''), parentName: s.parentName || '', parentPhone: s.parentPhone || '', note: s.note || '',
-  } : { ...EMPTY, classId: defaultClass || '' }));
+  } : { ...EMPTY, ...(initial || {}), classId: defaultClass || '' }));
   const [error, setError] = useState('');
   const [found, setFound] = useState({ probe: '', list: [] });
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
@@ -35,7 +35,7 @@ export default function StudentForm({ student, classes, school, defaultClass, id
     if (phoneProblem(f.parentPhone)) { setError(`Phone: ${phoneProblem(f.parentPhone)}`); return; }
     onBusy?.(true);
     try {
-      const body = { ...f, classId: f.classId ? Number(f.classId) : null, schoolId: Number(school) };
+      const body = { ...f, classId: f.classId ? Number(f.classId) : null, schoolId: Number(school), ...(s ? {} : extra || {}) };
       const r = s ? await api.patch(`/students/${s.id}`, body) : await api.post('/students', body);
       onBusy?.(false);
       onSaved(r.student, () => { setF((x) => ({ ...EMPTY, classId: x.classId })); }); // second argument: clear for the next student

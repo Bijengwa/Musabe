@@ -80,53 +80,92 @@ function checkStudent(b) {
 }
 
 // ---------- Classes ----------
+// Classes come from the levels built into the system (lib/levels.js). The Academic Master of the school (and the
+// Super Admin) adds a level with its stream(s) and sets the curriculum; nobody types class names (2026-11-20).
+// Old classes typed by hand before this keep working; if their level was not found, the Academic Master picks it.
+const { levelsFor, levelOf, CURRICULA } = require('../lib/levels');
 const classOut = (c) => ({ id: c.id, schoolId: c.school_id, name: c.name, shortName: c.short_name, stream: c.stream, label: classLabel(c), fullName: classFull(c), active: c.active,
+  level: c.level, curriculum: c.curriculum || levelOf(c.level)?.curriculum || null,
+  curriculumLabel: CURRICULA[c.curriculum || levelOf(c.level)?.curriculum] || null,
   students: Number(c.students || 0), boys: Number(c.boys || 0), girls: Number(c.girls || 0) });
 
+const schoolCode = async (schoolId) => (await db('schools').where({ id: schoolId }).first('code'))?.code;
 async function classList(schoolId) {
+  const order = levelsFor(await schoolCode(schoolId)).map((l) => l.key);
+  const rank = (c) => (order.indexOf(c.level) < 0 ? 999 : order.indexOf(c.level));
   const rows = await db('classes as c').where('c.school_id', schoolId)
     .leftJoin('students as s', (j) => j.on('s.class_id', 'c.id').andOn(db.raw("s.status = 'active'")))
     .groupBy('c.id')
     .select('c.*', db.raw('count(s.id) as students'), db.raw("count(s.id) filter (where s.sex='M') as boys"), db.raw("count(s.id) filter (where s.sex='F') as girls"));
-  return rows.sort(byShort).map(classOut);
+  return rows.sort((a, b) => rank(a) - rank(b) || byShort(a, b)).map(classOut);
 }
 
 router.get('/classes', requirePage('students'), async (req, res) => {
-  res.json({ classes: await classList(await schoolOf(req)) });
+  const schoolId = await schoolOf(req);
+  res.json({ classes: await classList(schoolId),
+    levels: levelsFor(await schoolCode(schoolId)).map((l) => ({ key: l.key, name: l.name, shortName: l.short, curriculum: l.curriculum })),
+    curricula: CURRICULA });
 });
 
-function readClass(b) {
-  const keep = (v) => up(v).replace(/[^A-Z0-9' .()/-]/g, '').replace(/\s+/g, ' ').trim();
-  const name = keep(b.name), shortName = keep(b.shortName), stream = keep(b.stream) || null;
-  if (name.length < 2) throw new HttpError(400, 'Type the class name, e.g. PRIMARY ONE or FORM ONE.');
-  if (!shortName) throw new HttpError(400, 'Type the short name, e.g. P 1 or F 1.');
-  if (name.length > 40 || shortName.length > 12 || (stream && stream.length > 30)) throw new HttpError(400, 'Class, short name or stream is too long.');
-  return { name, short_name: shortName, stream };
+const keep = (v) => up(v).replace(/[^A-Z0-9' .()/-]/g, '').replace(/\s+/g, ' ').trim();
+async function readLevel(schoolId, key) {
+  const l = levelOf(String(key || '').toUpperCase());
+  if (!l || !levelsFor(await schoolCode(schoolId)).includes(l)) throw new HttpError(400, 'Choose the class from the list.');
+  return l;
 }
-// The same class twice (by full name or by short name, with the same stream) is refused.
+function readCurriculum(v, level) {
+  if (v === undefined || v === null || v === '') return level?.curriculum || null;
+  if (!CURRICULA[v]) throw new HttpError(400, 'Choose the curriculum: new, old or the school\'s own.');
+  return v;
+}
+// The same class twice (same level, or same name, with the same stream) is refused.
 async function sameClass(schoolId, c, notId) {
   const q = db('classes').where({ school_id: schoolId })
-    .where((w) => w.whereRaw('lower(name) = lower(?)', [c.name]).orWhereRaw('lower(short_name) = lower(?)', [c.short_name]))
+    .where((w) => { if (c.level) w.where('level', c.level); w.orWhereRaw('lower(name) = lower(?)', [c.name]).orWhereRaw('lower(short_name) = lower(?)', [c.short_name]); })
     .whereRaw("lower(coalesce(stream,'')) = lower(?)", [c.stream || '']);
   if (notId) q.whereNot('id', notId);
   return q.first();
 }
 
-router.post('/classes', requirePage('students', 'f'), async (req, res) => {
-  const schoolId = await schoolOf(req, req.body?.schoolId);
-  const c = readClass(req.body || {});
-  const twin = await sameClass(schoolId, c);
-  if (twin) throw new HttpError(409, `${classFull(twin)} (${classLabel(twin)}) already exists.`);
-  const [row] = await db('classes').insert({ ...c, school_id: schoolId, created_by: req.user.id }).returning('*');
-  await audit(req, 'class.create', `Added class ${classFull(row)} (${classLabel(row)})`, { schoolId, detail: { classId: row.id } });
-  res.status(201).json({ class: classOut(row) });
+// Add a level with one or more streams at once: { level: 'F1', streams: ['A', 'B'] } (no streams = one class).
+router.post('/classes', requirePage('classlist', 'f'), async (req, res) => {
+  const b = req.body || {};
+  const schoolId = await schoolOf(req, b.schoolId);
+  const l = await readLevel(schoolId, b.level);
+  const curriculum = readCurriculum(b.curriculum, l);
+  const streams = [...new Set((Array.isArray(b.streams) ? b.streams : [b.stream]).map((x) => keep(x) || null))];
+  if (streams.length > 12) throw new HttpError(400, 'At most 12 streams at once.');
+  if (streams.some((x) => x && x.length > 30)) throw new HttpError(400, 'A stream name is too long.');
+  const made = await db.transaction(async (trx) => {
+    const rows = [];
+    for (const stream of streams) {
+      const c = { level: l.key, name: l.name, short_name: l.short, stream, curriculum };
+      const twin = await sameClass(schoolId, c);
+      if (twin) throw new HttpError(409, `${classFull(twin)} (${classLabel(twin)}) already exists.`);
+      const [row] = await trx('classes').insert({ ...c, school_id: schoolId, created_by: req.user.id }).returning('*');
+      rows.push(row);
+    }
+    return rows;
+  });
+  await audit(req, 'class.create', `Added ${made.map((r) => classLabel(r)).join(', ')} (${CURRICULA[curriculum] || 'curriculum not set'})`,
+    { schoolId, detail: { classIds: made.map((r) => r.id) } });
+  res.status(201).json({ classes: made.map(classOut), class: classOut(made[0]) });
 });
 
-router.patch('/classes/:id', requirePage('students', 'f'), async (req, res) => {
+router.patch('/classes/:id', requirePage('classlist', 'f'), async (req, res) => {
   const cls = await db('classes').where({ id: Number(req.params.id) }).first();
   if (!cls || (!allSchools(req.user) && cls.school_id !== req.user.school_id)) throw new HttpError(404, 'Class not found.');
   const b = req.body || {};
-  const c = readClass({ name: b.name ?? cls.name, shortName: b.shortName ?? cls.short_name, stream: b.stream !== undefined ? b.stream : cls.stream });
+  // The level can be chosen only for an old class that has none (typed before the built-in list).
+  let l = levelOf(cls.level);
+  if (b.level !== undefined && b.level !== cls.level) {
+    if (cls.level) throw new HttpError(400, 'The class level cannot be changed. Add the right class and move the students.');
+    l = await readLevel(cls.school_id, b.level);
+  }
+  const stream = b.stream !== undefined ? keep(b.stream) || null : cls.stream;
+  if (stream && stream.length > 30) throw new HttpError(400, 'The stream name is too long.');
+  const c = { level: l?.key || null, name: l ? l.name : cls.name, short_name: l ? l.short : cls.short_name, stream,
+    curriculum: b.curriculum !== undefined ? readCurriculum(b.curriculum, l) : cls.curriculum || l?.curriculum || null };
   const active = b.active === undefined ? cls.active : !!b.active;
   const twin = await sameClass(cls.school_id, c, cls.id);
   if (twin) throw new HttpError(409, `${classFull(twin)} (${classLabel(twin)}) already exists.`);
@@ -135,7 +174,9 @@ router.patch('/classes/:id', requirePage('students', 'f'), async (req, res) => {
     if (Number(n)) throw new HttpError(409, `${classLabel(cls)} still has ${plural(Number(n), 'student')}. Move them to another class first.`);
   }
   const [row] = await db('classes').where({ id: cls.id }).update({ ...c, active, updated_at: db.fn.now() }).returning('*');
-  const what = [(classLabel(cls) !== classLabel(row) || classFull(cls) !== classFull(row)) && `renamed to ${classFull(row)} (${classLabel(row)})`, cls.active !== active && (active ? 'switched on' : 'switched off')].filter(Boolean);
+  const what = [(classLabel(cls) !== classLabel(row) || classFull(cls) !== classFull(row)) && `now ${classFull(row)} (${classLabel(row)})`,
+    (cls.curriculum || null) !== (row.curriculum || null) && `curriculum: ${CURRICULA[row.curriculum] || 'not set'}`,
+    cls.active !== active && (active ? 'switched on' : 'switched off')].filter(Boolean);
   if (what.length) await audit(req, 'class.update', `Class ${classLabel(cls)}: ${what.join(', ')}`, { schoolId: cls.school_id, detail: { classId: cls.id } });
   else publish({ topics: ['class'], schoolId: cls.school_id });
   res.json({ class: classOut(row) });
@@ -455,11 +496,13 @@ router.get('/:id', requirePage('students'), async (req, res) => {
     // Previous / next student in the same class (by name), to go through a class one by one.
     s.class_id ? db('students').where({ class_id: s.class_id, status: s.status }).orderBy('full_name').orderBy('id').select('id', 'full_name') : [],
   ]);
+  const iv = s.interview_id ? await db('admission_interviews').where({ id: s.interview_id }).first() : null;
   const name = (id) => by.find((u) => u.id === id)?.full_name || null;
   const at = mates.findIndex((m) => m.id === s.id);
   res.json({
     student: { ...out(s), createdBy: name(s.created_by), updatedBy: name(s.updated_by),
-      addedFrom: imp ? { fileName: imp.file_name, at: imp.decided_at, by: imp.by } : null },
+      addedFrom: imp ? { fileName: imp.file_name, at: imp.decided_at, by: imp.by } : null,
+      interview: iv ? require('./interviews').ivOut(iv) : null },
     receipts: receipts.map((r) => ({ id: r.id, number: r.number, total: r.total, status: r.status, soldAt: r.sold_at, method: r.method, items: r.items })),
     history: history.map((h) => ({ id: h.id, at: h.at, action: h.action, summary: h.summary, by: h.by })),
     place: at < 0 ? null : { index: at + 1, of: mates.length, prev: mates[at - 1] || null, next: mates[at + 1] || null },
@@ -489,8 +532,19 @@ router.post('/', requirePage('students', 'f'), async (req, res) => {
   if (!cls) throw new HttpError(400, 'Choose the class.');
   const taken = await admTaken(schoolId, data.admission_no);
   if (taken) throw new HttpError(409, `Admission No. ${data.admission_no} is already used by ${taken.full_name}.`);
-  const [row] = await db('students').insert({ ...data, school_id: schoolId, class_id: cls.id, created_by: req.user.id, updated_by: req.user.id }).returning('id');
-  await audit(req, 'student.create', `Added student ${data.full_name} (${data.admission_no}) to ${classLabel(cls)}`, { schoolId, detail: { studentId: row.id } });
+  // Registered from an admission interview (2026-11-20): the interview stays linked for follow-up.
+  let iv = null;
+  if (b.interviewId) {
+    iv = await db('admission_interviews').where({ id: Number(b.interviewId), school_id: schoolId }).first();
+    if (!iv) throw new HttpError(404, 'Admission interview not found for this school.');
+    if (iv.student_id) throw new HttpError(409, `${iv.full_name} is already registered as a student.`);
+  }
+  const row = await db.transaction(async (trx) => {
+    const [r] = await trx('students').insert({ ...data, school_id: schoolId, class_id: cls.id, interview_id: iv?.id || null, created_by: req.user.id, updated_by: req.user.id }).returning('id');
+    if (iv) await trx('admission_interviews').where({ id: iv.id }).update({ student_id: r.id, updated_at: db.fn.now() });
+    return r;
+  });
+  await audit(req, 'student.create', `Added student ${data.full_name} (${data.admission_no}) to ${classLabel(cls)}${iv ? ' from the admission interview' : ''}`, { schoolId, detail: { studentId: row.id, interviewId: iv?.id } });
   res.status(201).json({ student: out(await base().where('s.id', row.id).first(COLS)) });
 });
 
@@ -525,3 +579,4 @@ router.patch('/:id', requirePage('students', 'f'), async (req, res) => {
 
 module.exports = router;
 module.exports.classLabel = classLabel;
+module.exports.clean = { nameText, sexOf, phoneOf, up };

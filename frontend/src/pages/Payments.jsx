@@ -1,5 +1,5 @@
 // Money going out: Requested Cash Payout Vouchers. One list; each voucher opens as its own paper page (pages/Voucher.jsx).
-// Internal payment: Assistant Accountant prepares -> Financial Officer authorizes -> Cashier pays (the payee signs on screen).
+// Internal payment: Assistant Accountant prepares -> Manager or Finance Manager authorizes -> Cashier pays (the payee signs on screen).
 // Money to buy for an approved requisition is made by the system when the Manager signs; the Cashier pays it the same way.
 import { useCallback, useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
@@ -31,11 +31,11 @@ function PList() {
   useLive(['payment', 'requisition'], load);
   return (
     <>
-      <PageHead title="Payout vouchers" sub="Prepared by the Assistant Accountant, authorized by the Financial Officer, paid by the Cashier.">
+      <PageHead title="Payout vouchers" sub="Prepared by the Assistant Accountant, authorized by the Manager or the Finance Manager, paid by the Cashier.">
         {data?.canWrite && <button className="btn p" onClick={() => navigate('/payments/new')}><Icon name="plus" /> New voucher</button>}
       </PageHead>
       {data && <div className="kpis">
-        <Kpi tone={data.review ? 'warn' : 'ok'} label="Waiting for the Financial Officer" value={data.review} />
+        <Kpi tone={data.review ? 'warn' : 'ok'} label="Waiting for the Manager / Finance Manager" value={data.review} />
         <Kpi tone={data.pending ? 'warn' : 'ok'} label="Waiting for the Cashier" value={data.pending} />
         <Kpi label="Paid this month" value={`TSh ${tsh(data.paidThisMonth)}`} />
       </div>}

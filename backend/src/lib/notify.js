@@ -35,14 +35,33 @@ const RULES = [
   { actions: ['purchase.create'], roles: ['storekeeper', 'acc', 'aacc'], why: 'Purchases to count and confirm' },
   { actions: ['purchase.check'], roles: ['acc', 'aacc', 'storekeeper'], why: 'Purchases counted: to confirm' },
   { actions: ['purchase.confirm', 'purchase.reject'], roles: ['storekeeper', 'fm'], why: 'Purchases decided' },
+  { actions: ['purchase.confirm', 'purchase.reject'], roles: ['amanager'], why: 'Your purchases', own: true },
+  { actions: ['purchase.wentwith'], roles: ['storekeeper', 'amanager'], why: 'Sign: you went to the market', own: true },
+  { actions: ['purchase.wentwith_signed'], roles: ['mapokezi'], why: 'Goods to check' },
+  // LPO (2026-11-21): prepared -> Head of Accounts certifies -> Manager (or Finance Manager) authorises.
+  { actions: ['lpo.create'], roles: ['acc'], why: 'LPOs to certify' },
+  { actions: ['lpo.certify'], roles: ['manager', 'fm'], why: 'LPOs to authorise' },
+  { actions: ['lpo.certify', 'lpo.authorise', 'lpo.reject'], roles: ['amanager', 'storekeeper'], why: 'Your LPOs', own: true },
+  { actions: ['supplier.paid'], roles: ['fm', 'manager'], why: 'Payments to suppliers' },
+  { actions: ['contract.create', 'contract.paid'], roles: ['acc'], why: 'Work agreements to check' },
+  { actions: ['contract.create', 'contract.paid', 'contract.status'], roles: ['director'], why: 'Work agreements' },
+  // Goods without a receipt (2026-11-21): the Finance Manager, the Manager and the Director, not their assistants.
+  { actions: ['purchase.no_receipt'], roles: ['fm', 'manager', 'director'], why: 'Goods came without a receipt' },
+  { actions: ['purchase.confirm'], roles: ['storekeeper'], why: 'Confirmed purchases to send to the schools' },
   // Money going out: the Cashier is told when there is money to give; Mapokezi and the store-keeper when it was given
   // (goods will come to be checked); the person who wrote a request hears how it ended.
-  { actions: ['payment.create'], roles: ['fm'], why: 'A payment voucher to authorize' },
+  { actions: ['payment.create'], roles: ['manager', 'fm'], why: 'A payment voucher to authorize' },
   { actions: ['payment.authorized', 'payment.float'], roles: ['cashier'], why: 'Money to give out' },
-  { actions: ['payment.floatpaid'], roles: ['mapokezi', 'storekeeper'], why: 'Money given to buy: goods to check soon' },
+  { actions: ['payment.floatpaid'], roles: ['mapokezi', 'storekeeper', 'amanager'], why: 'Money given to buy: goods to check soon' },
   { actions: ['payment.pay', 'payment.reject'], roles: ['aacc', 'fm', 'manager'], why: 'Your payment vouchers', own: true },
   // School requisitions: each signer is told when it is their turn; the Academic Master follows their own.
-  { actions: ['requisition.create'], roles: ['acad'], why: 'Requisitions to sign' },
+  // Since 2026-11-20 the buyer (Assistant Manager / store-keeper) writes it: the Manager and the Finance Manager approve the money.
+  { actions: ['requisition.create', 'requisition.store', 'requisition.fixed_check'], roles: ['aacc'], why: 'Requisitions to check' },
+  { actions: ['requisition.check', 'requisition.fixed_manager'], roles: ['manager', 'fm'], why: 'Requisitions to approve' },
+  { actions: ['requisition.check'], roles: ['amanager', 'storekeeper'], why: 'Your requisitions', own: true },
+  { actions: ['requisition.manager', 'requisition.reject', 'requisition.return', 'requisition.moneyback'], roles: ['amanager', 'storekeeper'], why: 'Your requisitions', own: true },
+  { actions: ['requisition.moneyback_ask'], roles: ['cashier'], why: 'Money to receive back' },
+  { actions: ['requisition.moneyback'], roles: ['manager', 'fm', 'aacc'], why: 'Money given back' },
   { actions: ['requisition.create_gen', 'requisition.fixed_school'], roles: ['sstore'], why: 'Requisitions to sign (school store-keeper)' },
   { actions: ['requisition.acad'], roles: ['head'], why: 'Requisitions to sign' },
   // Whoever asked hears what happened to it (teacher, librarian, bursar).
@@ -54,13 +73,18 @@ const RULES = [
   { actions: ['requisition.fixed_acad'], roles: ['acad'], why: 'Requisitions to sign' },
   { actions: ['requisition.fixed_head'], roles: ['head'], why: 'Requisitions to sign' },
   { actions: ['requisition.fixed_store'], roles: ['storekeeper'], why: 'Requisitions to sign' },
-  { actions: ['requisition.fixed_manager'], roles: ['manager'], why: 'Requisitions to sign' },
-  { actions: ['requisition.store'], roles: ['manager'], why: 'Requisitions to sign' },
+  { actions: ['requisition.fixed_manager'], roles: ['manager', 'fm'], why: 'Requisitions to sign' },
   { actions: ['requisition.manager', 'requisition.done'], roles: ['storekeeper'], why: 'Requisitions to buy or send' },
   { actions: ['requisition.manager', 'requisition.reject', 'requisition.done'], roles: ['head'], why: 'Requisitions of your school' },
   { actions: ['requisition.sent'], roles: ['librarian'], why: 'Stock coming to your library' },
   { actions: ['requisition.acad', 'requisition.amend', 'requisition.head', 'requisition.store', 'requisition.manager', 'requisition.reject', 'requisition.buying', 'requisition.arrived',
     'requisition.sent', 'requisition.done'], roles: ['acad'], why: 'Your requisitions', own: true },
+  // Order Book (2026-11-20): each signer when it is their turn; the person who ordered hears what happened.
+  { actions: ['order.create_acad'], roles: ['acad'], why: 'Orders to answer' },
+  { actions: ['order.create_head'], roles: ['head'], why: 'Orders to approve' },
+  { actions: ['order.create_manager', 'order.head'], roles: ['manager'], why: 'Orders to approve' },
+  { actions: ['order.create_keeper', 'order.acad', 'order.manager', 'order.head_keeper'], roles: ['storekeeper', 'amanager'], why: 'Orders to buy for' },
+  { actions: ['order.acad', 'order.given', 'order.head', 'order.head_keeper', 'order.manager', 'order.reject', 'order.requisition'], roles: ['teacher', 'acad', 'librarian', 'sstore', 'patron', 'head'], why: 'Your orders', own: true },
   // ID cards: the person is told when their own card is recorded.
   { actions: ['idcard.issue', 'idcard.close'], roles: Object.keys(ROLES), why: 'Your ID card', own: true },
   { actions: ['count.create'], roles: ['acc', 'aacc'], why: 'Weekly checks to confirm' },
@@ -99,18 +123,23 @@ const ownOnly = (role) => {
   return [...own];
 };
 
-// Limit a query on audit_log (alias "a") to this person's notifications.
-function forUser(q, user) {
-  const actions = actionsFor(user.role);
-  if (!actions.length) return q.whereRaw('false');
-  const own = ownOnly(user.role);
-  q.whereIn('a.action', actions).andWhere((w) => w.whereNull('a.user_id').orWhereNot('a.user_id', user.id));
-  if (own.length) q.andWhere((w) => w.whereNotIn('a.action', own).orWhereRaw(`a.detail ->> 'userId' = ?`, [String(user.id)]));
-  if (ROLES[user.role]?.scope !== 'all') {
-    q.andWhere((w) => w.where('a.school_id', user.school_id)
-      .orWhereRaw(`a.detail -> 'schoolIds' @> ?::jsonb`, [JSON.stringify([user.school_id])]));
+// Limit a query on audit_log (alias "a") to this person's notifications: for EVERY role the person holds
+// (one person, many roles, 2026-11-20), each with its own school. Never what the person did.
+function forRole(w, user, role, schoolId) {
+  const actions = actionsFor(role);
+  if (!actions.length) return w.whereRaw('false');
+  const own = ownOnly(role);
+  w.whereIn('a.action', actions);
+  if (own.length) w.andWhere((x) => x.whereNotIn('a.action', own).orWhereRaw(`a.detail ->> 'userId' = ?`, [String(user.id)]));
+  if (ROLES[role]?.scope !== 'all') {
+    w.andWhere((x) => x.where('a.school_id', schoolId).orWhereRaw(`a.detail -> 'schoolIds' @> ?::jsonb`, [JSON.stringify([schoolId])]));
   }
-  return q;
+  return w;
+}
+function forUser(q, user) {
+  const roles = user.roles?.length ? user.roles : [{ role: user.role, school_id: user.school_id }];
+  q.andWhere((w) => w.whereNull('a.user_id').orWhereNot('a.user_id', user.id));
+  return q.andWhere((w) => { for (const r of roles) w.orWhere((x) => forRole(x, user, r.role, r.school_id)); });
 }
 
 // Where a notification opens: the page that deals with it, if this person may open that page.
@@ -124,6 +153,10 @@ const LINKS = [
   [/^damage\./, ['damage', '/damage']],
   [/^stock\./, ['stock', '/stock']],
   [/^purchase\./, ['purchases', '/purchases']],
+  [/^(supplier|pricelist)\./, ['suppliers', '/suppliers']],
+  [/^lpo\./, ['lpo', '/lpo']],
+  [/^contract\./, ['contracts', '/contracts']],
+  [/^vehicle\./, ['vehicles', '/vehicles']],
   [/^count\./, ['counts', '/counts']],
   [/^issue\./, ['issue', '/issue']],
   [/^requisition\./, ['requisitions', '/requisitions']],

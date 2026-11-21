@@ -31,6 +31,13 @@ import Purchases from './pages/Purchases';
 import Store from './pages/Store';
 import Counts from './pages/Counts';
 import Requisitions from './pages/Requisitions';
+import Orders from './pages/Orders';
+import StoreBooks from './pages/StoreBooks';
+import Interviews from './pages/Interviews';
+import Suppliers from './pages/Suppliers';
+import Lpo from './pages/Lpo';
+import Contracts from './pages/Contracts';
+import Vehicles from './pages/Vehicles';
 import ComingSoon from './pages/ComingSoon';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -38,7 +45,7 @@ import Splash from './splash/Splash';
 
 const SCREENS = { home: Home, staff: Staff, schools: Schools, audit: Audit, items: Items, sell: Sell, receipts: Receipts, give: Give, students: Students,
   stock: Stock, stockin: SendStock, incoming: Incoming, requests: Requests, damage: Damage, payments: Payments, bills: Bills, money: Money, salesdash: SalesDashboard, reports: Reports,
-  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions };
+  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles };
 
 export default function App() {
   return <><Splash /><Routed /></>;

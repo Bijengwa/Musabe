@@ -21,7 +21,13 @@ async function purchase(k, id) {
   const lines = await k('purchase_lines').where({ purchase_id: id }).orderBy('id');
   return { no: p.number, school: p.school_id, req: p.requisition_id, by: p.created_by, lines: lines.map((l) => [l.id, l.item_name, l.qty, Number(l.unit_cost)]) };
 }
-const CONTENT = { requisition, voucher, purchase };
+async function lpo(k, id) {
+  const l = await k('lpos').where({ id }).first();
+  if (!l) return null;
+  const lines = await k('lpo_lines').where({ lpo_id: id }).orderBy('id');
+  return { no: l.number, to: l.supplier_id, ship: l.school_id, ref: l.our_ref, terms: l.terms, by: l.prepared_by, lines: lines.map((x) => [x.id, x.description, x.unit, x.qty, x.rate == null ? null : Number(x.rate)]) };
+}
+const CONTENT = { requisition, voucher, purchase, lpo };
 const contentOf = (type, id, k = db) => (CONTENT[type] ? CONTENT[type](k, Number(id)) : null);
 
 // The money of a document, for the "big amount needs an SMS code" rule.
@@ -32,9 +38,10 @@ async function amountOf(type, id, k = db) {
   }
   if (type === 'voucher') return Number((await k('payment_requests').where({ id }).first('amount'))?.amount || 0);
   if (type === 'purchase') return Number((await k('purchases').where({ id }).first('total'))?.total || 0);
+  if (type === 'lpo') return Number((await k('lpos').where({ id }).first('total'))?.total || 0);
   return 0;
 }
 
-const STEP = { applicant: 'Applicant', acad: 'First school signer', head: 'Head Master', store: 'Store-keeper', manager: 'Manager',
+const STEP = { applicant: 'Applicant', acad: 'First school signer', head: 'Head Master', store: 'Store-keeper', check: 'Assistant Accountant', manager: 'Manager', certified: 'Certified by', authorised: 'Authorised by',
   prepared: 'Prepared by', authorized: 'Authorized by', payee: 'Payee', paid: 'Cashier', bought: 'Buyer', checked: 'Mapokezi', settled: 'Cashier (money back)', confirmed: 'Accountant office' };
-module.exports = { contentOf, amountOf, STEP, requisition, voucher, purchase };
+module.exports = { contentOf, amountOf, STEP, requisition, voucher, purchase, lpo };

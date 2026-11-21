@@ -29,7 +29,7 @@ test.before(async () => {
   em = await db('schools').where({ code: 'pre' }).first();
   boys = await db('schools').where({ code: 'boys' }).first();
   const make = [['super', 'super', null], ['sadmin', 'sadmin', em.id], ['bSadmin', 'sadmin', boys.id], ['acad', 'acad', em.id], ['head', 'head', em.id], ['bHead', 'head', boys.id],
-    ['teacher', 'teacher', em.id], ['keeper', 'storekeeper', null], ['cashier', 'cashier', null], ['mapokezi', 'mapokezi', null], ['manager', 'manager', null], ['acc', 'acc', null],
+    ['teacher', 'teacher', em.id], ['keeper', 'storekeeper', null], ['cashier', 'cashier', null], ['mapokezi', 'mapokezi', null], ['manager', 'manager', null], ['acc', 'acc', null], ['aacc', 'aacc', null],
     ['librarian', 'librarian', em.id], ['bursar', 'bursar', em.id]];
   for (const [key, role, school] of make) {
     const username = `r_${key}_${tag}`.toLowerCase();
@@ -83,89 +83,68 @@ test('ID card: not issued, then the School Admin records it; others cannot; lost
 // The paper PAYMENT REQUISITION FORM: free words (Details, Qty, Amount @, Total), signed in order with the signing PIN.
 const line = (name, qty, estCost, total) => ({ name, qty, estCost, total });
 
-test('Requisition: Academic Master → Head Master → store-keeper → Manager → Cashier float → bought → Mapokezi → accountant → librarian', { skip }, async () => {
-  const body = { department: 'Academic', lines: [line('Chalk white boxes', 20, 3000), line('Marker pens blue', 10, 12000)] };
-  assert.equal((await as('acad', 'POST', '/api/requisitions', { lines: [] })).status, 400, 'an empty form is refused');
-  assert.equal((await as('keeper', 'POST', '/api/requisitions', body)).status, 403, 'only the school staff write requisitions');
-  // A teacher may ask: it goes to the Academic Master first.
-  let r = await as('teacher', 'POST', '/api/requisitions', body);
-  assert.equal(r.status, 201, JSON.stringify(r.json)); assert.equal(r.json.requisition.status, 'acad');
-  assert.equal((await as('teacher', 'POST', `/api/requisitions/${r.json.requisition.id}/withdraw`, {})).json.requisition.status, 'withdrawn');
-  r = await as('acad', 'POST', '/api/requisitions', body);
+test('Requisition (2026-11-20): store-keeper writes → Manager → Cashier float → bought → Mapokezi → Cashier money back → librarian', { skip }, async () => {
+  const body = { schoolId: em.id, department: 'Academic', lines: [line('Chalk white boxes', 20, 3000), line('Marker pens blue', 10, 12000)] };
+  assert.equal((await as('keeper', 'POST', '/api/requisitions', { schoolId: em.id, lines: [] })).status, 400, 'an empty form is refused');
+  for (const who of ['acad', 'teacher', 'head', 'librarian', 'bursar']) assert.equal((await as(who, 'POST', '/api/requisitions', body)).status, 403, `${who} uses the Order Book`);
+  let r = await as('keeper', 'POST', '/api/requisitions', body);
   assert.equal(r.status, 201, JSON.stringify(r.json));
   const q = r.json.requisition; assert.match(q.number, /^RQN\.\d{4}$/);
-  assert.equal(q.status, 'head', 'the Academic Master wrote it, so his signature is already on it');
+  assert.equal(q.status, 'check', 'the buyer signs the store-keeper step himself; the Assistant Accountant checks next (2026-11-21)');
   assert.equal(q.total, 20 * 3000 + 10 * 12000);
-  // Order of signatures is enforced.
-  assert.equal((await as('manager', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true })).status, 409);
-  assert.equal((await as('keeper', 'POST', `/api/requisitions/${q.id}/store`, { approve: true })).status, 409);
-  assert.equal((await as('bHead', 'POST', `/api/requisitions/${q.id}/head`, { approve: true })).status, 404, "another school's Head Master");
-  assert.equal((await as('head', 'POST', `/api/requisitions/${q.id}/head`, { approve: false })).status, 400, 'rejecting needs a reason');
-  assert.equal((await as('head', 'POST', `/api/requisitions/${q.id}/head`, { approve: true, pin: '0000' })).status, 403, 'a wrong PIN signs nothing');
-  r = await as('head', 'POST', `/api/requisitions/${q.id}/head`, { approve: true });
-  assert.equal(r.status, 200, JSON.stringify(r.json));
-  assert.equal(r.json.requisition.status, 'store'); assert.match(r.json.requisition.signs.head.by, /head/); assert.ok(r.json.requisition.signs.head.image, 'the drawn signature is on the paper');
-  assert.equal(r.json.requisition.seal.status, 'valid');
-  assert.equal((await as('acad', 'POST', `/api/requisitions/${q.id}/withdraw`, {})).status, 409, 'too late to withdraw');
-  r = await as('keeper', 'POST', `/api/requisitions/${q.id}/store`, { approve: true });
-  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.requisition.status, 'manager');
+  assert.equal((await as('manager', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true })).status, 409, 'the Manager waits for the Assistant Accountant');
+  assert.equal((await as('keeper', 'POST', `/api/requisitions/${q.id}/check`, { approve: true })).status, 403);
+  r = await as('aacc', 'POST', `/api/requisitions/${q.id}/check`, { approve: true, note: 'prices as on the proforma' });
+  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.requisition.status, 'manager'); assert.equal(r.json.requisition.signs.check.by, `Test aacc ${tag}`);
+  assert.equal((await as('manager', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true, pin: '0000' })).status, 403, 'a wrong PIN signs nothing');
   // The Manager gives fewer markers: a note is needed.
-  const marker = r.json.requisition.lines.find((l) => /Marker/.test(l.item));
+  const marker = q.lines.find((l) => /Marker/.test(l.item));
   assert.equal((await as('manager', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true, lines: [{ lineId: marker.id, approvedQty: 6 }] })).status, 400, 'fewer needs a note');
   r = await as('manager', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true, note: 'six are enough', lines: [{ lineId: marker.id, approvedQty: 6 }] });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   assert.equal(r.json.requisition.status, 'approved'); assert.equal(r.json.requisition.total, 20 * 3000 + 6 * 12000);
+  assert.equal(r.json.requisition.seal.status, 'valid');
   const money = r.json.requisition.money;
   assert.equal(money.amount, 20 * 3000 + 6 * 12000, 'the system made the money for the Cashier');
-  // The Cashier gives exactly that amount; the buyer signs for it.
-  const PNG = `data:image/png;base64,${'A'.repeat(1200)}`;
   r = await as('cashier', 'POST', `/api/payments/${money.id}/decide`, { approve: true, payeeName: 'STORE KEEPER', payeeImage: PNG });
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.payment.status, 'paid');
-  // Buy it for the requisition: the store-keeper buys, Mapokezi counts, the accountant confirms.
   const [pen] = await db('items').insert({ name: `MARKER PEN ${tag}`.toUpperCase(), category: 'stationery', unit: 'box', sellable: false }).returning('*');
-  r = await as('keeper', 'POST', '/api/purchases', { supplier: 'Nyanza Stationery', requisitionId: q.id, lines: [{ itemId: chalk.id, qty: 20, unitCost: 3000 }, { itemId: pen.id, qty: 6, unitCost: 12000 }] });
+  r = await as('keeper', 'POST', '/api/purchases', { supplier: 'Nyanza Stationery', requisitionId: q.id, lines: [{ itemId: chalk.id, qty: 20, unitCost: 3000 }, { itemId: pen.id, qty: 6, unitCost: 11000 }] });
   assert.equal(r.status, 201, JSON.stringify(r.json)); const pid = r.json.purchase.id;
-  assert.equal((await as('acad', 'GET', `/api/requisitions/${q.id}`)).json.requisition.status, 'buying');
+  assert.equal((await as('manager', 'GET', `/api/requisitions/${q.id}`)).json.requisition.status, 'buying');
   assert.equal((await as('mapokezi', 'POST', `/api/purchases/${pid}/check`, {})).status, 200);
-  assert.equal((await as('acc', 'POST', `/api/purchases/${pid}/decide`, { approve: true })).status, 200);
-  // Confirmed: it goes straight to the school's library.
-  r = await as('acad', 'GET', `/api/requisitions/${q.id}`);
+  assert.equal((await as('acc', 'POST', `/api/purchases/${pid}/decide`, { approve: true, returnedAmount: 6000 })).status, 403, 'the Head Accountant only audits');
+  r = await as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, returnedAmount: 6000 });
+  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.purchase.toSend, true, 'confirming does not send (2026-11-21)');
+  assert.equal((await as('manager', 'GET', `/api/requisitions/${q.id}`)).json.requisition.status, 'arrived');
+  assert.equal((await as('cashier', 'POST', `/api/purchases/${pid}/send`, {})).status, 403, 'only the store-keeper sends');
+  r = await as('keeper', 'POST', `/api/purchases/${pid}/send`, {});
+  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.match(r.json.purchase.delivery.number, /^DLV\./);
+  assert.equal((await as('keeper', 'POST', `/api/purchases/${pid}/send`, {})).status, 409, 'sent once');
+  r = await as('manager', 'GET', `/api/requisitions/${q.id}`);
   assert.equal(r.json.requisition.status, 'sent'); assert.match(r.json.requisition.delivery.number, /^DLV\./);
-  const dlv = r.json.requisition.delivery;
-  await as('librarian', 'POST', `/api/stock/deliveries/${dlv.id}/confirm-all`, {});
+  await as('librarian', 'POST', `/api/stock/deliveries/${r.json.requisition.delivery.id}/confirm-all`, {});
   assert.equal(await lib(chalk.id), 20);
-  r = await as('acad', 'GET', `/api/requisitions/${q.id}`);
+  r = await as('manager', 'GET', `/api/requisitions/${q.id}`);
   assert.equal(r.json.requisition.status, 'done');
-  assert.equal(r.json.requisition.seal.status, 'valid', 'the seal still holds after the whole life of the paper');
-  await assert.rejects(db('requisitions').where({ id: q.id }).update({ status: 'head' }), /finished/);
-  assert.ok(JSON.stringify((await as('acad', 'GET', '/api/notifications')).json).includes(q.number), 'the Academic Master follows the requisition');
-  // Lists: other schools do not see it.
-  assert.ok(!(await as('bHead', 'GET', '/api/requisitions')).json.requisitions.some((x) => x.id === q.id));
+  await assert.rejects(db('requisitions').where({ id: q.id }).update({ status: 'manager' }), /finished/);
+  assert.equal((await as('bHead', 'GET', '/api/requisitions')).status, 403, 'school staff do not see requisitions (they use the Order Book)');
 });
 
-test('Requisition written by the Head Master starts signed by him', { skip }, async () => {
-  const r = await as('head', 'POST', '/api/requisitions', { lines: [line('Staff room supplies', 3, 1000)] });
-  assert.equal(r.status, 201, JSON.stringify(r.json)); assert.equal(r.json.requisition.status, 'store'); assert.match(r.json.requisition.signs.head.by, /head/);
-});
-
-test('Requisition: sent back to the applicant, corrected, rejected by the Manager', { skip }, async () => {
-  let r = await as('acad', 'POST', '/api/requisitions', { lines: [line('Reams for exams', 2, 20000)] });
+test('Requisition: sent back to the buyer, corrected, rejected by the Manager', { skip }, async () => {
+  let r = await as('keeper', 'POST', '/api/requisitions', { schoolId: em.id, lines: [line('Reams for exams', 2, 20000)] });
   const a = r.json.requisition;
-  assert.equal((await as('head', 'POST', `/api/requisitions/${a.id}/return`, {})).status, 400, 'sending back needs a reason');
-  r = await as('head', 'POST', `/api/requisitions/${a.id}/return`, { note: 'We need 3 reams, not 2' });
+  assert.equal((await as('aacc', 'POST', `/api/requisitions/${a.id}/return`, {})).status, 400, 'sending back needs a reason');
+  r = await as('aacc', 'POST', `/api/requisitions/${a.id}/return`, { note: 'We need 3 reams, not 2' });
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.ok(r.json.requisition.returned);
-  assert.equal((await as('head', 'POST', `/api/requisitions/${a.id}/head`, { approve: true })).status, 409, 'nobody signs until it is corrected');
-  r = await as('acad', 'POST', `/api/requisitions/${a.id}/correct`, { lines: [{ ...line('Reams for exams', 3, 20000), lineId: a.lines[0].id }] });
+  assert.equal((await as('aacc', 'POST', `/api/requisitions/${a.id}/check`, { approve: true })).status, 409, 'nobody signs until it is corrected');
+  r = await as('keeper', 'POST', `/api/requisitions/${a.id}/correct`, { lines: [{ ...line('Reams for exams', 3, 20000), lineId: a.lines[0].id }] });
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.requisition.returned, null);
   assert.equal(r.json.requisition.total, 60000);
-  r = await as('head', 'POST', `/api/requisitions/${a.id}/head`, { approve: true });
-  assert.equal(r.status, 200, JSON.stringify(r.json));
-  r = await as('keeper', 'POST', `/api/requisitions/${a.id}/store`, { approve: true });
-  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal((await as('aacc', 'POST', `/api/requisitions/${a.id}/check`, { approve: true })).status, 200);
   r = await as('manager', 'POST', `/api/requisitions/${a.id}/manager`, { approve: false, note: 'Use what the library has' });
   assert.equal(r.json.requisition.status, 'rejected'); assert.match(r.json.requisition.rejected.reason, /library/);
-  // The home "To do" shows the work of each signer.
-  await as('acad', 'POST', '/api/requisitions', { lines: [line('Pencils', 10, 200)] });
-  assert.ok((await as('head', 'GET', '/api/dashboard')).json.todo.some((t) => /requisitions to sign/.test(t.label)));
+  await as('keeper', 'POST', '/api/requisitions', { schoolId: em.id, lines: [line('Pencils', 10, 200)] });
+  assert.ok((await as('aacc', 'GET', '/api/dashboard')).json.todo.some((t) => /requisitions to check/.test(t.label)));
   assert.ok((await as('sadmin', 'GET', '/api/dashboard')).json.todo.some((t) => /ID card/.test(t.label)));
 });

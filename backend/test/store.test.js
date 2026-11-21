@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const URL = process.env.TEST_DATABASE_URL;
 const skip = !URL && 'set TEST_DATABASE_URL to run database tests';
 if (URL) process.env.DATABASE_URL = URL;
+process.env.SIGN_SMS_FROM = '1000000000000'; // no SMS code in these tests (signing.test.js checks it)
 
 const app = URL ? require('../src/server') : null;
 const db = URL ? require('../src/db') : null;
@@ -17,9 +18,11 @@ const { codeFor, parseCode } = require('../src/lib/codes');
 const tag = `b${Date.now().toString(36)}`;
 const password = `Test-${tag}-9x`;
 const people = {};
+const PIN = '2468';
+const PNG = `data:image/png;base64,${'A'.repeat(1200)}`;
 let server, port, em, boys, rice, scope, student, socks, delivery;
 const cookie = (r) => (r.headers['set-cookie'] || [])[0]?.split(';')[0];
-const as = (who, method, path, body) => request({ port, method, path, body, cookie: people[who].cookie });
+const as = (who, method, path, body) => request({ port, method, path, body: method === 'POST' && body && typeof body === 'object' ? { pin: PIN, ...body } : body, cookie: people[who].cookie });
 const lib = async (itemId, schoolId = em.id) => (await db('stock_levels').where({ school_id: schoolId, item_id: itemId }).first())?.qty || 0;
 
 test.before(async () => {
@@ -31,7 +34,7 @@ test.before(async () => {
     ['teacher', 'teacher', em.id], ['sadmin', 'sadmin', em.id], ['bursar', 'bursar', em.id]];
   for (const [key, role, school] of make) {
     const username = `t_${key}_${tag}`.toLowerCase();
-    const [u] = await db('users').insert({ full_name: `Test ${key} ${tag}`, username, role, school_id: school, password_hash: await bcrypt.hash(password, 4), must_change_password: false }).returning('id');
+    const [u] = await db('users').insert({ full_name: `Test ${key} ${tag}`, username, role, school_id: school, password_hash: await bcrypt.hash(password, 4), must_change_password: false, phone: '0712000000', signature_image: PNG, signing_pin_hash: await bcrypt.hash(PIN, 4) }).returning('id');
     const r = await request({ port, method: 'POST', path: '/api/auth/login', body: { username, password } });
     people[key] = { id: u.id, cookie: cookie(r) };
   }
@@ -70,7 +73,7 @@ test('Order for a school: ordered → arrives and Mapokezi counts → accountant
   assert.equal((await as('acc', 'POST', '/api/purchases', body)).status, 403, 'the accountant does not write purchases');
   assert.equal((await as('keeper', 'POST', '/api/purchases', { ...body, schoolId: null })).status, 400, 'a purchase goes to one school');
   let r = await as('keeper', 'POST', '/api/purchases', body);
-  assert.equal(r.status, 201); const p = r.json.purchase;
+  assert.equal(r.status, 201, JSON.stringify(r.json)); const p = r.json.purchase;
   assert.match(p.number, /^PUR\.\d{4}$/); assert.equal(p.ordered, true); assert.match(p.statusLabel, /Ordered/); assert.equal(p.school.id, em.id);
   assert.equal((await as('aacc', 'POST', `/api/purchases/${p.id}/decide`, { approve: true })).status, 409, 'the accountant waits for the count');
   assert.equal((await as('keeper', 'POST', `/api/purchases/${p.id}/check`, {})).status, 403, 'only Mapokezi counts');
@@ -80,7 +83,9 @@ test('Order for a school: ordered → arrives and Mapokezi counts → accountant
   assert.equal(r.status, 200); assert.equal(r.json.purchase.status, 'checked');
   assert.equal((await as('keeper', 'POST', `/api/purchases/${p.id}/decide`, { approve: true })).status, 403);
   r = await as('aacc', 'POST', `/api/purchases/${p.id}/decide`, { approve: true });
-  assert.equal(r.status, 200); assert.equal(r.json.purchase.status, 'confirmed'); assert.match(r.json.purchase.delivery.number, /^DLV\./);
+  assert.equal(r.status, 200); assert.equal(r.json.purchase.status, 'confirmed'); assert.equal(r.json.purchase.delivery, null, 'confirming does not send');
+  r = await as('keeper', 'POST', `/api/purchases/${p.id}/send`, {});
+  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.match(r.json.purchase.delivery.number, /^DLV\./);
   delivery = r.json.purchase.delivery;
   assert.equal(await lib(rice.id), 0, 'stock goes up only when the librarian signs');
   // The store-keeper prints the QR labels: 8 pieces with their own code, the rice with the item code.
@@ -98,7 +103,8 @@ test('Order for a school: ordered → arrives and Mapokezi counts → accountant
   // An order that never comes: the one who wrote it cancels it.
   r = await as('keeper', 'POST', '/api/purchases', { ...body, lines: [{ itemId: rice.id, qty: 5, unitCost: 1 }] });
   assert.equal(r.json.purchase.canCancel, true);
-  assert.equal((await as('keeper', 'POST', `/api/purchases/${r.json.purchase.id}/decide`, { approve: false, note: 'shop has none' })).json.purchase.status, 'rejected');
+  const cx = await as('keeper', 'POST', `/api/purchases/${r.json.purchase.id}/decide`, { approve: false, note: 'shop has none' });
+  assert.equal(cx.json.purchase?.status, 'rejected', JSON.stringify(cx.json));
 });
 
 test('Issue in the library: food to the kitchen by quantity; pieces to a person by scanning; return', { skip }, async () => {
@@ -144,7 +150,7 @@ test('Weekly check by the librarian; the accountant confirms; ledger of the scho
   assert.equal((await as('keeper', 'POST', '/api/counts', { category: 'food', lines: [{ itemId: rice.id, counted: 1 }] })).status, 403, 'the store-keeper has no store to count');
   let r = await as('librarian', 'POST', '/api/counts', { category: 'food', lines: [{ itemId: rice.id, counted: 435, note: 'one bag torn' }] });
   assert.equal(r.status, 201); const c = r.json.count; assert.equal(c.lines[0].system, null);
-  r = await as('acc', 'POST', `/api/counts/${c.id}/decide`, { approve: true, note: 'bag torn, 5 kg lost' });
+  r = await as('aacc', 'POST', `/api/counts/${c.id}/decide`, { approve: true, note: 'bag torn, 5 kg lost' });
   assert.equal(r.status, 200); assert.equal(await lib(rice.id), 435);
   assert.equal((await as('acc', 'GET', '/api/counts/ledger?category=food')).status, 400, 'administration chooses a school');
   r = await as('acc', 'GET', `/api/counts/ledger?school=${em.id}&category=food`);

@@ -183,3 +183,56 @@ The app was attacked on a throwaway database (scripts kept outside the repo). He
 - Rule for new screens: call `useLive([...areas], load)`; every change must go through `audit()` (or `publish()`) so other screens update.
 - Nginx: live updates work with the normal proxy; the server sends `X-Accel-Buffering: no` and a ping every 30 s.
 - 2026-11-11: Each person's look (theme, text size) is saved on the server and cached in the browser. Sidebar "System settings" (Super Admin) is still for Step 4.
+
+## Store-keeper office, Order Book, Assistant Manager, help chat (2026-11-20)
+Agreed 2026-11-20: only the people sent to buy (Assistant Manager, store-keeper) write payment requisitions; everyone else uses the Order Book. Money is approved by the Manager OR the Finance Manager. Teachers order from the Academic Master; the Academic Master orders straight from the store-keeper; the librarian and the School Store-keeper go through the Head Master, then the Manager.
+- [x] Migration `20261120_029_amanager_order_book`: role Assistant Manager (`amanager`), tables `orders` + `order_lines` (move forward only, never deleted); `db/provision-roles.sql` has the new tables
+- [x] Order Book (`routes/orders.js`, `pages/Orders.jsx`): paper ORDER layout (No. ORD.0001, M/s, Qty / Particulars, signatures); teacher → Academic Master (gives it or sends it on) → store-keeper; librarian / School Store-keeper → Head Master → Manager → store-keeper; signers may give fewer; store-keeper "Write the requisition" (prefilled) or reject with a reason; Excel; To do and bell for each signer
+- [x] Requisitions (`routes/requisitions.js`): written only by `amanager` / `storekeeper`, for a chosen school (or from an order), every line with an amount; starts at the money step; Manager or Finance Manager approves (never their own); old school-written requisitions still finish the old way
+- [x] Store-keeper / Assistant Manager home: orders to buy for, requisitions with the Manager / FM, approved to buy
+- [x] Fixed: daily purchases form "Sign and send to Mapokezi" opened nothing (could not be saved); store-keeper could not cancel his own order; a new requisition stayed on the edit form after sending; the public paper check (QR) showed no number
+- [x] Help chat (`routes/help.js`, `src/help/pages.js`, `components/HelpChat.jsx`): a Help button on every account. The AI (Claude Haiku 5.5) gets ONLY the how-to notes of the pages that role can open, no data, no tools, chats not saved. Needs `ANTHROPIC_API_KEY` in `backend/.env`
+- [x] Tests: `test/orders.test.js` (4), `test/help.test.js` (1), requisitions and store tests updated — 89 tests pass
+- After pulling: `npm run migrate`, then run `db/provision-roles.sql` again. Create the Assistant Manager account (Staff accounts → New account). Put `ANTHROPIC_API_KEY=` in `backend/.env` for the help chat.
+- Not yet: multiple roles per person; Second Master + Issue Note; School Store-keeper giving out; GRN at school (Bursar → Head Master); stock per place; price list / proforma + LPO; supplier debts; Summary of Goods Received.
+
+## Money back, closing by itself, signatures, paper size (2026-11-20, evening)
+- [x] Buying with office money that is spent exactly closes by itself when Mapokezi accepts the goods (no Cashier step; nothing to give back). Money left over still goes to the Cashier.
+- [x] Mapokezi rejects → the buyer chooses: "Go back to the market (new buying form)" or "Give the money back to the Cashier". The Cashier types what he received and signs; the requisition becomes "closed" (migration `20261120_030_money_back`). Cashier "To do" shows buyers bringing money back
+- [x] Requisition shows every buying form: rejected ones say "then bought again on PUR.000x"; the Order Book shows how far the buying went (being bought, sent, received, money given back)
+- [x] Signatures: "Photo of my signature on paper" (paper made see-through, empty space cut, max 360x120) or draw it; on papers a signature sits on its own dotted line in the middle (max 48px high)
+- [x] Papers smaller: about 720px wide, smaller letters, fewer empty rows
+- [x] Tests: `test/moneyback.test.js` (3) — 92 tests
+- After pulling: `npm run migrate`. Ask each person to upload a photo of their signature again in My profile.
+
+## Many roles, Patron, "Went with", Store books (2026-11-20, night)
+- [x] One person, many roles (migration 031): Staff accounts → Roles; "Working as" in the menu; blocked pairs (roles.js BLOCKED_PAIRS); activity log keeps the role used; notifications for all roles
+- [x] Patron / Matron role; teachers no longer use the Order Book; School Store-keeper and Patron orders: Head Master → buyers; librarian: Head Master → Manager
+- [x] Payout vouchers: Manager or Finance Manager authorizes
+- [x] "Went with" on the buying form (migration 032): the second buyer signs before Mapokezi checks
+- [x] Store books (migration 033, `routes/storebooks.js`, `pages/StoreBooks.jsx`): store-keeper's folders (FOODS...) and items (MCHELE kg...); received / sent to a place / used / corrected; what is left in the store and at each place; Excel; lines never changed
+- After pulling: `npm run migrate`, then `db/provision-roles.sql` again.
+
+## Classes from built-in levels (Academic Master), admission interviews (2026-11-20, late night)
+Agreed 2026-11-20: class names are built into the system; the Academic Master (not the School Admin) adds the classes and streams. After the admission interview the child's details are kept: exam centre, names, previous school, marks, result, parent contacts, date; marks are entered by a secretary under the Assistant Director.
+- [x] `src/lib/levels.js`: built-in levels per school (English Medium: BABY CLASS, PREP ONE, PREP TWO, PRIMARY ONE … SEVEN; secondary: FORM ONE … FOUR) with the default curriculum (new / old / school's own)
+- [x] Migration `20261120_034_levels_interviews`: classes.level + classes.curriculum (old classes matched by name), role Academic Secretary (`secretary`), table `admission_interviews` (never deleted), students.interview_id
+- [x] Classes page: Academic Master (own school) and Super Admin add a class from the list with several streams at once, set the curriculum, fix old hand-typed classes; everyone else only looks (page key `classlist`)
+- [x] Admission interviews page (`routes/interviews.js`, `pages/Interviews.jsx`): Secretary / Assistant Director add one or upload Excel (subject columns found by name, check before save); filters; Excel export; School Admin presses "Register" → Add student filled in; the interview shows on the student's page; Home "To do" lines
+- [x] Tests: `test/interviews.test.js` (2), `test/students.test.js` updated — 98 of 102 pass on a test database (the 4 others need the owner account or docs/test-data; unchanged)
+- After pulling: `npm run migrate`, then run `db/provision-roles.sql` again. Create the Academic Secretary account (Staff accounts → New account).
+- To confirm with the school: the pre-primary class names (BABY CLASS, PREP ONE, PREP TWO) and default curricula.
+
+## Office buying: Assistant Accountant check, suppliers, price lists, LPO, debts, no receipt, goods summary, agreements, vehicles (2026-11-21)
+- [x] Migration `20261121_035_office_buying` (+ `db/provision-roles.sql` grants)
+- [x] Requisitions: new step **check** — the Assistant Accountant checks prices and sums (may fill empty amounts, send back, reject) before the Manager / Finance Manager approves. A requisition can point to the supplier's price list / proforma; "see the paper" link
+- [x] Suppliers page (`routes/suppliers.js`, `pages/Suppliers.jsx`): supplier list with payment terms (cash, weekly, monthly, other); price lists / proforma invoices typed as on the paper + photo or PDF (added once, never changed); supplier account: goods on credit, payments (accountant office or FM, with reference), balance; Excel
+- [x] LPO (`routes/lpos.js`, `pages/Lpo.jsx`): paper layout (To, Our Ref, Ship to, SL No., Description, Unit, Rate, Amount, Total, Prepared / Certified / Authorised by); prepared by Assistant Manager / store-keeper → certified by the Accountant (may fill empty rates) → authorised by the Manager or the Finance Manager; PIN signatures and seal + QR; fill lines from a price list; cancel before goods; "delivered" when the goods are confirmed
+- [x] Purchases: supplier from the list (or a small shop typed), from an LPO, on credit; Mapokezi ticks "No receipt" with the reason → Finance Manager, Manager and Director are told (not assistants)
+- [x] Purchases split: confirm (Cashier / Assistant Accountant) no longer sends; the store-keeper presses "Send to the school" (requisition shows "Bought: to send"); To do line for the store-keeper
+- [x] Summary of Daily Goods Received (`/purchases/summary`): paper layout of book 1701 for any dates, cash / credit, no-receipt lines, print + Excel
+- [x] Work agreements — Makubaliano ya Malipo ya Kazi (`routes/contracts.js`, `pages/Contracts.jsx`): entered by the Assistant Accountant with a copy of the signed paper; instalments with balance (salio), never more than agreed; checked by the Accountant (Imekaguliwa na); stop / finished
+- [x] Vehicles (`routes/vehicles.js`, `pages/Vehicles.jsx`): plate, make, use, school, responsible driver now, driver history
+- [x] Tests: `test/office.test.js` (5) + requisitions / orders / moneyback / store tests updated — 103 of 107 pass (same 4 as before need the owner account or docs/test-data)
+- After pulling: `npm run migrate`, then run `db/provision-roles.sql` again. The Assistant Accountant now signs every requisition before the Manager.
+- Not yet: number series per school and per place (with stock per place); LPO paper not yet compared with a photo of the real LPO book.

@@ -5,7 +5,8 @@
 //   Everything else (patron, cleaners... through the School Store-keeper): the School Store-keeper -> Head Master -> the same.
 // Only the APPLICANT changes the words. A signer changes a quantity, or sends it back to the applicant to correct.
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useSchools } from '../layout/scope';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
@@ -16,7 +17,7 @@ import { PinBox, SealBadge, SealQR, verifyUrl } from '../components/signing';
 import { Paper, fmtDate } from '../components/paper';
 import './requisition.css';
 
-const TONE = { acad: 'warn', head: 'warn', store: 'warn', manager: 'warn', approved: 'info', buying: 'info', arrived: 'info', sent: 'info', done: 'ok', rejected: 'bad', withdrawn: '' };
+const TONE = { acad: 'warn', head: 'warn', store: 'warn', check: 'warn', manager: 'warn', approved: 'info', buying: 'info', arrived: 'info', sent: 'info', done: 'ok', rejected: 'bad', withdrawn: '' };
 const STOCK_ROLES = ['acad', 'sstore', 'librarian', 'head'];
 // "" (empty) is a real value: nothing written. A number is a whole number of shillings / pieces.
 const num = (v) => (String(v ?? '').trim() === '' ? null : Number(String(v).replace(/\D/g, '')));
@@ -54,7 +55,7 @@ function RList() {
   const tabs = [['', 'All'], ['mine', `Waiting for you${data?.mine ? ` (${data.mine})` : ''}`], ['open', 'On the way'], admin && ['admin', 'With administration'], admin && ['money', 'Money given'], ['done', 'Received'], ['rejected', 'Rejected']].filter(Boolean);
   return (
     <>
-      <PageHead title="Payment requisitions" sub="The paper form. Lessons stationery goes through the Academic Master; everything else through the School Store-keeper. Then the Head Master, the store-keeper and the Manager. The Cashier gives the money.">
+      <PageHead title="Payment requisitions" sub="The paper form. Written only by the Assistant Manager or the store-keeper (the people sent to buy), often from an Order Book order. The Manager or the Finance Manager approves; the Cashier gives the money.">
         <ExcelButton href={`/api/requisitions/export.xlsx?${qs}`} />
         {data?.canWrite && <Link className="btn p" to="/requisitions/new"><Icon name="plus" /> New requisition</Link>}
       </PageHead>
@@ -100,8 +101,8 @@ function RList() {
 
 // Small dots: first school signer, Head Master, store-keeper, Manager.
 const Dots = ({ r }) => (
-  <span className="sigdots" title="First school signer · Head Master · Store-keeper · Manager">
-    {['acad', 'head', 'store', 'manager'].map((k) => <i key={k} className={r.signs[k] ? 'on' : r.status === 'rejected' && !r.signs[k] ? 'off' : ''} />)}
+  <span className="sigdots" title="First school signer · Head Master · Store-keeper · Assistant Accountant · Manager">
+    {['acad', 'head', 'store', 'check', 'manager'].map((k) => <i key={k} className={r.signs[k] ? 'on' : r.status === 'rejected' && !r.signs[k] ? 'off' : ''} />)}
   </span>
 );
 
@@ -111,7 +112,7 @@ function Sig({ label, sign, hint, children }) {
     <div className="rq-sig">
       <div className="rq-sigline">{sign ? (sign.image ? <img className="rq-sigimg" src={sign.image} alt="" /> : <span className="rq-ink">{sign.by}</span>) : children}</div>
       <b>{label}</b>
-      <span className="who">{sign ? `${sign.by}${sign.acting ? ' (standing in)' : ''}` : hint || ''}</span>
+      {(sign || hint) && <span className="who">{sign ? `${sign.by}${sign.acting ? ' (standing in)' : ''}` : hint}</span>}
       <span className="dt">Date: {sign?.at ? fmtDate(sign.at) : '......./......./20....'}</span>
     </div>
   );
@@ -169,16 +170,35 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [ask, setAsk] = useState(null);                        // the signing PIN box: { id, title, call(cred) }
   const [note, setNote] = useState('');
+  const [backAmt, setBackAmt] = useState('');
   const [editing, setEditing] = useState(!id);                 // writing a new one, or correcting one sent back
   const [dept, setDept] = useState(user.school?.name || '');
   const [who, setWho] = useState(user.fullName || '');
   const [kind, setKind] = useState('academic');
+  const buyer = ['amanager', 'storekeeper'].includes(user.role);
+  const schools = useSchools();
+  const [qs] = useSearchParams();
+  const [schoolId, setSchoolId] = useState('');
+  const [order, setOrder] = useState(null);
+  const orderId = qs.get('order');
   const [needed, setNeeded] = useState('');
-  const [rows, setRows] = useState(() => Array.from({ length: 10 }, blankRow));
+  const [rows, setRows] = useState(() => Array.from({ length: 6 }, blankRow));
   const [qv, setQv] = useState({});                            // lineId -> quantity being typed (saved when you leave the box)
   const [sv, setSv] = useState({});                            // lineId -> { left, used } being typed
   const [costs, setCosts] = useState({});                      // lineId -> { est, total } written into an EMPTY cell (store-keeper, Manager)
   const [appr, setAppr] = useState({});                        // lineId -> { qty, amt } (Manager)
+  // The supplier's price list / proforma the prices come from (2026-11-21): the Assistant Accountant checks against it.
+  const [lists, setLists] = useState([]);
+  const [priceListId, setPriceListId] = useState('');
+  useEffect(() => { if (!id && buyer) api.get('/suppliers/price-lists/pick').then((d) => setLists(d.priceLists)).catch(() => {}); }, [id, buyer]);
+  const pickedList = lists.find((x) => String(x.id) === priceListId);
+  useEffect(() => {
+    if (id || !orderId) return;
+    api.get(`/orders/${orderId}`).then(({ order: o }) => {
+      setOrder(o); setSchoolId(String(o.schoolId)); setDept(`${o.school} – ${o.placeLabel}`); setWho(user.fullName || '');
+      setRows([...o.lines.map((l) => ({ key: `o${l.id}`, name: `${l.particulars}${l.unit ? ` (${l.unit})` : ''}`, qty: l.qty == null ? '' : String(l.qty), cost: '', total: '' })), blankRow(), blankRow()]);
+    }).catch((e) => setError(e.message));
+  }, [id, orderId, user.fullName]);
   const load = useCallback(() => (id ? api.get(`/requisitions/${id}`).then((d) => { setR(d.requisition); setError(''); }).catch((e) => setError(e.message)) : Promise.resolve()), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['requisition', 'purchase', 'delivery', 'payment'], load);
@@ -188,7 +208,8 @@ function Page() {
 
   // ---------- writing (new, or correcting a requisition that was sent back) ----------
   const used = rows.filter((x) => x.name.trim() || x.qty || x.cost || x.total);
-  const bad = !used.length || used.some((x) => x.name.trim().length < 2);
+  const noAmount = buyer && !r && used.some((x) => (num(x.qty) == null || num(x.cost) == null) && num(x.total) == null);
+  const bad = !used.length || used.some((x) => x.name.trim().length < 2) || (buyer && !r && (!schoolId || noAmount));
   const head = user.role === 'head';
   const firstRole = (head ? kind : ['sstore', 'bursar'].includes(user.role) ? 'general' : 'academic') === 'academic' ? 'Academic Master' : 'School Store-keeper';
   const startCorrect = () => {
@@ -197,9 +218,9 @@ function Page() {
     setEditing(true);
   };
   const submitForm = () => setAsk({ id: r?.id || 0, title: r ? `Sign the correction of ${r.number}` : 'Sign and send', call: async (cred) => {
-    const body = { kind, department: dept, applicantName: who, neededBy: needed || null, lines: used.map((x) => ({ lineId: x.lineId, name: x.name, qty: num(x.qty), estCost: num(x.cost), total: num(x.total) })), ...cred };
+    const body = { kind: buyer && !r ? (order?.place === 'academic' ? 'academic' : 'general') : kind, ...(buyer && !r ? { schoolId: Number(schoolId), orderId: order?.id || undefined, priceListId: Number(priceListId) || undefined } : {}), department: dept, applicantName: who, neededBy: needed || null, lines: used.map((x) => ({ lineId: x.lineId, name: x.name, qty: num(x.qty), estCost: num(x.cost), total: num(x.total) })), ...cred };
     if (r) { await api.post(`/requisitions/${r.id}/correct`, body); toast(`${r.number} corrected and sent on`); setEditing(false); await load(); return; }
-    const d = await api.post('/requisitions', body); toast(`${d.requisition.number} sent`); navigate(`/requisitions/${d.requisition.id}`, { replace: true });
+    const d = await api.post('/requisitions', body); toast(`${d.requisition.number} sent`); setEditing(false); navigate(`/requisitions/${d.requisition.id}`, { replace: true });
   } });
 
   if (editing) {
@@ -207,6 +228,23 @@ function Page() {
       <div className="rq-wrap">
         <div className="rq-bar"><Link to={r ? `/requisitions/${r.id}` : '/requisitions'} className="btn sm" onClick={() => r && setEditing(false)}>← Back</Link><h2 style={{ margin: 0 }}>{r ? `Correct ${r.number}` : 'New requisition'}</h2></div>
         {r?.returned && <p className="rq-note bad"><b>{r.returned.by} sent it back:</b> {r.returned.note}</p>}
+        {!r && buyer && (
+          <div className="row" style={{ alignItems: 'end', gap: 12, flexWrap: 'wrap' }}>
+            <label>School it is for<select value={schoolId} disabled={!!order} onChange={(e) => { setSchoolId(e.target.value); const s = schools.find((x) => String(x.id) === e.target.value); if (s) setDept(s.name); }}>
+              <option value="">Choose the school…</option>{schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+            {order && <span className="pill info">From order {order.number} ({order.placeLabel})</span>}
+            <label>Price list / proforma (from the supplier)<select value={priceListId} onChange={(e) => setPriceListId(e.target.value)}>
+              <option value="">{lists.length ? 'Choose the paper the prices come from…' : 'None entered yet (Suppliers page)'}</option>
+              {lists.map((x) => <option key={x.id} value={x.id}>{x.number} · {x.supplier} · {x.kindLabel}{x.refNo ? ` ${x.refNo}` : ''}{x.expired ? ' (expired)' : ''}</option>)}</select></label>
+          </div>
+        )}
+        {pickedList && (
+          <div className="rq-note info small">
+            <b>{pickedList.kindLabel} {pickedList.number}</b> from {pickedList.supplier}{pickedList.docDate ? ` · ${pickedList.docDate}` : ''}{pickedList.validUntil ? ` · valid until ${pickedList.validUntil}` : ''}:{' '}
+            {pickedList.lines.map((l) => `${l.item}${l.unit ? ` (${l.unit})` : ''} ${tsh(l.price)}`).join(' · ')}
+            {pickedList.hasFile && <> · <a href={`/api/suppliers/price-lists/${pickedList.id}/file`} target="_blank" rel="noreferrer">see the paper</a></>}
+          </div>
+        )}
         {!r && head && (
           <div className="seg">{[['academic', 'For lessons (Academic Master signs first)'], ['general', 'General (School Store-keeper signs first)']].map(([k, t]) => <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{t}</button>)}</div>
         )}
@@ -217,7 +255,7 @@ function Page() {
         </div>
         <div className="rq-actions">
           <label>Needed by (not required)<input type="date" min={r ? undefined : todayStr()} value={needed} onChange={(e) => setNeeded(e.target.value)} style={{ maxWidth: 220 }} /></label>
-          <p className="small muted" style={{ margin: 0 }}>Write it as you do on the paper, in your own words. It does not have to be in any store. Qty and Amount @ can stay empty: a TOTAL AMOUNT alone is fine. {!r && `It goes to the ${firstRole} first.`}</p>
+          <p className="small muted" style={{ margin: 0 }}>Write it as you do on the paper, in your own words. It does not have to be in any store. Qty and Amount @ can stay empty: a TOTAL AMOUNT alone is fine. {!r && (buyer ? 'You know the price (ask the shop for a price list first): write an amount on every line. Then the Assistant Accountant checks it, and the Manager or the Finance Manager approves.' : `It goes to the ${firstRole} first.`)}</p>
           <ErrorNote error={error} />
           <div className="row"><button className="btn p" disabled={busy || bad} onClick={submitForm}>{r ? 'Sign the correction' : 'Sign and send'}</button>
             <Link to={r ? `/requisitions/${r.id}` : '/requisitions'} className="btn" onClick={() => r && setEditing(false)}>Cancel</Link></div>
@@ -229,10 +267,11 @@ function Page() {
 
   // ---------- reading / signing ----------
   const turn = r.turn;
-  const signer = ['acad', 'head', 'store', 'manager'].includes(turn);
+  const byBuyer = ['amanager', 'storekeeper'].includes(r.requestedByRole) && !r.signs.head && !r.signs.acad;   // written by the buyer (2026-11-20): no school signatures
+  const signer = ['acad', 'head', 'store', 'check', 'manager'].includes(turn);
   const mgr = turn === 'manager';
   const qtyEditor = ['acad', 'head', 'store'].includes(turn);
-  const fills = turn === 'store' || mgr;
+  const fills = turn === 'store' || turn === 'check' || mgr;
   const atSchool = ['acad', 'head'].includes(r.status);
   const stockEditor = atSchool && STOCK_ROLES.includes(user.role);
   const showStock = atSchool || r.lines.some((l) => l.leftQty != null || l.usedQty != null);
@@ -280,6 +319,7 @@ function Page() {
   const sendBack = async () => { if (await run(() => api.post(`/requisitions/${r.id}/return`, { note }), `${r.number} sent back to the applicant`)) setNote(''); };
   const stop = async () => { if (await run(() => api.post(`/requisitions/${r.id}/stop`, { note }), `${r.number} stopped`)) setNote(''); };
   const withdraw = () => run(() => api.post(`/requisitions/${r.id}/withdraw`, {}), `${r.number} withdrawn`);
+  const askBack = () => run(() => api.post(`/requisitions/${r.id}/money-back/ask`, {}), `${r.number}: the Cashier is told`);
 
   // The sign button goes INSIDE the box of the person whose turn it is, like a pen on the dotted line.
   const signHere = (step) => (turn === step ? <button className="btn p sm" disabled={busy || (mgr && mgrMissing)} onClick={() => sign(true)}>{busy ? '…' : 'Sign here'}</button> : null);
@@ -313,7 +353,7 @@ function Page() {
       </tr>
     );
   });
-  const blanks = Math.max(0, 8 - r.lines.length);
+  const blanks = Math.max(0, 4 - r.lines.length);
   const cols = 5 + (showStock ? 2 : 0) + (showAppr ? 2 : 0);
 
   return (
@@ -322,7 +362,23 @@ function Page() {
         <PrintButton className="btn" label="Print form">{requisitionPaper(r)}</PrintButton></div>
       {r.returned && <p className="rq-note bad"><b>{r.returned.by} sent it back:</b> {r.returned.note}. {turn === 'correct' ? 'Correct it and it goes on again.' : 'Waiting for the applicant to correct it.'}</p>}
       {r.rejected && <p className="rq-note bad"><b>Rejected by {r.rejected.by}</b> on {fmtDate(r.rejected.at)}: {r.rejected.reason}</p>}
+      {r.priceList && <p className="rq-note info">Prices from <b>{r.priceList.kind === 'proforma' ? 'proforma invoice' : 'price list'} {r.priceList.number}</b> ({r.priceList.supplier}) · <a href={`/api/suppliers/price-lists/${r.priceList.id}/file`} target="_blank" rel="noreferrer">see the paper</a></p>}
       {!r.returned && !r.rejected && r.waiting && !signer && <p className="rq-note info">Waiting for <b>{r.waiting.role}</b>{r.waiting.names.length ? `: ${r.waiting.names.join(', ')}` : ` — nobody with this role is set up yet`}.</p>}
+      {r.purchases?.length > 0 && (
+        <div className="rq-note info">
+          <b>Buying for this requisition</b>
+          {r.purchases.map((b) => (
+            <div key={b.id} style={{ marginTop: 4 }}>
+              <Link to={`/purchases/form/${b.id}`}>{b.number}</Link> · {b.supplier} · TSh {tsh(b.total)} · <span className={`pill ${b.status === 'confirmed' ? 'ok' : b.status === 'rejected' ? 'bad' : 'warn'}`}>{b.statusLabel}</span>
+              {b.status === 'rejected' && <div className="small">Rejected by {b.decidedBy}{b.decidedAt ? ` on ${fmtDate(b.decidedAt)}` : ''}: {b.note}{r.purchases.some((x) => x.id > b.id) ? ` · then bought again on ${r.purchases.find((x) => x.id > b.id).number}` : ''}</div>}
+              {b.status === 'confirmed' && !b.decidedBy && <div className="small">Accepted by Mapokezi; nothing to give back, so it closed by itself.</div>}
+            </div>
+          ))}
+          {r.purchases[r.purchases.length - 1].status === 'rejected' && ['approved', 'buying'].includes(r.status) && !r.moneyBackAsked && <div className="small" style={{ marginTop: 4 }}>The buyer goes back to the market (new buying form), or gives the money back to the Cashier (buttons below).</div>}
+        </div>
+      )}
+      {r.moneyBack && <p className="rq-note ok"><b>Money given back:</b> TSh {tsh(r.moneyBack.amount)} received by {r.moneyBack.by} on {fmtDate(r.moneyBack.at)}{r.moneyBack.note ? ` (${r.moneyBack.note})` : ''}. Nothing was bought; this requisition is closed.</p>}
+      {!r.moneyBack && r.moneyBackAsked && <p className="rq-note info">The buyer said on {fmtDate(r.moneyBackAsked)} that he brings the money back. Waiting for the Cashier to receive it.</p>}
       {money$ && <p className="rq-note info">Money: <b>{money$.number}</b> TSh {tsh(money$.amount)} · {money$.status === 'paid' ? `given by ${money$.paidBy} on ${fmtDate(money$.paidAt)}` : money$.status === 'rejected' ? 'the Cashier rejected it' : 'waiting for the Cashier'}</p>}
 
       <div className="rq-sheet">
@@ -340,16 +396,20 @@ function Page() {
         </table></div>
         {mgr && <p className="rq-small" style={{ margin: '6px 0 0' }}>The Cashier will pay exactly <b>TSh {tsh(mgrTotal)}</b>. Give less than asked by lowering the quantity or the amount (0 = not this line).</p>}
 
+        {!byBuyer && <>
         <div className="rq-sec">At the school</div>
-        <div className="rq-signs">
-          <Sig label="Signature of Applicant" sign={r.signs.applicant || { by: r.applicantName, at: r.requestedAt }} hint={r.requestedByRole && r.requestedBy !== r.applicantName ? `written by ${r.requestedBy}` : ''} />
-          <Sig label={r.firstName} sign={r.signs.acad} hint={r.signs.acad ? '' : turn === 'acad' ? 'your turn' : r.status === 'acad' ? 'waiting' : ''}>{empty('acad') && signHere('acad')}</Sig>
-          <Sig label="Approved by (Head Master)" sign={r.signs.head} hint={r.signs.head ? '' : turn === 'head' ? 'your turn' : ''}>{empty('head') && signHere('head')}</Sig>
-        </div>
+          <div className="rq-signs">
+            <Sig label="Signature of Applicant" sign={r.signs.applicant || { by: r.applicantName, at: r.requestedAt }} hint={r.requestedByRole && r.requestedBy !== r.applicantName ? `written by ${r.requestedBy}` : ''} />
+            <Sig label={r.firstName} sign={r.signs.acad} hint={r.signs.acad ? '' : turn === 'acad' ? 'your turn' : r.status === 'acad' ? 'waiting' : ''}>{empty('acad') && signHere('acad')}</Sig>
+            <Sig label="Approved by (Head Master)" sign={r.signs.head} hint={r.signs.head ? '' : turn === 'head' ? 'your turn' : ''}>{empty('head') && signHere('head')}</Sig>
+          </div>
+        </>}
         <div className="rq-sec">Administration</div>
         <div className="rq-signs">
-          <Sig label="Checked by (Store-keeper)" sign={r.signs.store} hint={r.signs.store ? '' : turn === 'store' ? 'your turn' : ''}>{empty('store') && signHere('store')}</Sig>
-          <Sig label="Authorise by (Manager)" sign={r.signs.manager} hint={r.signs.manager ? '' : mgr ? 'your turn' : ''}>{empty('manager') && signHere('manager')}</Sig>
+          {byBuyer && <Sig label={`Signature of Applicant (${r.requestedByRole === 'amanager' ? 'Assistant Manager' : 'Store-keeper'})`} sign={r.signs.applicant || { by: r.applicantName, at: r.requestedAt }} />}
+          {!byBuyer && <Sig label="Checked by (Store-keeper)" sign={r.signs.store} hint={r.signs.store ? '' : turn === 'store' ? 'your turn' : ''}>{empty('store') && signHere('store')}</Sig>}
+          <Sig label="Checked by (Assistant Accountant)" sign={r.signs.check} hint={r.signs.check ? '' : turn === 'check' ? 'your turn' : r.status === 'check' ? 'waiting' : ''}>{empty('check') && signHere('check')}</Sig>
+          <Sig label="Authorised by (Manager / Finance Manager)" sign={r.signs.manager} hint={r.signs.manager ? '' : mgr ? 'your turn' : ''}>{empty('manager') && signHere('manager')}</Sig>
           <Sig label="Money given (Cashier)" sign={money$?.status === 'paid' ? { by: money$.paidBy, at: money$.paidAt } : null} hint={money$ && money$.status !== 'paid' ? (payer ? 'your turn' : 'waiting') : ''}>{money$ && <Link className="btn sm" to={`/payments/${money$.id}`}>{payer ? `Pay TSh ${tsh(money$.amount)}` : 'Open voucher'}</Link>}</Sig>
         </div>
       </div>
@@ -364,8 +424,16 @@ function Page() {
           {r.canStop && <button className="btn danger" disabled={busy || !note.trim()} onClick={stop}>Stop it</button>}
           {r.canWithdraw && <button className="btn" disabled={busy} onClick={withdraw}>Withdraw</button>}
           {turn === 'correct' && <button className="btn p" onClick={startCorrect}>Correct it</button>}
-          {turn === 'fulfil' && <Link className="btn p" to={`/purchases/buy/${r.id}`}>Fill the buying form</Link>}
+          {turn === 'fulfil' && !r.moneyBackAsked && <Link className="btn p" to={`/purchases/buy/${r.id}`}>{r.purchases?.some((b) => b.status === 'rejected') ? 'Go back to the market (new buying form)' : 'Fill the buying form'}</Link>}
+          {r.canAskMoneyBack && <button className="btn" disabled={busy} onClick={askBack}>Give the money back to the Cashier</button>}
         </div>
+        {r.canReceiveMoneyBack && (
+          <div className="row" style={{ alignItems: 'end' }}>
+            <label>Money received back (TSh)<input inputMode="numeric" value={backAmt} placeholder={String(r.money?.amount ?? '')} onChange={(e) => setBackAmt(e.target.value.replace(/\D/g, ''))} style={{ maxWidth: 180 }} /></label>
+            <label style={{ flex: 1 }}>Note (needed if the amount is different)<input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} /></label>
+            <button className="btn p" disabled={busy || backAmt === ''} onClick={() => setAsk({ id: r.id, title: `Sign: received TSh ${tsh(Number(backAmt))} back`, call: async (cred) => { await api.post(`/requisitions/${r.id}/money-back`, { amount: Number(backAmt), note, ...cred }); toast(`${r.number}: money received, closed`); setNote(''); setBackAmt(''); await load(); } })}>I received the money back</button>
+          </div>
+        )}
         {qtyEditor && <p className="small muted" style={{ margin: 0 }}>You can change a quantity: it is saved as soon as you leave the box. The words and amounts are the applicant's: send it back if they are wrong.</p>}
         {fills && <p className="small muted" style={{ margin: 0 }}>Yellow boxes are empty on the paper: you may fill them. Written amounts cannot be changed.</p>}
       </div>
@@ -388,7 +456,8 @@ export const requisitionPaper = (r) => (
       { role: r.firstName, name: r.signs.acad?.by, at: r.signs.acad?.at, note: r.signs.acad?.note, image: r.signs.acad?.image },
       { role: 'Approved by (Head Master)', name: r.signs.head?.by, at: r.signs.head?.at, note: r.signs.head?.note, image: r.signs.head?.image },
       { role: 'Checked by (Store-keeper)', name: r.signs.store?.by, at: r.signs.store?.at, note: r.signs.store?.note, image: r.signs.store?.image },
-      { role: 'Authorise by (Manager)', name: r.signs.manager?.by, at: r.signs.manager?.at, note: r.signs.manager?.note, image: r.signs.manager?.image },
+      { role: 'Checked by (Assistant Accountant)', name: r.signs.check?.by, at: r.signs.check?.at, note: r.signs.check?.note, image: r.signs.check?.image },
+      { role: 'Authorised by (Manager / Finance Manager)', name: r.signs.manager?.by, at: r.signs.manager?.at, note: r.signs.manager?.note, image: r.signs.manager?.image },
       { role: 'Money given (Cashier)', name: r.money?.status === 'paid' ? r.money.paidBy : '', at: r.money?.status === 'paid' ? r.money.paidAt : null }]}
     qr={r.seal?.code ? verifyUrl('requisition', r.id, r.seal.code) : undefined}
     foot={r.rejected ? `Rejected by ${r.rejected.by} on ${fmtDate(r.rejected.at)}: ${r.rejected.reason}` : 'Each name and time above was stamped by the system when that person signed with his own account. Nothing is bought or paid before the Manager signs.'} />

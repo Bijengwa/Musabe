@@ -18,7 +18,7 @@ function greeting(name) {
 
 // Each role has its own home page (see ./home/RoleHomes.jsx). Super Admin and School Admin also get the accounts part.
 const HOMES = { super: SuperHome, director: DirectorHome, adirector: DirectorHome, manager: ManagerHome, fm: FinanceHome, afm: FinanceHome,
-  acc: AccountantHome, aacc: AccountantHome, sadmin: SchoolAdminHome, head: HeadHome, bursar: BursarHome, librarian: LibrarianHome, storekeeper: StoreHome,
+  acc: AccountantHome, aacc: AccountantHome, sadmin: SchoolAdminHome, head: HeadHome, bursar: BursarHome, librarian: LibrarianHome, storekeeper: StoreHome, amanager: StoreHome,
   mapokezi: MapokeziHome, cashier: CashierHome };
 
 export default function Home() {

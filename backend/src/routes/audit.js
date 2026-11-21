@@ -15,14 +15,14 @@ function query(req, limit) {
   let qb = db('audit_log as a')
     .leftJoin('users as u', 'u.id', 'a.user_id')
     .leftJoin('schools as s', 's.id', 'a.school_id')
-    .select('a.id', 'a.at', 'a.action', 'a.summary', 'a.school_id', 's.short_name as school_short', 'u.full_name', 'u.role')
+    .select('a.id', 'a.at', 'a.action', 'a.summary', 'a.school_id', 's.short_name as school_short', 'u.full_name', db.raw('coalesce(a.role, u.role) as role'))
     .orderBy('a.at', 'desc').limit(limit);
   qb = visible(qb, req.user, { group: group || undefined });
   if (ROLES[req.user.role].scope === 'all') {
     if (school === 'admin') qb = qb.whereNull('a.school_id');
     else if (school) qb = qb.where('a.school_id', Number(school));
   }
-  if (role) qb = qb.where('u.role', String(role));
+  if (role) qb = qb.whereRaw('coalesce(a.role, u.role) = ?', [String(role)]);
   if (from) qb = qb.where('a.at', '>=', new Date(`${from}T00:00:00`));
   if (to) qb = qb.where('a.at', '<', new Date(new Date(`${to}T00:00:00`).getTime() + 86400000));
   if (q) qb = qb.where((w) => w.whereILike('a.summary', `%${q}%`).orWhereILike('u.full_name', `%${q}%`));

@@ -6,6 +6,7 @@ const ROLES = {
   director:  { label: 'Director',                  scope: 'all' },
   adirector: { label: 'Assistant Director',        scope: 'all' },
   manager:   { label: 'Manager',                   scope: 'all' },
+  amanager:  { label: 'Assistant Manager',         scope: 'all' },   // sent to buy (with the store-keeper); writes payment requisitions (2026-11-20)
   fm:        { label: 'Finance Manager',           scope: 'all' },
   afm:       { label: 'Assistant Finance Manager', scope: 'all' },
   acc:       { label: 'Accountant',                scope: 'all' },
@@ -13,23 +14,25 @@ const ROLES = {
   storekeeper: { label: 'Store-keeper',            scope: 'all' },
   cashier:   { label: 'Cashier',                   scope: 'all' },
   mapokezi:  { label: 'Mapokezi (reception)',      scope: 'all' },
+  secretary: { label: 'Academic Secretary',        scope: 'all' },   // Assistant Director's office: enters admission interview marks (2026-11-20)
   sadmin:    { label: 'School Admin',              scope: 'school' },
   head:      { label: 'Head Master',               scope: 'school' },
   acad:      { label: 'Academic Master',           scope: 'school' },
   teacher:   { label: 'Subject Teacher',           scope: 'own' },
   bursar:    { label: 'Bursar',                    scope: 'school' },
   librarian: { label: 'Librarian',                 scope: 'school' },
-  sstore:    { label: 'School Store-keeper',       scope: 'school' },   // keeps the school's other stores (linen, uniforms, cleaning...); first signer of general requisitions
+  sstore:    { label: 'School Store-keeper',       scope: 'school' },
+  patron:    { label: 'Patron / Matron',           scope: 'school' },   // boarding; writes in the Order Book (2026-11-20)   // keeps the school's other stores (linen, uniforms, cleaning...); first signer of general requisitions
 };
 
 // Administration roles have no school. School roles must have one.
-const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi'];
-const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'];
+const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary'];
+const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'];
 
 // Who can create (and manage) which accounts.
 const CREATES = {
   super: [...ADMIN_ROLES, ...SCHOOL_ROLES],
-  sadmin: ['head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'],
+  sadmin: ['head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'],
 };
 
 // Page access: 'f' = full, 'v' = view only, missing = hidden.
@@ -37,12 +40,12 @@ const parse = (s) =>
   Object.fromEntries(s.trim().split(/\s+/).map((x) => { const [k, v] = x.split(':'); return [k, v || 'f']; }));
 
 const ACCESS = {
-  super:     parse('home useitems:v schools staff students:v labels idcards requisitions:v issue:v purchases:v counts:v items:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v payments:v year:v watch:v classes:v marks:v support:v reports audit settings'),
-  director:  parse('home useitems:v schools:v staff:v students:v idcards:v requisitions:v issue:v purchases:v counts:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v items:v payments:v year:v watch:v classes:v marks:v support:v reports audit:v'),
+  super:     parse('home books:v orders:v useitems:v schools staff students:v labels idcards requisitions:v issue:v purchases:v counts:v items:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v payments:v year:v watch:v classes:v marks:v support:v reports audit settings interviews:v classlist'),
+  director:  parse('home books:v orders:v useitems:v schools:v staff:v students:v idcards:v requisitions:v issue:v purchases:v counts:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v items:v payments:v year:v watch:v classes:v marks:v support:v reports audit:v interviews:v'),
   // Assistant Director (agreed 2026-11-17): own, smaller access — meetings and academics, not money or stock.
   // The academic secretary works under this office.
-  adirector: parse('home students:v idcards:v year watch classes marks:v support:v reports audit:v'),
-  manager:   parse('home useitems:v schools:v staff:v students:v requisitions issue:v purchases:v counts:v receipts:v bills:v money:v requests:v stockin:v stock:v damage:v items:v payments:v year:v watch:v classes:v support:v reports audit:v'),
+  adirector: parse('home students:v idcards:v year watch classes marks:v support:v reports audit:v interviews'),
+  manager:   parse('home books:v orders useitems:v schools:v staff:v students:v requisitions issue:v purchases:v counts:v receipts:v bills:v money:v requests:v stockin:v stock:v damage:v items:v payments year:v watch:v classes:v support:v reports audit:v interviews:v'),
   // Library and stock (agreed 2026-11-11 to 2026-11-17):
   // - Store-keeper (administration, one person): registers items the schools use but do not sell, sends stock to a
   //   school's library, handles the librarian's stock requests, puts the QR codes on. The ONLY one who sends stock.
@@ -59,16 +62,16 @@ const ACCESS = {
   // - Sales dashboard (salesdash): only the finance office and the accountant office (and Super Admin / Director). Not bursars.
   // - Control numbers (bills): the bursar makes them; the bursar or the accountant marks them paid.
   // - Daily money (money): the accountant confirms each bursar's day; a bursar sees only their own days.
-  fm:        parse('home useitems students:v requisitions:v issue:v purchases:v counts:v items itemsupload requests:v receipts:v bills:v money:v salesdash stock damage payments reports audit:v'),
+  fm:        parse('home books:v orders:v useitems students:v requisitions issue:v purchases:v counts:v items itemsupload requests:v receipts:v bills:v money:v salesdash stock damage payments reports audit:v'),
   afm:       parse('home useitems:v students:v requisitions:v issue:v purchases:v counts:v items:v itemsupload requests:v receipts:v bills:v money:v salesdash stock:v damage:v reports audit:v'),
-  acc:       parse('home useitems:v students:v requisitions:v issue:v purchases counts items:v requests:v receipts:v bills money salesdash stock damage payments:v reports audit'),
-  aacc:      parse('home useitems:v students:v requisitions:v issue:v purchases counts items:v receipts:v bills:v money:v salesdash:v requests:v stock:v damage:v payments reports audit:v'),
-  sadmin:    parse('home staff students labels idcards classes:v reports audit:v'),
-  head:      parse('home staff:v students:v idcards:v requisitions issue:v counts:v items:v receipts:v bills:v damage:v year watch classes marks:v bank:v support reports audit:v'),
-  acad:      parse('home students:v requisitions year watch classes marks bank support reports'),
-  teacher:   parse('home students:v requisitions year watch classes marks bank support'),
-  bursar:    parse('home students:v items:v sell requisitions receipts bills money:v reports'),
-  librarian: parse('home useitems:v items:v issue labels counts give incoming requests damage requisitions receipts:v reports'),
+  acc:       parse('home books:v useitems:v students:v requisitions:v issue:v purchases counts items:v requests:v receipts:v bills money salesdash stock damage payments:v reports audit'),
+  aacc:      parse('home books:v useitems:v students:v requisitions issue:v purchases counts items:v receipts:v bills:v money:v salesdash:v requests:v stock:v damage:v payments reports audit:v'),
+  sadmin:    parse('home staff students labels idcards classes:v reports audit:v interviews:v'),
+  head:      parse('home orders staff:v students:v idcards:v issue:v counts:v items:v receipts:v bills:v damage:v year watch classes marks:v bank:v support reports audit:v interviews:v'),
+  acad:      parse('home orders students:v year watch classes marks bank support reports classlist interviews:v'),
+  teacher:   parse('home students:v year watch classes marks bank support'),
+  bursar:    parse('home students:v items:v sell receipts bills money:v reports'),
+  librarian: parse('home orders useitems:v items:v issue labels counts give incoming requests damage receipts:v reports'),
 };
 // Barcodes, store and issuing (agreed 2026-11-16; store-keeper and sending-stock corrected 2026-11-17):
 // - There is NO main store. ONE store-keeper (administration): receives what Mapokezi has already checked and
@@ -85,18 +88,45 @@ const ACCESS = {
 // - Super Admin: views students and the reports of the class lists uploaded (no uploading).
 // Pages: useitems = the list of things the schools use (not sold), with the Excel import; issue = scan out / return; labels = QR labels and ID cards; purchases; counts = weekly check and ledger.
 // No selling prices for the store-keeper (no Items &prices page), no main store, no issuing: the librarian gives out.
-ACCESS.storekeeper = parse('home requisitions purchases useitems items:v stock:v labels stockin requests audit:v');
+ACCESS.storekeeper = parse('home books orders requisitions purchases useitems items:v stock:v labels stockin requests audit:v');
 // Cashier and Mapokezi (new roles, agreed 2026-11-17): the Money going out module they belong to is not built yet,
 // so this is a minimal starting access — add the real pages here once that module exists (see the Gaps doc).
 // - Cashier: pays out money the Manager has signed, on a Requested Cash Payout Voucher; records how a float was used
 //   once Mapokezi accepts the purchase.
 // - Mapokezi: receives everything bought, checks it against the receipts, and accepts it before the store-keeper
 //   sends it on.
+// Assistant Manager (2026-11-20): the person usually sent to buy, like the store-keeper. Writes payment requisitions
+// and purchases; no QR labels or sending to schools (the store-keeper's job).
+ACCESS.amanager = parse('home orders:v requisitions purchases useitems:v items:v stock:v requests:v reports audit:v');
 ACCESS.cashier = parse('home payments requisitions:v purchases audit:v');   // sees the paper requisition he pays from (read only; he gives the money on the paper itself)
 ACCESS.mapokezi = parse('home requisitions:v purchases audit:v');
 // School Store-keeper (agreed 2026-11-18): writes requisitions for staff who have no account (patron, cleaners...) and signs the
 // general ones first. Sees the requisitions of his school only.
-ACCESS.sstore = parse('home requisitions');
+ACCESS.sstore = parse('home orders');
+// Patron / Matron (2026-11-20): asks for what the dormitories need with the Order Book.
+ACCESS.patron = parse('home orders');
+// Office buying (2026-11-21): suppliers + price lists + debts (suppliers), LPOs (lpo), work agreements (contracts), vehicles.
+// - Procurement (Assistant Manager, store-keeper) keeps the suppliers and their price lists / proforma invoices and prepares LPOs.
+// - Head of Accounts (Accountant) certifies an LPO; the Manager authorises it (the Finance Manager when he is away).
+// - Payments to suppliers (debts) are recorded by the accountant office (Accountant, Assistant Accountant) or the Finance Manager.
+// - Work agreements: the Assistant Accountant enters them (signed on paper by the Director and the contractor) and records each
+//   instalment; the Accountant checks them (Imekaguliwa na).
+// - Vehicles and their responsible driver: the Manager and the Assistant Manager.
+const OFFICE = {
+  suppliers: { f: ['amanager', 'storekeeper', 'acc', 'aacc', 'fm', 'manager'], v: ['super', 'director', 'cashier', 'afm'] },
+  lpo: { f: ['amanager', 'storekeeper', 'acc', 'manager', 'fm'], v: ['super', 'director', 'aacc', 'mapokezi'] },
+  contracts: { f: ['aacc', 'acc', 'director'], v: ['super', 'manager', 'fm', 'cashier'] },
+  vehicles: { f: ['manager', 'amanager'], v: ['super', 'director', 'fm'] },
+};
+for (const [page, { f, v }] of Object.entries(OFFICE)) {
+  for (const r of f) ACCESS[r][page] = 'f';
+  for (const r of v) ACCESS[r][page] = ACCESS[r][page] || 'v';
+}
+// Academic Secretary (2026-11-20, Assistant Director's office): enters the admission interviews (marks from the teacher who
+// marked, on paper or Excel). The School Admin of the school registers those who passed as students.
+ACCESS.secretary = parse('home interviews students:v reports');
+// classlist (2026-11-20): the Academic Master (own school) adds the classes and streams, from the levels built into the
+// system (src/lib/levels.js). Everyone with the Students page still SEES the classes.
 
 const ISSUERS = ['librarian'];                           // gives out and takes back by scanning, counts the library (no main store)
 const PURCHASE_CONFIRMERS = ['aacc'];             // confirm purchases and weekly checks
@@ -110,7 +140,11 @@ const CARD_ISSUERS = ['sadmin', 'super'];
 // Requisitions: Academic Master asks, Head Master signs, store-keeper signs, Manager signs; then the store-keeper
 // buys or sends. routes/purchases.js and routes/requisitions.js still have the OLD two-store-keeper wording and
 // need rewriting to match this (see the Gaps doc).
-const REQUISITION_MAKERS = ['acad', 'head', 'teacher', 'librarian', 'sstore', 'bursar'];
+// Payment requisitions (2026-11-20): only administration roles see them; school staff use the Order Book.
+// written ONLY by the people sent to buy: the Assistant Manager and the store-keeper.
+// Everyone else asks with the Order Book (routes/orders.js). The Manager OR the Finance Manager approves the money.
+const REQUISITION_MAKERS = ['amanager', 'storekeeper'];
+const MONEY_APPROVERS = ['manager', 'fm'];
 
 // Who approves damaged / lost items (agreed 2026-11-11): only these two.
 const DAMAGE_APPROVERS = ['fm', 'acc'];
@@ -136,6 +170,17 @@ const REPORTS = {
 };
 const canReport = (role, key) => !!REPORTS[key]?.includes(role);
 
+// One person, many roles (2026-11-20). These pairs may never be held by the same person: they check each other's money or goods.
+const BLOCKED_PAIRS = [
+  ['bursar', 'acc'], ['bursar', 'aacc'], ['bursar', 'cashier'],          // takes money / checks the money
+  ['storekeeper', 'mapokezi'], ['amanager', 'mapokezi'],                 // buys / checks what was bought
+  ['storekeeper', 'aacc'], ['amanager', 'aacc'],                         // buys / confirms purchases
+  ['storekeeper', 'cashier'], ['amanager', 'cashier'],                   // receives the money to buy / gives it
+  ['cashier', 'aacc'], ['cashier', 'mapokezi'],
+  ['manager', 'amanager'], ['manager', 'storekeeper'], ['fm', 'amanager'], ['fm', 'storekeeper'],   // approves the money / spends it
+];
+const clash = (roles) => BLOCKED_PAIRS.find(([a, b]) => roles.includes(a) && roles.includes(b)) || null;
+
 const isAdminRole = (r) => ADMIN_ROLES.includes(r);
 const isSchoolRole = (r) => SCHOOL_ROLES.includes(r);
 const pageAccess = (role, page) => ACCESS[role]?.[page] || null;
@@ -149,4 +194,4 @@ function canManage(actor, target) {
   return true;
 }
 
-module.exports = { ROLES, ADMIN_ROLES, SCHOOL_ROLES, CREATES, ACCESS, DAMAGE_APPROVERS, ISSUERS, PURCHASE_CONFIRMERS, STORE_ITEM_MAKERS, CARD_ISSUERS, REQUISITION_MAKERS, REPORTS, canReport, isAdminRole, isSchoolRole, pageAccess, canManage };
+module.exports = { ROLES, ADMIN_ROLES, SCHOOL_ROLES, CREATES, ACCESS, DAMAGE_APPROVERS, ISSUERS, PURCHASE_CONFIRMERS, STORE_ITEM_MAKERS, CARD_ISSUERS, REQUISITION_MAKERS, MONEY_APPROVERS, REPORTS, canReport, BLOCKED_PAIRS, clash, isAdminRole, isSchoolRole, pageAccess, canManage };

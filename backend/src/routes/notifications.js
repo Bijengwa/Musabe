@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
   const seen = req.user.notif_seen_at || new Date(0);
   const [rows, [{ n }]] = await Promise.all([
     base().leftJoin('users as u', 'u.id', 'a.user_id').leftJoin('schools as s', 's.id', 'a.school_id')
-      .select('a.id', 'a.at', 'a.action', 'a.summary', 's.short_name as school', 'u.full_name as by', 'u.role')
+      .select('a.id', 'a.at', 'a.action', 'a.summary', 's.short_name as school', 'u.full_name as by', db.raw('coalesce(a.role, u.role) as role'))
       .orderBy('a.at', 'desc').limit(30),
     base().where('a.at', '>', seen).count('* as n'),
   ]);
