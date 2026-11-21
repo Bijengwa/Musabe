@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { useLive } from '../../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, fmtPhone } from '../../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SkeletonTable, fmtPhone } from '../../components/ui';
 import { useClasses, useStudentSchool } from './shared';
 
 export default function StudentList() {
@@ -70,7 +70,7 @@ export default function StudentList() {
             {list && <span className="muted small">{list.length} student{list.length === 1 ? '' : 's'}</span>}
           </div>
           <Panel flush>
-            {!list ? <Empty>Loading…</Empty> : !list.length ? <Empty>{q ? 'No student matches.' : current ? `No students in ${current.label} yet.` : 'No students yet.'}</Empty> : (
+            {!list ? <SkeletonTable rows={9} columns={validCls ? 6 : 7} /> : !list.length ? <Empty>{q ? 'No student matches.' : current ? `No students in ${current.label} yet.` : 'No students yet.'}</Empty> : (
               <div className="tw"><table className="stafftable">
                 <thead><tr><th className="sn">S/N</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th>{!validCls && <th>Class</th>}<th>Parent</th><th>Phone</th></tr></thead>
                 <tbody>

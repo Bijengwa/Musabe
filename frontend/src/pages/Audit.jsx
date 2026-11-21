@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
 import { useScope } from '../layout/scope';
 import { ROLE_LABELS } from '../nav';
-import { Empty, ErrorNote, ExcelButton, Icon, PageHead, Panel, fmtWhen } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, PageHead, Panel, SkeletonTable, fmtWhen } from '../components/ui';
 
 const GROUP_ICON = { library: 'box', accounts: 'key', schools: 'building', academic: 'book', other: 'list' };
 
@@ -69,7 +69,7 @@ export default function Audit() {
 
       <ErrorNote error={error} />
       <Panel title={rows ? `${rows.length}${rows.length === 300 ? '+' : ''} entries` : 'Entries'} sub={rows?.length === 300 ? 'Showing the newest 300. The Excel file has all of them.' : ''} flush>
-        {!rows ? <Empty>Loading…</Empty> : !rows.length ? <Empty>Nothing found.</Empty> : (
+        {!rows ? <SkeletonTable rows={8} columns={5} /> : !rows.length ? <Empty>Nothing found.</Empty> : (
           <div className="list">{rows.map((a) => (
             <div className="li" key={a.id}>
               <span className={`gic g-${a.group}`}><Icon name={GROUP_ICON[a.group] || 'list'} /></span>

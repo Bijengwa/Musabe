@@ -119,6 +119,36 @@ export const ExcelButton = ({ href, label = 'Excel' }) => (
 export const tsh = (n) => Number(n).toLocaleString('en-GB');
 
 export const Empty = ({ children }) => <div className="empty">{children}</div>;
+
+export function Spinner({ size = 'md', label = 'Loading' }) {
+  return <span className={`spinner spinner-${size}`} role="status" aria-label={label}><span /></span>;
+}
+
+export function Skeleton({ width, height, circle, className = '', style }) {
+  return <span aria-hidden="true" className={`skeleton${circle ? ' circle' : ''} ${className}`} style={{ width, height, ...style }} />;
+}
+
+export function SkeletonKpis({ count = 4 }) {
+  return <div className="kpis skeleton-kpis" aria-label="Loading summary">{Array.from({ length: count }, (_, i) => (
+    <div className="kpi" key={i}><Skeleton width="48%" height={10} /><Skeleton width="38%" height={28} /><Skeleton width="72%" height={10} /></div>
+  ))}</div>;
+}
+
+export function SkeletonTable({ rows = 6, columns = 5 }) {
+  return <div className="skeleton-table" style={{ '--skeleton-cols': columns }} role="status" aria-label="Loading data">
+    <div className="skeleton-table-head">{Array.from({ length: columns }, (_, i) => <Skeleton key={i} width={`${58 + (i % 3) * 15}%`} height={10} />)}</div>
+    {Array.from({ length: rows }, (_, r) => <div className="skeleton-table-row" key={r}>{Array.from({ length: columns }, (_, c) => <Skeleton key={c} width={`${52 + ((r + c) % 4) * 11}%`} height={12} />)}</div>)}
+  </div>;
+}
+
+export function PageSkeleton({ table = true, kpis = false }) {
+  return <div className="page-skeleton" role="status" aria-live="polite" aria-label="Loading page">
+    <div className="ph1"><div className="t"><Skeleton width="220px" height={28} /><div className="skeleton-sub"><Skeleton width="min(520px, 78%)" height={12} /></div></div></div>
+    {kpis && <SkeletonKpis />}
+    <Panel title=""><SkeletonTable rows={table ? 7 : 4} /></Panel>
+  </div>;
+}
+
 export const ErrorNote = ({ error }) => (error ? <p className="err" role="alert">{error}</p> : null);
 
 export function CopyBox({ label, value }) {
