@@ -108,7 +108,7 @@ router.get('/:id', requirePage('purchases'), async (req, res) => res.json({ purc
 router.post('/', requirePage('purchases', 'f'), async (req, res) => {
   if (!['storekeeper', 'manager'].includes(req.user.role)) throw new HttpError(403, 'The Assistant Manager or the store-keeper writes purchases. Mapokezi and the accountant office check them.');
   const b = req.body || {};
-  const supplier = clean(b.supplier, 120).toUpperCase() || (b.requisitionId ? 'MANUNUZI YA KILA SIKU' : '');
+  let supplier = clean(b.supplier, 120).toUpperCase() || (b.requisitionId ? 'MANUNUZI YA KILA SIKU' : '');
   const invoiceNo = clean(b.invoiceNo, 60).toUpperCase() || null;
   const boughtOn = isDate(b.boughtOn) ? b.boughtOn : today();
   const ordered = b.ordered === true;

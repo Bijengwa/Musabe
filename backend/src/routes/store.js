@@ -275,10 +275,7 @@ router.post('/issues', requirePage('issue', 'f'), issuer, async (req, res) => {
     person = await findStaff(req.user, Number(b.staffId) || 0);
     if (!person.active) throw new HttpError(400, `The account of ${person.full_name} is switched off.`);
     toName = person.full_name; toDetail = [ROLES[person.role]?.label, person.school].filter(Boolean).join(' · ');
-  } else if (toKind === 'dept') {
-    toName = clean(b.toName, 120).toUpperCase(); toDetail = clean(b.toDetail, 80) || null;
-    if (toName.length < 3) throw new HttpError(400, 'Type where it goes (e.g. KITCHEN, STAFF ROOM, OFFICE).');
-  } else throw new HttpError(400, 'Scan the ID of the person who receives, or choose a place.');
+  } else throw new HttpError(400, 'Scan the ID of the student or staff person who receives it.');
   const note = clean(b.note, 200) || null;
 
   const copyIds = new Set(), want = new Map();
@@ -290,7 +287,6 @@ router.post('/issues', requirePage('issue', 'f'), issuer, async (req, res) => {
   }
   if (!copyIds.size && !want.size) throw new HttpError(400, 'Scan at least one thing to give out.');
   if (copyIds.size + want.size > 100) throw new HttpError(400, 'Too many things on one paper (more than 100). Save this one and start another.');
-  if (copyIds.size && toKind === 'dept') throw new HttpError(400, 'Things that come back are given to a person: scan the student or staff ID.');
 
   let id;
   try {

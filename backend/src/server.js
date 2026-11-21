@@ -1,4 +1,4 @@
-require('dotenv').config({ quiet: true });
+﻿require('dotenv').config({ quiet: true });
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const db = require('./db');
@@ -54,6 +54,7 @@ app.use('/api/money', require('./routes/money'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/store', require('./routes/store'));
 app.use('/api/purchases', require('./routes/purchases'));
+app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/counts', require('./routes/counts'));
 app.use('/api/idcards', require('./routes/idcards'));
 app.use('/api/requisitions', require('./routes/requisitions'));

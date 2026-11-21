@@ -12,6 +12,7 @@ import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, Schoo
 import { todayStr } from '../components/common';
 import { PinBox } from '../components/signing';
 import { NewItem } from './Store';
+import SupplierPicker from '../components/SupplierPicker';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Manunuzi, { ManunuziView } from './Manunuzi';
 
@@ -38,7 +39,6 @@ function PurchasesList() {
   const load = useCallback(() => api.get(`/purchases${qs}`).then((d) => { setData(d); setError(''); }).catch((e) => setError(e.message)), [qs]);
   useEffect(() => { load(); }, [load]);
   useLive(['purchase'], load);
-  const act = (p) => (p.canCheck ? 'Check' : p.canDecide ? (p.canSettle ? 'Money back' : 'Confirm') : 'Open');
   return (
     <>
       <PageHead title="Purchases & orders" sub="Bought or ordered for one school. When the goods are at the office, Mapokezi checks them against the receipts; the accountant confirms and they go to the school's library.">
@@ -57,16 +57,14 @@ function PurchasesList() {
       <Panel flush>
         {!data ? <Empty>Loading…</Empty> : !data.purchases.length ? <Empty>Nothing here.</Empty> : (
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>No.</th><th>Date</th><th>For</th><th className="stick">Supplier</th><th>Items</th><th className="n">Cost (TSh)</th><th>Written by</th><th>Checked by</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>No.</th><th>Date</th><th>For</th><th className="stick">Supplier</th><th className="n">Cost (TSh)</th><th>Written by</th><th>Checked by</th><th>Status</th></tr></thead>
             <tbody>{data.purchases.map((p) => (
-              <tr key={p.id}>
+              <tr key={p.id} className="clickrow" tabIndex={0} onClick={() => navigate(`/purchases/form/${p.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/purchases/form/${p.id}`); }}>
                 <td className="mono small">{p.number}{p.requisition && <div className="muted">for {p.requisition.number}</div>}</td><td className="small">{p.boughtOn}{p.expectedOn && p.waitingGoods && <div className="muted">expected {p.expectedOn}</div>}</td>
                 <td><SchoolTag p={p} /></td>
                 <td className="stick"><b>{p.supplier}</b>{p.invoiceNo && <div className="small muted">{p.invoiceNo}</div>}</td>
-                <td className="small">{p.lines.slice(0, 3).map((l) => `${l.qty} ${l.unit} ${l.item}`).join(', ')}{p.lines.length > 3 ? ` +${p.lines.length - 3}` : ''}</td>
                 <td className="n"><b>{tsh(p.total)}</b></td><td className="small">{p.by}</td><td className="small">{p.checkedBy || <span className="muted">—</span>}</td>
-                <td><span className={`pill ${p.waitingGoods ? 'info' : TONE[p.status]}`}>{p.statusLabel}</span>{p.delivery && <div className="small muted">{p.delivery.number} · {p.delivery.status === 'received' ? 'received by the library' : 'on the way'}</div>}</td>
-                <td><button className={`btn sm${p.canCheck || p.canDecide ? ' p' : ''}`} onClick={() => navigate(`/purchases/form/${p.id}`)}>{act(p)}</button></td>
+                <td><span className={`pill ${p.waitingGoods ? 'info' : TONE[p.status]}`}>{p.statusLabel}</span>{p.delivery && <div className="small muted">{p.delivery.number}<br />{p.delivery.status === 'received' ? 'received by the library' : 'on the way'}</div>}</td>
               </tr>
             ))}</tbody>
           </table></div>
@@ -121,7 +119,18 @@ export function Write({ onClose, requisition, ordered: orderedStart = false }) {
           {f.ordered && <label>Expected on (not required)<input type="date" min={todayStr()} value={f.expectedOn} onChange={(e) => set('expectedOn', e.target.value)} /></label>}
         </div>
         <div className="fg">
-          <label>Shop / supplier<input autoFocus value={f.supplier} maxLength={120} onChange={(e) => set('supplier', e.target.value)} placeholder="e.g. MWANZA TRADERS" /></label>
+          <label>Shop / supplier<SupplierPicker
+            value={f.supplier}
+            autoFocus
+            onChange={(name) => setF((x) => ({ ...x, supplier: name }))}
+            onRegister={async (name) => {
+              try {
+                const d = await api.post('/suppliers', { name });
+                setF((x) => ({ ...x, supplier: d.supplier.name }));
+                toast(d.existing ? `${d.supplier.name} selected` : `${d.supplier.name} registered and selected`);
+              } catch (e) { setError(e.message); }
+            }}
+          /></label>
           <label>Invoice or receipt number<input value={f.invoiceNo} maxLength={60} onChange={(e) => set('invoiceNo', e.target.value)} /></label>
           <label>{f.ordered ? 'Ordered on' : 'Bought on'}<input type="date" value={f.boughtOn} max={todayStr()} onChange={(e) => set('boughtOn', e.target.value)} /></label>
         </div>

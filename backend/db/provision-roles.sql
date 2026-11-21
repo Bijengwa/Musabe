@@ -127,6 +127,7 @@ DECLARE
     "parent_requests":      "SELECT, INSERT, UPDATE",
     "payment_requests":     "SELECT, INSERT, UPDATE",
     "payment_lines":        "SELECT, INSERT",
+    "suppliers": "SELECT, INSERT, UPDATE",
     "orders":"SELECT, INSERT, UPDATE",
     "order_lines":"SELECT, INSERT, UPDATE",
     "login_codes":          "SELECT, INSERT, UPDATE, DELETE",
