@@ -6,7 +6,7 @@ const { publish } = require('../realtime');
 const { sendExcel } = require('../lib/excel');
 const { HttpError, tempPassword, tzPhone, suggestUsername, audit } = require('../lib/util');
 const { requireAuth, requirePage, endAllSessions } = require('../auth/session');
-const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage } = require('../auth/roles');
+const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage, clash } = require('../auth/roles');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -34,6 +34,7 @@ const shape = (r, actor) => ({
   createdAt: r.created_at,
   createdBy: r.created_by_name,
   canManage: canManage(actor, r),
+  extraRoles: (r.extra_roles || []).map((x) => ({ id: x.id, role: x.role, label: ROLES[x.role]?.label, schoolId: x.school_id, school: x.school_short || null })),
 });
 
 function baseQuery() {
@@ -56,7 +57,8 @@ router.get('/', requirePage('staff'), async (req, res) => {
   if (status === 'reset') query = query.whereNotNull('u.reset_requested_at').where('u.active', true);
   if (q) query = query.where((w) => w.whereILike('u.full_name', `%${q}%`).orWhereILike('u.username', `%${q}%`));
   const rows = await query.orderByRaw('u.school_id NULLS FIRST').orderBy('u.role').orderBy('u.full_name');
-  res.json({ users: rows.map((r) => shape(r, req.user)) });
+  const extra = await extraRoles(rows.map((r) => r.id));
+  res.json({ users: rows.map((r) => shape({ ...r, extra_roles: extra[r.id] }, req.user)) });
 });
 
 router.get('/export.xlsx', requirePage('staff'), async (req, res) => {
@@ -177,6 +179,57 @@ router.post('/:id/reset-password', requirePage('staff', 'f'), async (req, res) =
     await audit(req, 'user.reset_password', `Gave a temporary password to ${t.full_name}`, { schoolId: t.school_id, detail: { userId: t.id } }, trx);
   });
   res.json({ ok: true, username: t.username, tempPassword: temp });
+});
+
+// ---- One person, many roles (2026-11-20) ----
+// Extra roles of a person. The main role stays on the account; extra roles are added or switched off here.
+async function extraRoles(ids) {
+  if (!ids.length) return {};
+  const rows = await db('user_roles as r').leftJoin('schools as sc', 'sc.id', 'r.school_id').whereIn('r.user_id', ids).where('r.active', true).orderBy('r.id')
+    .select('r.id', 'r.user_id', 'r.role', 'r.school_id', 'sc.short_name as school_short');
+  const out = {};
+  for (const x of rows) (out[x.user_id] ||= []).push(x);
+  return out;
+}
+
+router.get('/:id/roles', requirePage('staff'), async (req, res) => {
+  const t = await loadTarget(req);
+  res.json({ main: { role: t.role, label: ROLES[t.role].label }, extra: ((await extraRoles([t.id]))[t.id] || []).map((x) => ({ id: x.id, role: x.role, label: ROLES[x.role].label, schoolId: x.school_id, school: x.school_short })),
+    canAdd: (CREATES[req.user.role] || []).filter((r) => r !== 'super').map((r) => ({ role: r, label: ROLES[r].label, needsSchool: isSchoolRole(r) })) });
+});
+
+router.post('/:id/roles', requirePage('staff', 'f'), async (req, res) => {
+  const t = await loadTarget(req);
+  const role = String(req.body?.role || '');
+  let schoolId = req.body?.schoolId ? Number(req.body.schoolId) : null;
+  if (!(CREATES[req.user.role] || []).includes(role) || role === 'super') throw new HttpError(403, `You cannot give the role ${ROLES[role]?.label || role}.`);
+  if (req.user.role === 'sadmin') schoolId = req.user.school_id;
+  if (isAdminRole(role)) schoolId = null;
+  if (isSchoolRole(role) && !schoolId) throw new HttpError(400, `Choose the school for the ${ROLES[role].label} role.`);
+  if (isSchoolRole(role) && isSchoolRole(t.role) && schoolId !== t.school_id) throw new HttpError(400, 'A school role must be in the same school as the person\'s main role.');
+  if (role === t.role) throw new HttpError(409, `${t.full_name} is already ${ROLES[role].label} (main role).`);
+  const have = ((await extraRoles([t.id]))[t.id] || []).map((x) => x.role);
+  if (have.includes(role)) throw new HttpError(409, `${t.full_name} already has the role ${ROLES[role].label}.`);
+  const bad = clash([t.role, ...have, role]);
+  if (bad) throw new HttpError(409, `One person cannot be both ${ROLES[bad[0]].label} and ${ROLES[bad[1]].label}: one checks the other's work.`);
+  await db.transaction(async (trx) => {
+    await trx('user_roles').insert({ user_id: t.id, role, school_id: schoolId, added_by: req.user.id });
+    await audit(req, 'user.role_add', `${t.full_name} also works as ${ROLES[role].label} now (main role ${ROLES[t.role].label})`, { schoolId: schoolId ?? t.school_id, detail: { userId: t.id, role } }, trx);
+  });
+  res.status(201).json({ ok: true });
+});
+
+router.post('/:id/roles/:rid/remove', requirePage('staff', 'f'), async (req, res) => {
+  const t = await loadTarget(req);
+  const x = await db('user_roles').where({ id: Number(req.params.rid) || 0, user_id: t.id, active: true }).first();
+  if (!x) throw new HttpError(404, 'That role was not found.');
+  if (!(CREATES[req.user.role] || []).includes(x.role)) throw new HttpError(403, 'You cannot remove this role.');
+  await db.transaction(async (trx) => {
+    await trx('user_roles').where({ id: x.id }).update({ active: false, removed_by: req.user.id, removed_at: trx.fn.now() });
+    await trx('sessions').where({ user_id: t.id, active_role: x.role }).update({ active_role: null });   // back to the main role
+    await audit(req, 'user.role_remove', `${t.full_name} no longer works as ${ROLES[x.role].label}`, { schoolId: x.school_id ?? t.school_id, detail: { userId: t.id, role: x.role } }, trx);
+  });
+  res.json({ ok: true });
 });
 
 module.exports = router;

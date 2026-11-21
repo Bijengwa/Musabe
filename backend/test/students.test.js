@@ -62,7 +62,7 @@ test.before(async () => {
   em = await db('schools').where({ code: 'pre' }).first();
   boys = await db('schools').where({ code: 'boys' }).first();
   const make = [['sadmin', 'sadmin', em.id], ['bursar', 'bursar', em.id], ['bursar2', 'bursar', em.id], ['librarian', 'librarian', em.id],
-    ['boysAdmin', 'sadmin', boys.id], ['boysBursar', 'bursar', boys.id], ['acc', 'acc', null], ['fm', 'fm', null]];
+    ['acad', 'acad', em.id], ['boysAdmin', 'sadmin', boys.id], ['boysBursar', 'bursar', boys.id], ['acc', 'acc', null], ['fm', 'fm', null]];
   for (const [key, role, school] of make) {
     const username = `s_${key}_${tag}`.toLowerCase();
     const [u] = await db('users').insert({ full_name: `Test ${key}`, username, role, school_id: school,
@@ -73,18 +73,16 @@ test.before(async () => {
 });
 test.after(async () => { if (server) server.close(); if (db) await db.destroy(); });
 
-test('School Admin makes classes with the school\'s own stream names', { skip }, async () => {
-  const short = `P2${tag}`.slice(0, 12);
-  const a = await as('sadmin', 'POST', '/api/students/classes', { name: `Primary Two ${tag}`, shortName: short, stream: 'Blue' });
+test('Academic Master makes classes from the built-in list with the school\'s own stream names', { skip }, async () => {
+  assert.equal((await as('sadmin', 'POST', '/api/students/classes', { level: 'P2', streams: ['X'] })).status, 403); // School Admin only looks (2026-11-20)
+  const a = await as('acad', 'POST', '/api/students/classes', { level: 'P2', streams: [`Blue${tag}`, `Green${tag}`] });
   assert.equal(a.status, 201, JSON.stringify(a.json));
-  cls = a.json.class;
-  assert.equal(cls.label, `${short.toUpperCase()} BLUE`);
-  assert.equal(cls.fullName, `PRIMARY TWO ${tag.toUpperCase()} BLUE`);
-  assert.equal((await as('sadmin', 'POST', '/api/students/classes', { name: `primary two ${tag}`, shortName: 'X1', stream: 'blue' })).status, 409); // same name
-  assert.equal((await as('sadmin', 'POST', '/api/students/classes', { name: `Other ${tag}`, shortName: short.toLowerCase(), stream: 'blue' })).status, 409); // same short name
-  assert.equal((await as('sadmin', 'POST', '/api/students/classes', { name: `Primary Two ${tag}` })).status, 400); // short name needed
-  cls2 = (await as('sadmin', 'POST', '/api/students/classes', { name: `Primary Two ${tag}`, shortName: short, stream: 'Green' })).json.class;
-  assert.equal((await as('bursar', 'POST', '/api/students/classes', { name: 'X' })).status, 403);
+  [cls, cls2] = a.json.classes;
+  assert.equal(cls.label, `P 2 BLUE${tag.toUpperCase()}`);
+  assert.equal(cls.fullName, `PRIMARY TWO BLUE${tag.toUpperCase()}`);
+  assert.equal((await as('acad', 'POST', '/api/students/classes', { level: 'P2', stream: `blue${tag}` })).status, 409); // same class and stream
+  assert.equal((await as('acad', 'POST', '/api/students/classes', { level: 'F1' })).status, 400); // not a class of this school
+  assert.equal((await as('bursar', 'POST', '/api/students/classes', { level: 'P3' })).status, 403);
 });
 
 let up1;

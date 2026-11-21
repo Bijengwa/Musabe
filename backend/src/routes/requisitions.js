@@ -18,6 +18,10 @@
 //   6. Mapokezi checks it against the receipts; the accountant confirms: it goes to the school's library at once.    "sent"
 //   7. The librarian checks what arrived and signs (Incoming stock)                                                  "done"
 //
+// CHANGED 2026-11-20: only the people sent to buy write requisitions: the Assistant Manager and the store-keeper.
+//   They write it for a school (often from an Order Book order, routes/orders.js); it starts at the money step:
+//   the Manager OR the Finance Manager approves -> Cashier gives the money -> they buy -> Mapokezi -> confirm.
+//   Old requisitions written by school staff before this date still move through the old steps below.
 // WHO CHANGES WHAT: only the applicant changes the words (what, department, name, Amount@) and adds / removes lines.
 // Every signer (Academic Master, Head Master, store-keeper) may change a QUANTITY, and the Manager approves a quantity.
 // A signer who sees something wrong SENDS IT BACK to the applicant with a reason ("returned"): nobody can sign until the
@@ -27,7 +31,7 @@ const express = require('express');
 const db = require('../db');
 const { HttpError, audit } = require('../lib/util');
 const { requireAuth, requirePage } = require('../auth/session');
-const { ROLES, REQUISITION_MAKERS } = require('../auth/roles');
+const { ROLES, REQUISITION_MAKERS, MONEY_APPROVERS } = require('../auth/roles');
 const { sendExcel } = require('../lib/excel');
 const stock = require('../lib/stock');
 const seal = require('../lib/seal');
@@ -42,12 +46,12 @@ const clean = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, m
 const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
 const STATUS = {
-  acad: 'Waiting for the Academic Master', head: 'Waiting for the Head Master', store: 'Waiting for the store-keeper', manager: 'Waiting for the Manager',
+  acad: 'Waiting for the Academic Master', head: 'Waiting for the Head Master', store: 'Waiting for the store-keeper', check: 'Waiting for the Assistant Accountant', manager: 'Waiting for the Manager / Finance Manager',
   approved: 'Approved: to buy', buying: 'Being bought / ordered', arrived: 'Bought: to send to the school',
-  sent: 'Sent: the librarian checks it', done: 'Received by the school', rejected: 'Rejected', withdrawn: 'Withdrawn',
+  sent: 'Sent: the librarian checks it', done: 'Received by the school', rejected: 'Rejected', withdrawn: 'Withdrawn', closed: 'Not bought: the money was given back to the Cashier',
 };
-const OPEN = ['acad', 'head', 'store', 'manager', 'approved', 'buying', 'arrived', 'sent'];
-const SIGN_STEPS = ['acad', 'head', 'store', 'manager'];
+const OPEN = ['acad', 'head', 'store', 'check', 'manager', 'approved', 'buying', 'arrived', 'sent'];
+const SIGN_STEPS = ['acad', 'head', 'store', 'check', 'manager'];   // check = the Assistant Accountant (2026-11-21)
 // Two kinds. academic = stationery used in lessons (from the library): first school signer is the Academic Master.
 // general = everything else (uniforms, bed sheets, brooms...): first school signer is the school's store-keeper (the librarian).
 // The Head Master may always sign the first step if that person is away. The status of that step is called "acad".
@@ -59,7 +63,13 @@ const kindFor = (role, asked) => (role === 'head' ? (asked === 'general' ? 'gene
 // Who may write what is left / already used on the lines (at the school, before the administration sees it).
 const STOCK_INFO = ['acad', 'sstore', 'librarian', 'head'];
 // What the label says once the Cashier is involved (the status itself does not change).
-const label = (r, money) => {
+const BUY_LABEL = { pending: 'Bought: waiting for Mapokezi to check', checked: 'Checked by Mapokezi: waiting for the Cashier (money back)', confirmed: 'Confirmed', rejected: 'Rejected' };
+const label = (r, money, buys = []) => {
+  const last = buys[buys.length - 1];
+  if (['approved', 'buying'].includes(r.status) && last && last.status !== 'confirmed') {
+    if (last.status === 'rejected') return r.money_back_asked_at ? 'Not bought: the buyer brings the money back to the Cashier' : `${last.number} was rejected: buy again or return the money`;
+    return `${last.number} ${BUY_LABEL[last.status].charAt(0).toLowerCase()}${BUY_LABEL[last.status].slice(1)}`;
+  }
   if (r.status === 'acad' && !r.returned) return `Waiting for the ${FIRST_NAME[r.kind]}`;
   if (r.returned && SIGN_STEPS.includes(r.status)) return 'Sent back to the applicant to correct';
   if (r.status === 'approved') return !money ? STATUS.approved : money.status === 'paid' ? 'Money given: to buy / order' : money.status === 'rejected' ? 'Approved: the Cashier rejected the money' : 'Approved: waiting for the Cashier to give the money';
@@ -78,15 +88,18 @@ function turn(user, r) {
   if (r.status === 'acad') return (user.role === FIRST[r.kind] || user.role === 'head') && here ? 'acad' : (mine ? 'withdraw' : null);
   if (r.status === 'head') return user.role === 'head' && here ? 'head' : (mine ? 'withdraw' : null);
   if (r.status === 'store') return user.role === 'storekeeper' ? 'store' : null;
-  if (r.status === 'manager') return user.role === 'manager' ? 'manager' : null;
-  if (r.status === 'approved') return user.role === 'storekeeper' ? 'fulfil' : null;
+  // The Assistant Accountant checks the prices (and the supplier's price list) before the money step (2026-11-21).
+  if (r.status === 'check') return user.role === 'aacc' && !mine ? 'check' : null;
+  if (r.status === 'manager') return MONEY_APPROVERS.includes(user.role) && !mine ? 'manager' : null;
+  if (r.status === 'approved') return user.role === 'storekeeper' || (user.role === 'amanager' && mine) ? 'fulfil' : null;
   return null;
 }
 
 function list(user, f = {}) {
   const q = db('requisitions as r').join('schools as s', 's.id', 'r.school_id').join('users as u', 'u.id', 'r.requested_by')
-    .leftJoin('users as a', 'a.id', 'r.acad_by').leftJoin('users as h', 'h.id', 'r.head_by').leftJoin('users as k', 'k.id', 'r.store_by').leftJoin('users as m', 'm.id', 'r.manager_by')
-    .leftJoin('users as x', 'x.id', 'r.rejected_by').leftJoin('users as rt', 'rt.id', 'r.returned_by').leftJoin('deliveries as d', 'd.id', 'r.delivery_id');
+    .leftJoin('users as a', 'a.id', 'r.acad_by').leftJoin('users as h', 'h.id', 'r.head_by').leftJoin('users as k', 'k.id', 'r.store_by').leftJoin('users as m', 'm.id', 'r.manager_by').leftJoin('users as ck', 'ck.id', 'r.check_by')
+    .leftJoin('price_lists as pl', 'pl.id', 'r.price_list_id').leftJoin('suppliers as plsup', 'plsup.id', 'pl.supplier_id')
+    .leftJoin('users as x', 'x.id', 'r.rejected_by').leftJoin('users as rt', 'rt.id', 'r.returned_by').leftJoin('users as mb', 'mb.id', 'r.money_back_by').leftJoin('deliveries as d', 'd.id', 'r.delivery_id');
   if (!allSchools(user)) q.where('r.school_id', user.school_id);
   // A teacher, librarian or bursar sees only what they asked for themselves.
   if (ASKERS_OWN.includes(user.role)) q.where('r.requested_by', user.id);
@@ -99,25 +112,28 @@ function list(user, f = {}) {
   }
   if (f.status === 'open') q.whereIn('r.status', OPEN);
   // What the administration has: school signatures are done.
-  else if (f.status === 'admin') q.whereIn('r.status', ['store', 'manager', 'approved', 'buying', 'arrived', 'sent']);
+  else if (f.status === 'admin') q.whereIn('r.status', ['store', 'check', 'manager', 'approved', 'buying', 'arrived', 'sent']);
   // Money given by the Cashier and the goods not yet sent on: what Mapokezi will be asked to check.
   else if (f.status === 'money') q.whereIn('r.status', MONEY_OPEN).whereExists(db('payment_requests as pr').whereRaw('pr.requisition_id = r.id').where('pr.kind', 'float').where('pr.status', 'paid').select(db.raw('1')));
   else if (STATUS[f.status]) q.where('r.status', f.status);
   if (f.q) { const w = `%${clean(f.q, 60)}%`; q.where((x) => x.whereILike('r.number', w).orWhereILike('r.purpose', w)); }
   return q.select('r.*', db.raw('r.needed_by::text as needed'), 's.short_name as school', 's.name as school_name', 's.code', 'u.full_name as requested_by_name', 'u.role as requested_by_role',
-    'a.full_name as acad_name', 'h.full_name as head_name', 'k.full_name as store_name', 'm.full_name as manager_name', 'x.full_name as rejected_name',
-    'rt.full_name as returned_name', 'rt.role as returned_role', 'd.number as delivery_no', 'd.status as delivery_status');
+    'a.full_name as acad_name', 'h.full_name as head_name', 'k.full_name as store_name', 'm.full_name as manager_name', 'ck.full_name as check_name', 'pl.number as price_list_no', 'pl.kind as price_list_kind', 'plsup.name as price_list_supplier', 'x.full_name as rejected_name',
+    'rt.full_name as returned_name', 'rt.role as returned_role', 'mb.full_name as money_back_name', 'd.number as delivery_no', 'd.status as delivery_status');
 }
 
 async function withLines(rows, user) {
   const ids = rows.map((r) => r.id);
   const [lines, buys, floats, staff, sigs] = await Promise.all([
     ids.length ? db('requisition_lines').whereIn('requisition_id', ids).orderBy('id') : [],
-    ids.length ? db('purchases').whereIn('requisition_id', ids).orderBy('id').select('id', 'number', 'status', 'requisition_id', 'total') : [],
+    ids.length ? db('purchases as p').leftJoin('users as d', 'd.id', 'p.decided_by').leftJoin('users as k', 'k.id', 'p.checked_by').whereIn('p.requisition_id', ids).orderBy('p.id')
+      .select('p.id', 'p.number', 'p.status', 'p.requisition_id', 'p.total', 'p.supplier', 'p.decision_note', 'p.decided_at', 'd.full_name as decided_name', 'd.role as decided_role', 'k.full_name as checked_name') : [],
     ids.length ? db('payment_requests as p').leftJoin('users as c', 'c.id', 'p.paid_by').whereIn('p.requisition_id', ids).where('p.kind', 'float')
       .select('p.id', 'p.number', 'p.requisition_id', 'p.status', 'p.amount', 'p.est_amount', 'p.paid_at', 'p.pay_note', 'c.full_name as paid_by_name') : [],
     // Who the requisition is waiting for, by name.
-    ids.length ? db('users').where('active', true).whereIn('role', ['acad', 'sstore', 'head', 'storekeeper', 'manager', 'cashier']).select('full_name', 'role', 'school_id') : [],
+    ids.length ? (() => { const R = ['acad', 'sstore', 'head', 'storekeeper', 'amanager', 'aacc', 'manager', 'fm', 'cashier'];   // main roles and extra roles (one person, many roles)
+      return db('users').where('active', true).whereIn('role', R).select('full_name', 'role', 'school_id')
+        .union((u) => u.from('user_roles as x').join('users as y', 'y.id', 'x.user_id').where({ 'x.active': true, 'y.active': true }).whereIn('x.role', R).select('y.full_name', 'x.role', 'x.school_id')); })() : [],
     seal.signaturesOf(db, 'requisition', ids),
   ]);
   // The latest signature of each step (the applicant signs again after a correction).
@@ -130,8 +146,9 @@ async function withLines(rows, user) {
       acad: { role: FIRST_NAME[r.kind], names: names(FIRST[r.kind], r.school_id).length ? names(FIRST[r.kind], r.school_id) : names('head', r.school_id), orHead: true },
       head: { role: 'Head Master', names: names('head', r.school_id) },
       store: { role: 'Store-keeper', names: names('storekeeper') },
-      manager: { role: 'Manager', names: names('manager') },
-      approved: money?.status === 'paid' ? { role: 'Store-keeper (to buy)', names: names('storekeeper') } : { role: 'Cashier (to give the money)', names: names('cashier') },
+      check: { role: 'Assistant Accountant', names: names('aacc') },
+      manager: { role: 'Manager or Finance Manager', names: [...names('manager'), ...names('fm')] },
+      approved: money?.status === 'paid' ? (r.requested_by_role === 'amanager' ? { role: 'Assistant Manager (to buy)', names: [r.requested_by_name] } : { role: 'Store-keeper (to buy)', names: names('storekeeper') }) : { role: 'Cashier (to give the money)', names: names('cashier') },
     })[r.status] || null;
   };
   return rows.map((r) => {
@@ -150,19 +167,23 @@ async function withLines(rows, user) {
     return {
       id: r.id, number: r.number, schoolId: r.school_id, school: r.school, schoolName: r.school_name, code: r.code, purpose: r.purpose, neededBy: r.needed,
       kind: r.kind, firstName: FIRST_NAME[r.kind], department: r.department || r.school_name, applicantName: r.applicant_name || r.requested_by_name,
-      status: r.status, statusLabel: label(r, money), money, requestedBy: r.requested_by_name, requestedByRole: r.requested_by_role, requestedAt: r.requested_at,
+      status: r.status, statusLabel: label(r, money, buys.filter((p) => p.requisition_id === r.id)), money, requestedBy: r.requested_by_name, requestedByRole: r.requested_by_role, requestedAt: r.requested_at,
       returned: r.returned && SIGN_STEPS.includes(r.status) ? { by: r.returned_name, role: r.returned_role, at: r.returned_at, note: r.returned_note } : null,
       signs: {
         applicant: sg(r.id, 'applicant', null, null, null),
         acad: r.acad_by ? sg(r.id, 'acad', r.acad_name, r.acad_at, r.acad_note) : null,
         head: r.head_by ? sg(r.id, 'head', r.head_name, r.head_at, r.head_note) : null,
         store: r.store_by ? sg(r.id, 'store', r.store_name, r.store_at, r.store_note) : null,
+        check: r.check_by ? sg(r.id, 'check', r.check_name, r.check_at, r.check_note) : null,
         manager: r.manager_by ? sg(r.id, 'manager', r.manager_name, r.manager_at, r.manager_note) : null,
       },
+      priceList: r.price_list_id ? { id: r.price_list_id, number: r.price_list_no, kind: r.price_list_kind, supplier: r.price_list_supplier } : null,
       rejected: r.rejected_by ? { by: r.rejected_name, at: r.rejected_at, reason: r.reject_reason } : null,
       delivery: r.delivery_id ? { id: r.delivery_id, number: r.delivery_no, status: r.delivery_status } : null, doneAt: r.done_at,
-      purchases: buys.filter((p) => p.requisition_id === r.id).map((p) => ({ id: p.id, number: p.number, status: p.status, total: Number(p.total) })),
-      lines: ls, removedLines: taken, waiting: waitingFor(r, money), canStop: user.role === 'manager' && ['acad', 'head', 'store'].includes(r.status),
+      purchases: buys.filter((p) => p.requisition_id === r.id).map((p) => ({ id: p.id, number: p.number, status: p.status, statusLabel: BUY_LABEL[p.status], total: Number(p.total), supplier: p.supplier,
+        checkedBy: p.checked_name, decidedBy: p.decided_name ? `${p.decided_name} (${ROLES[p.decided_role]?.label || ''})` : null, decidedAt: p.decided_at, note: p.decision_note })),
+      ...moneyBack(user, r, money, buys.filter((p) => p.requisition_id === r.id)),
+      lines: ls, removedLines: taken, waiting: waitingFor(r, money), canStop: MONEY_APPROVERS.includes(user.role) && ['acad', 'head', 'store', 'check'].includes(r.status),
       canWithdraw: r.requested_by === user.id && ['acad', 'head'].includes(r.status),
       // Can a signer send it back to the applicant now?
       canReturn: SIGN_STEPS.includes(t),
@@ -172,6 +193,20 @@ async function withLines(rows, user) {
       turn: t,
     };
   });
+}
+// Money back (2026-11-20): when nothing is being bought now and nothing was confirmed, the buyer may give the office money back.
+// The buyer says so (askMoneyBack); the Cashier records what he received (receiveMoneyBack) and the requisition is closed.
+function moneyBack(user, r, money, buys) {
+  const open = buys.some((p) => ['pending', 'checked'].includes(p.status));
+  const used = buys.some((p) => p.status === 'confirmed');
+  const can = ['approved', 'buying'].includes(r.status) && money?.status === 'paid' && !open && !used;
+  return {
+    moneyBack: r.money_back_at ? { amount: Number(r.money_back_amount), by: r.money_back_name, at: r.money_back_at, note: r.money_back_note } : null,
+    moneyBackAsked: r.money_back_asked_at || null,
+    canAskMoneyBack: can && r.requested_by === user.id && !r.money_back_asked_at,
+    canBuyAgain: can && r.requested_by === user.id,
+    canReceiveMoneyBack: can && user.role === 'cashier',
+  };
 }
 async function one(user, id) {
   const r = await list(user).where('r.id', Number(id) || 0).first();
@@ -245,7 +280,11 @@ const when = (n) => (n == null ? 'none' : n.toLocaleString('en-GB'));
 
 // 1. Anyone on the school staff asks (teacher, librarian, bursar, School Store-keeper, Academic Master, Head Master).
 router.post('/', requirePage('requisitions', 'f'), async (req, res) => {
-  if (!REQUISITION_MAKERS.includes(req.user.role)) throw new HttpError(403, 'Only the staff of a school write requisitions for it.');
+  if (!REQUISITION_MAKERS.includes(req.user.role)) throw new HttpError(403, 'Only the Assistant Manager or the store-keeper writes a payment requisition. Staff of a school ask with the Order Book.');
+  return writeByBuyer(req, res);
+});
+// Old way (before 2026-11-20): written by school staff. Kept so the old papers still read the same; no route uses it now.
+async function writeBySchool(req, res) {
   const byHead = req.user.role === 'head';
   const school = (await db('schools').where({ id: req.user.school_id }).first('name'))?.name || '';
   const f = readForm(req.user, req.body, school);
@@ -268,7 +307,48 @@ router.post('/', requirePage('requisitions', 'f'), async (req, res) => {
     return rid;
   });
   res.status(201).json({ requisition: await one(req.user, id) });
-});
+}
+void writeBySchool;
+
+// The buyer (Assistant Manager or store-keeper) writes it for one school. His signature covers the store-keeper step,
+// so it goes straight to the money step: the Manager or the Finance Manager. orderId: the Order Book order it answers.
+async function writeByBuyer(req, res) {
+  const b = req.body || {};
+  const schoolRow = await db('schools').where({ id: Number(b.schoolId) || 0 }).first('id', 'name');
+  if (!schoolRow) throw new HttpError(400, 'Choose the school this requisition is for.');
+  const f = readForm(req.user, b, schoolRow.name);
+  f.kind = b.kind === 'academic' ? 'academic' : 'general';
+  const missing = f.lines.filter((l) => l.line_total === null).map((l) => l.item_name);
+  if (missing.length) throw new HttpError(400, `Write the amount on: ${missing.join(', ')}. You are the one who knows the price (ask the shop for a price list first).`);
+  const orderId = Number(b.orderId) || null;
+  // The supplier's price list or proforma invoice the prices come from (not required, but the Assistant Accountant checks against it).
+  const priceList = b.priceListId ? await db('price_lists').where({ id: Number(b.priceListId) || 0 }).first('id', 'number') : null;
+  if (b.priceListId && !priceList) throw new HttpError(400, 'That price list was not found. Reload the page.');
+  await signPre(req, 0);
+  const id = await db.transaction(async (trx) => {
+    let order = null;
+    if (orderId) {
+      order = await trx('orders').where({ id: orderId }).forUpdate().first();
+      if (!order || order.status !== 'keeper') throw new HttpError(409, 'That order is not waiting for the store-keeper any more. Reload the page.');
+      if (order.school_id !== schoolRow.id) throw new HttpError(400, 'The order is for another school.');
+    }
+    const { rows: [{ id: rid }] } = await trx.raw(`SELECT nextval(pg_get_serial_sequence('requisitions', 'id'))::int AS id`);
+    const number = stock.paperNo('RQN', rid);
+    await trx('requisitions').insert({ id: rid, number, school_id: schoolRow.id, purpose: f.purpose, kind: f.kind, department: f.department, applicant_name: f.applicant,
+      needed_by: f.neededBy, requested_by: req.user.id, status: 'check', store_by: req.user.id, store_at: trx.fn.now(), price_list_id: priceList?.id ?? null });
+    await trx('requisition_lines').insert(f.lines.map((l) => ({ requisition_id: rid, item_name: l.item_name, qty: l.qty, est_cost: l.est_cost, line_total: l.line_total })));
+    await signStamp(trx, req, rid, 'applicant');
+    await signStamp(trx, req, rid, 'store', { allowSame: true });
+    if (order) {
+      await trx('orders').where({ id: order.id }).update({ status: 'requisition', requisition_id: rid, keeper_by: req.user.id, keeper_at: trx.fn.now() });
+      await audit(req, 'order.requisition', `${order.number}: ${req.user.full_name} wrote ${number} for it`, { schoolId: order.school_id, detail: { orderId: order.id, requisitionId: rid, userId: order.written_by } }, trx);
+    }
+    await audit(req, 'requisition.create', `${number}: ${f.applicant} (${ROLES[req.user.role].label}) asks for ${sum(f.lines)} for ${schoolRow.name}${order ? ` (order ${order.number})` : ''}${priceList ? `, prices from ${priceList.number}` : ''}. Waiting for the Assistant Accountant to check it`,
+      { schoolId: schoolRow.id, detail: { requisitionId: rid } }, trx);
+    return rid;
+  });
+  res.status(201).json({ requisition: await one(req.user, id) });
+}
 
 // Load for a step, locked, and check it is this person's turn.
 async function forStep(trx, user, id, steps) {
@@ -372,9 +452,33 @@ router.post('/:id/store', requirePage('requisitions', 'f'), async (req, res) => 
       await saveAmount(trx, l, a);
       total += a.line_total || 0;
     }
-    await trx('requisitions').where({ id: r.id }).update({ status: 'manager', store_by: req.user.id, store_at: trx.fn.now(), store_note: note });
+    await trx('requisitions').where({ id: r.id }).update({ status: 'check', store_by: req.user.id, store_at: trx.fn.now(), store_note: note });
     await signStamp(trx, req, r.id, 'store');
-    await audit(req, 'requisition.store', `${r.number} signed by the store-keeper (${req.user.full_name})${total ? `, about TSh ${total.toLocaleString('en-GB')}` : ''}${note ? `: ${note}` : ''}. Waiting for the Manager`,
+    await audit(req, 'requisition.store', `${r.number} signed by the store-keeper (${req.user.full_name})${total ? `, about TSh ${total.toLocaleString('en-GB')}` : ''}${note ? `: ${note}` : ''}. Waiting for the Assistant Accountant`,
+      { schoolId: r.school_id, detail: { requisitionId: r.id, userId: r.requested_by } }, trx);
+  });
+  res.json({ requisition: await one(req.user, req.params.id) });
+});
+
+// 3b. The Assistant Accountant checks it (2026-11-21): the prices against the supplier's price list / proforma, the sums.
+// He may fill an Amount @ or a total that is empty; a written one is the applicant's (send it back to change it).
+router.post('/:id/check', requirePage('requisitions', 'f'), async (req, res) => {
+  const { approve, note } = decision(req.body);
+  const given = new Map((Array.isArray(req.body?.lines) ? req.body.lines : []).map((l) => [Number(l?.lineId), l]));
+  if (approve) await signPre(req, req.params.id);
+  await db.transaction(async (trx) => {
+    const r = await forStep(trx, req.user, req.params.id, 'check');
+    if (!approve) return reject(trx, req, r, note, 'Assistant Accountant');
+    const lines = await trx('requisition_lines').where({ requisition_id: r.id, removed: false }).orderBy('id');
+    let total = 0;
+    for (const l of lines) {
+      const a = fillAmount(l, given.get(l.id));
+      await saveAmount(trx, l, a);
+      total += a.line_total || 0;
+    }
+    await trx('requisitions').where({ id: r.id }).update({ status: 'manager', check_by: req.user.id, check_at: trx.fn.now(), check_note: note });
+    await signStamp(trx, req, r.id, 'check');
+    await audit(req, 'requisition.check', `${r.number} checked by the Assistant Accountant (${req.user.full_name})${total ? `, TSh ${total.toLocaleString('en-GB')}` : ''}${note ? `: ${note}` : ''}. Waiting for the Manager or the Finance Manager`,
       { schoolId: r.school_id, detail: { requisitionId: r.id, userId: r.requested_by } }, trx);
   });
   res.json({ requisition: await one(req.user, req.params.id) });
@@ -388,7 +492,7 @@ router.post('/:id/manager', requirePage('requisitions', 'f'), async (req, res) =
   if (approve) await signPre(req, req.params.id);
   await db.transaction(async (trx) => {
     const r = await forStep(trx, req.user, req.params.id, 'manager');
-    if (!approve) return reject(trx, req, r, note, 'Manager');
+    if (!approve) return reject(trx, req, r, note, ROLES[req.user.role].label);
     const lines = await trx('requisition_lines').where({ requisition_id: r.id, removed: false }).orderBy('id');
     const cut = [];
     const noCost = [];
@@ -419,13 +523,13 @@ router.post('/:id/manager', requirePage('requisitions', 'f'), async (req, res) =
     if (cut.length && !note) throw new HttpError(400, 'You gave less than asked. Write a short note why.');
     await trx('requisitions').where({ id: r.id }).update({ status: 'approved', manager_by: req.user.id, manager_at: trx.fn.now(), manager_note: note });
     await signStamp(trx, req, r.id, 'manager');
-    await audit(req, 'requisition.manager', `${r.number} approved by the Manager (${req.user.full_name}), TSh ${est.toLocaleString('en-GB')}${cut.length ? `, less: ${cut.join(', ')}` : ''}${note ? ` (${note})` : ''}. The Cashier gives the money, then the store-keeper buys or sends it`,
+    await audit(req, 'requisition.manager', `${r.number} approved by the ${ROLES[req.user.role].label} (${req.user.full_name}), TSh ${est.toLocaleString('en-GB')}${cut.length ? `, less: ${cut.join(', ')}` : ''}${note ? ` (${note})` : ''}. The Cashier gives the money, then the store-keeper buys or sends it`,
       { schoolId: r.school_id, detail: { requisitionId: r.id, userId: r.requested_by } }, trx);
     // The money to buy it: the Cashier is told at once.
     const { rows: [{ id: pid }] } = await trx.raw(`SELECT nextval(pg_get_serial_sequence('payment_requests', 'id'))::int AS id`);
     const pno = stock.paperNo('PRQ', pid);
     await trx('payment_requests').insert({ id: pid, number: pno, kind: 'float', requisition_id: r.id, amount: est, est_amount: est,
-      purpose: `Money to buy for ${r.number}: ${r.purpose}`.slice(0, 300), approved_by_name: `Manager ${req.user.full_name}`.slice(0, 120), requested_by: req.user.id, authorized_by: req.user.id, authorized_at: trx.fn.now() });
+      purpose: `Money to buy for ${r.number}: ${r.purpose}`.slice(0, 300), approved_by_name: `${ROLES[req.user.role].label} ${req.user.full_name}`.slice(0, 120), requested_by: req.user.id, authorized_by: req.user.id, authorized_at: trx.fn.now() });
     await trx('payment_lines').insert({ payment_id: pid, sn: 1, detail: `Money to buy: ${r.number}`.slice(0, 200), amount: est });
     await seal.stamp(trx, req, 'voucher', pid, 'authorized', await docs.voucher(trx, pid), { allowSame: true });
     await audit(req, 'payment.float', `${pno}: money to give for ${r.number}, TSh ${est.toLocaleString('en-GB')}. Waiting for the Cashier`,
@@ -536,7 +640,7 @@ router.post('/:id/correct', requirePage('requisitions', 'f'), async (req, res) =
     await trx('requisitions').where({ id: r.id }).update({ purpose: f.purpose, department: f.department, applicant_name: f.applicant, needed_by: f.neededBy,
       returned: false, returned_by: null, returned_at: null, returned_note: null });
     await signStamp(trx, req, r.id, 'applicant', { allowSame: true, note: 'corrected' });
-    const who = { acad: FIRST_NAME[r.kind], head: 'Head Master', store: 'store-keeper', manager: 'Manager' }[r.status];
+    const who = { acad: FIRST_NAME[r.kind], head: 'Head Master', store: 'store-keeper', check: 'Assistant Accountant', manager: 'Manager' }[r.status];
     await audit(req, `requisition.fixed_${r.status === 'acad' && r.kind === 'general' ? 'school' : r.status}`, `${r.number} corrected by ${req.user.full_name}${said.length ? `: ${said.join('; ')}` : ' (nothing changed)'}. Waiting for the ${who} again`,
       { schoolId: r.school_id, detail: { requisitionId: r.id } }, trx);
   });
@@ -546,16 +650,52 @@ router.post('/:id/correct', requirePage('requisitions', 'f'), async (req, res) =
 // The Manager may stop a requisition that is still with the school or the store-keeper (with a reason).
 router.post('/:id/stop', requirePage('requisitions', 'f'), async (req, res) => {
   const note = clean(req.body?.note, 300);
-  if (req.user.role !== 'manager') throw new HttpError(403, 'Only the Manager can stop a requisition.');
+  if (!MONEY_APPROVERS.includes(req.user.role)) throw new HttpError(403, 'Only the Manager or the Finance Manager can stop a requisition.');
   if (!note) throw new HttpError(400, 'Write why it is stopped, so the school knows.');
   await db.transaction(async (trx) => {
     const r = await trx('requisitions').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
     if (!r) throw new HttpError(404, 'Requisition not found.');
-    if (!['acad', 'head', 'store'].includes(r.status)) throw new HttpError(409, `${r.number} is ${STATUS[r.status].toLowerCase()}.`);
+    if (!['acad', 'head', 'store', 'check'].includes(r.status)) throw new HttpError(409, `${r.number} is ${STATUS[r.status].toLowerCase()}.`);
     await reject(trx, req, r, note, 'Manager (stopped it)');
   });
   res.json({ requisition: await one(req.user, req.params.id) });
 });
 
 module.exports = router;
+// The buyer says he will bring the money back (instead of going back to the market). The Cashier is told.
+router.post('/:id/money-back/ask', requirePage('requisitions'), async (req, res) => {
+  await db.transaction(async (trx) => {
+    const r = await trx('requisitions').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
+    if (!r) throw new HttpError(404, 'Requisition not found.');
+    const view = (await one(req.user, r.id));
+    if (!view.canAskMoneyBack) throw new HttpError(409, `${r.number}: the money cannot be given back now (only by the buyer, when nothing is being bought or was received).`);
+    await trx('requisitions').where({ id: r.id }).update({ money_back_asked_at: trx.fn.now() });
+    await audit(req, 'requisition.moneyback_ask', `${r.number}: ${req.user.full_name} will give the money back to the Cashier (TSh ${view.money.amount.toLocaleString('en-GB')}) instead of buying again`,
+      { schoolId: r.school_id, detail: { requisitionId: r.id } }, trx);
+  });
+  res.json({ requisition: await one(req.user, req.params.id) });
+});
+
+// The Cashier records the money he received back and signs. The requisition is closed (nothing was bought).
+router.post('/:id/money-back', requirePage('requisitions'), async (req, res) => {
+  if (req.user.role !== 'cashier') throw new HttpError(403, 'The Cashier receives the money back.');
+  const b = req.body || {};
+  const amount = Number(String(b.amount ?? '').replace(/[,\s]/g, ''));
+  const note = clean(b.note, 300) || null;
+  if (!Number.isInteger(amount) || amount < 0) throw new HttpError(400, 'Write how much money you received back.');
+  await signPre(req, Number(req.params.id) || 0, amount);
+  await db.transaction(async (trx) => {
+    const r = await trx('requisitions').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
+    if (!r) throw new HttpError(404, 'Requisition not found.');
+    const view = await one(req.user, r.id);
+    if (!view.canReceiveMoneyBack) throw new HttpError(409, `${r.number}: there is no office money to receive back now.`);
+    if (amount !== view.money.amount && !note) throw new HttpError(400, `The buyer was given TSh ${view.money.amount.toLocaleString('en-GB')}. Write a note why you received a different amount.`);
+    await trx('requisitions').where({ id: r.id }).update({ status: 'closed', money_back_amount: amount, money_back_by: req.user.id, money_back_at: trx.fn.now(), money_back_note: note });
+    await signStamp(trx, req, r.id, 'moneyback', { allowSame: true });
+    await audit(req, 'requisition.moneyback', `${r.number}: the Cashier (${req.user.full_name}) received TSh ${amount.toLocaleString('en-GB')} back. Nothing was bought; the requisition is closed${note ? ` (${note})` : ''}`,
+      { schoolId: r.school_id, detail: { requisitionId: r.id, userId: r.requested_by } }, trx);
+  });
+  res.json({ requisition: await one(req.user, req.params.id) });
+});
+
 module.exports.STATUS = STATUS;

@@ -23,7 +23,7 @@ test.before(async () => {
   if (!URL) return;
   ({ server, port } = await listen(app));
   const pinHash = await bcrypt.hash(PIN, 4);
-  for (const [key, role] of [['aacc', 'aacc'], ['fm', 'fm'], ['cashier', 'cashier'], ['acc', 'acc']]) {
+  for (const [key, role] of [['aacc', 'aacc'], ['fm', 'fm'], ['cashier', 'cashier'], ['acc', 'acc'], ['manager', 'manager']]) {
     const username = `v_${key}_${tag}`.toLowerCase();
     const [u] = await db('users').insert({ full_name: `Test ${key} ${tag}`, username, role, password_hash: await bcrypt.hash(password, 4), must_change_password: false, phone: '0712000000', signature_image: PNG, signing_pin_hash: pinHash }).returning('id');
     const r = await request({ port, method: 'POST', path: '/api/auth/login', body: { username, password } });
@@ -66,4 +66,13 @@ test('FO can reject with a reason; no PIN needed to reject', { skip }, async () 
   const r = await as('fm', 'POST', `/api/payments/${id}/authorize`, { approve: false, note: 'Not budgeted' });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   assert.equal(r.json.payment.status, 'rejected');
+});
+
+test('The Manager also authorizes vouchers (or the Finance Manager when he is away); the Accountant cannot', { skip }, async () => {
+  const c = await as('aacc', 'POST', '/api/payments', { payeeName: 'ASHA', purpose: 'Test', lines: [{ detail: 'Y item', amount: 7000 }], pin: PIN });
+  const id = c.json.payment.id;
+  assert.equal((await as('acc', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN })).status, 403);
+  const r = await as('manager', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(r.json.payment.status, 'pending');
 });

@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { QR } from './qr';
 import { ErrorNote } from './ui';
+import { cleanSignature } from './cleanSignature';
 
-// A box to draw a signature with a finger or mouse. onChange(pngDataUrl | null).
+// A box to draw a signature with a finger or mouse. onChange(pngDataUrl | null), already cleaned and cut to size.
 export function SignPad({ onChange, height = 150 }) {
   const ref = useRef(null);
   const drawing = useRef(false);
@@ -28,7 +29,7 @@ export function SignPad({ onChange, height = 150 }) {
     drawing.current = false;
     if (!dirty.current) return;
     setEmpty(false);
-    onChange?.(ref.current.toDataURL('image/png'));
+    onChange?.(cleanSignature(ref.current));
   };
   const clear = () => {
     const c = ref.current; c.getContext('2d').clearRect(0, 0, c.width, c.height);

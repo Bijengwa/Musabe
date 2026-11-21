@@ -9,17 +9,12 @@ exports.up = async function up(knex) {
       t.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
     });
   }
-
   if (!(await knex.schema.hasColumn('purchases', 'supplier_id'))) {
     await knex.schema.alterTable('purchases', (t) => {
       t.integer('supplier_id').references('id').inTable('suppliers').onDelete('RESTRICT');
     });
   }
-
-  // Do not update old purchase rows: purchase records are intentionally immutable.
-  // Supplier names remain historical snapshots on purchases; the suppliers table is an autocomplete master.
 };
-
 exports.down = async function down(knex) {
   if (await knex.schema.hasColumn('purchases', 'supplier_id')) {
     await knex.schema.alterTable('purchases', (t) => t.dropColumn('supplier_id'));

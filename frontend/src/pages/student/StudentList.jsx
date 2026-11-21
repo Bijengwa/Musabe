@@ -48,8 +48,8 @@ export default function StudentList() {
       </PageHead>
       <ErrorNote error={cErr || error} />
       {all && !classes.length ? (
-        <Panel><div className="stack"><p style={{ margin: 0 }}>No classes yet. {edit ? 'Register the classes first (e.g. PRIMARY ONE = P 1), then add students or load each class from Excel.' : 'The School Admin has not registered the classes yet.'}</p>
-          {edit && <Link className="btn p" style={{ alignSelf: 'flex-start' }} to="/students/classes"><Icon name="plus" /> Register classes</Link>}</div></Panel>
+        <Panel><div className="stack"><p style={{ margin: 0 }}>No classes yet. {can('classlist', 'f') ? 'Add the classes first (choose them from the list and type the streams), then add students.' : 'The Academic Master has not added the classes yet.'}</p>
+          {can('classlist', 'f') && <Link className="btn p" style={{ alignSelf: 'flex-start' }} to="/students/classes"><Icon name="plus" /> Add classes</Link>}</div></Panel>
       ) : (
         <>
           {all && (

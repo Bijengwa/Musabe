@@ -60,7 +60,7 @@ async function loadUser(req, _res, next) {
     .where('s.id', sha256(token))
     .andWhere('s.expires_at', '>', db.fn.now())
     .select('u.*', 'sc.name as school_name', 'sc.short_name as school_short', 'sc.code as school_code', 's.id as session_id',
-      's.created_at as session_created', 's.expires_at as session_expires', 's.last_seen_at as session_seen')
+      's.created_at as session_created', 's.expires_at as session_expires', 's.last_seen_at as session_seen', 's.active_role')
     .first();
   if (!row || !row.active) return next();
   // Idle too long: end the session (it is used no more).
@@ -73,6 +73,13 @@ async function loadUser(req, _res, next) {
   // One small write at most every 20 seconds per session (not one per request: that slowed the server down).
   if (Date.now() - new Date(seen).getTime() > 20000) db('sessions').where({ id: row.session_id }).update({ last_seen_at: db.fn.now() }).catch(() => {});
   delete row.password_hash;
+  // One person, many roles (2026-11-20): the main role plus extra roles; the session says which one is in use.
+  row.main_role = row.role;
+  const extra = await db('user_roles as r').leftJoin('schools as sc', 'sc.id', 'r.school_id').where({ 'r.user_id': row.id, 'r.active': true })
+    .select('r.role', 'r.school_id', 'sc.name as school_name', 'sc.short_name as school_short', 'sc.code as school_code');
+  row.roles = [{ role: row.role, school_id: row.school_id, school_name: row.school_name, school_short: row.school_short, school_code: row.school_code }, ...extra.filter((e) => e.role !== row.role)];
+  const use = row.active_role && row.roles.find((r) => r.role === row.active_role);
+  if (use) Object.assign(row, { role: use.role, school_id: use.school_id, school_name: use.school_name, school_short: use.school_short, school_code: use.school_code });
   req.user = row;
   next();
 }
@@ -128,6 +135,8 @@ function publicUser(u) {
     preferences: u.preferences || {},
     hasSignature: !!u.signature_image,
     hasPin: !!u.signing_pin_hash,
+    // All the roles this person holds; the one in use is "role" above.
+    roles: (u.roles || [{ role: u.role, school_id: u.school_id, school_short: u.school_short }]).map((r) => ({ role: r.role, label: ROLES[r.role]?.label, school: r.school_short || null, main: r.role === (u.main_role || u.role) })),
   };
 }
 

@@ -17,6 +17,17 @@ const THEMES = ['system', 'light', 'dark'];
 const TEXT_SIZES = ['normal', 'large'];
 // sound: play a sound for new notifications (default on)
 
+// "Working as" (2026-11-20): switch to another of my roles on this device. Pages, buttons and "To do" follow it.
+router.post('/role', async (req, res) => {
+  const role = String(req.body?.role || '');
+  if (!req.user.roles.some((r) => r.role === role)) throw new HttpError(403, 'You do not hold this role.');
+  await db('sessions').where({ id: req.user.session_id }).update({ active_role: role === req.user.main_role ? null : role });
+  const { ROLES } = require('../auth/roles');
+  await audit(req, 'auth.role', `${req.user.full_name} now works as ${ROLES[role].label} (was ${ROLES[req.user.role].label})`, { detail: { userId: req.user.id } });
+  const use = req.user.roles.find((r) => r.role === role);
+  res.json({ user: publicUser({ ...req.user, role: use.role, school_id: use.school_id, school_name: use.school_name, school_short: use.school_short, school_code: use.school_code }) });
+});
+
 // Short public id for a session. The full value is a hash of the cookie and never leaves the server.
 const sid = (hash) => hash.slice(0, 12);
 

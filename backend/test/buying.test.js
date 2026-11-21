@@ -37,7 +37,7 @@ test.before(async () => {
 test.after(async () => { if (server) server.close(); if (db) await db.destroy(); });
 
 test('buy -> check -> cashier takes the money back; each step signed', { skip }, async () => {
-  const body = { requisitionId: rq.id, lines: [{ itemId: item.id, qty: 10, unitCost: 6000 }] };
+  const body = { requisitionId: rq.id, supplier: 'Nyanza Stationery', lines: [{ itemId: item.id, qty: 10, unitCost: 6000 }] };
   assert.equal((await as('keeper', 'POST', '/api/purchases', body)).status, 403, 'no PIN');
   const c = await as('keeper', 'POST', '/api/purchases', { ...body, pin: PIN });
   assert.equal(c.status, 201, JSON.stringify(c.json));

@@ -1,6 +1,6 @@
 // The Requested Cash Payout Voucher, as on the paper: company line, MUSABE SCHOOLS, title, Date, Cheque No., Name of payee,
 // S/NO | DETAIL | AMOUNT, TOTAL (with what it is for), Total in words, Prepared by / Signature of payee / Authorized by.
-// Internal payment: Assistant Accountant prepares -> Financial Officer authorizes -> Cashier pays, the payee signs here on the screen.
+// Internal payment: Assistant Accountant prepares -> Manager or Finance Manager authorizes -> Cashier pays, the payee signs here on the screen.
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
@@ -54,7 +54,7 @@ export default function Voucher() {
   const canAuth = v?.canAuthorize;
   const submitNew = async ({ pin, smsCode }) => {
     const d = await api.post('/payments', { ...f, lines: lines.map((l) => ({ detail: l.detail, amount: Number(l.amount) })), pin, smsCode });
-    toast(`${d.payment.number} sent to the Financial Officer`); setAsk(null); navigate(`/payments/${d.payment.id}`, { replace: true });
+    toast(`${d.payment.number} sent to the Manager / Finance Manager`); setAsk(null); navigate(`/payments/${d.payment.id}`, { replace: true });
   };
   const authorize = async ({ pin, smsCode }) => { await api.post(`/payments/${v.id}/authorize`, { approve: true, note, pin, smsCode }); toast(`${v.number} authorized`); setAsk(null); setNote(''); await load(); };
   const reject = async () => { try { await api.post(`/payments/${v.id}/authorize`, { approve: false, note }); toast(`${v.number} rejected`); setNote(''); await load(); } catch (e) { setError(e.message); } };
@@ -70,8 +70,8 @@ export default function Voucher() {
       <div className="rq-bar"><Link to="/payments" className="btn sm">← All vouchers</Link>
         {v ? <><span className={`pill ${TONE[v.status]}`}>{v.statusLabel}</span><SealBadge seal={v.seal} /></> : <h2 style={{ margin: 0 }}>New payout voucher</h2>}
         <span className="grow" />{v && <PrintButton />}</div>
-      {v?.status === 'rejected' && <p className="rq-note bad"><b>Rejected</b>{v.authorizedBy && !v.paidBy ? ` by the Financial Officer (${v.authorizedBy})` : v.paidBy ? ` by the Cashier (${v.paidBy})` : ''}: {v.payNote || v.authorizeNote}</p>}
-      {v?.requisition && <p className="rq-note info">Money to buy for <Link to={`/requisitions/${v.requisition.id}`}>{v.requisition.number}</Link>{v.requisition.school ? ` · ${v.requisition.school}` : ''}. Authorized by the Manager when he signed the requisition.</p>}
+      {v?.status === 'rejected' && <p className="rq-note bad"><b>Rejected</b>{v.authorizedBy && !v.paidBy ? ` by ${v.authorizedBy}` : v.paidBy ? ` by the Cashier (${v.paidBy})` : ''}: {v.payNote || v.authorizeNote}</p>}
+      {v?.requisition && <p className="rq-note info">Money to buy for <Link to={`/requisitions/${v.requisition.id}`}>{v.requisition.number}</Link>{v.requisition.school ? ` · ${v.requisition.school}` : ''}. Authorized by the Manager / Finance Manager when they approved the requisition.</p>}
       <div className="rq-sheet">
         <div className="rq-top"><img src="/musabe-logo.png" alt="" /><div><h2 style={{ margin: 0 }}>KARAGWE MARKETING COMPANY LIMITED</h2>
           <b>MUSABE SCHOOLS</b><div className="rq-small">P.O BOX 5154 MWANZA</div></div></div>
@@ -101,7 +101,7 @@ export default function Voucher() {
           <Sig label="Prepared by" sign={s.prepared} hint={isNew ? 'signed when you send it' : isFloat ? '' : ''} />
           <Sig label="Signature of payee" sign={s.payee} hint={v && v.status === 'pending' ? 'signs when paid' : ''}>
             {canPay && <span className="rq-small">sign below</span>}</Sig>
-          <Sig label="Authorized by" sign={s.authorized} hint={canAuth ? 'your turn' : v?.status === 'review' ? 'waiting for the Financial Officer' : ''} />
+          <Sig label="Authorized by" sign={s.authorized} hint={canAuth ? 'your turn' : v?.status === 'review' ? 'waiting for the Manager / Finance Manager' : ''} />
         </div>
         <div className="rq-signs" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           <div /><Sig label="Paid by (Cashier)" sign={s.paid} hint={canPay ? 'your turn' : v?.status === 'pending' ? 'waiting for the Cashier' : ''} /><div />
@@ -110,7 +110,7 @@ export default function Voucher() {
       {v && <SealQR type="voucher" id={v.id} seal={v.seal} />}
       <div className="rq-actions">
         <ErrorNote error={error} />
-        {isNew && <div className="row"><button className="btn p" disabled={!lines.length || f.payeeName.trim().length < 3 || f.purpose.trim().length < 3} onClick={() => { setError(''); setAsk({ kind: 'new', title: 'Sign and send to the Financial Officer', note: `Total TSh ${tsh(total)} to ${f.payeeName}.` }); }}>Sign and send</button></div>}
+        {isNew && <div className="row"><button className="btn p" disabled={!lines.length || f.payeeName.trim().length < 3 || f.purpose.trim().length < 3} onClick={() => { setError(''); setAsk({ kind: 'new', title: 'Sign and send to the Manager / Finance Manager', note: `Total TSh ${tsh(total)} to ${f.payeeName}.` }); }}>Sign and send</button></div>}
         {canAuth && <>
           <label>Note (needed to reject)<input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} /></label>
           <div className="row"><button className="btn danger" disabled={!note.trim()} onClick={reject}>Reject</button>

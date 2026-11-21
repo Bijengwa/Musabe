@@ -3,10 +3,10 @@
 const { ROLES } = require('../auth/roles');
 
 const GROUPS = {
-  library: { label: 'Library & sales', prefixes: ['item', 'stock', 'receipt', 'sale', 'give', 'damage', 'request', 'money', 'delivery', 'bill', 'issue', 'purchase', 'count', 'store', 'requisition', 'payment'] },
+  library: { label: 'Library & sales', prefixes: ['item', 'stock', 'receipt', 'sale', 'give', 'damage', 'request', 'money', 'delivery', 'bill', 'issue', 'purchase', 'count', 'store', 'requisition', 'payment', 'order', 'book', 'supplier', 'pricelist', 'lpo', 'contract', 'vehicle'] },
   accounts: { label: 'Accounts & sign-in', prefixes: ['user', 'auth', 'profile', 'idcard'] },
   schools: { label: 'Schools', prefixes: ['school'] },
-  academic: { label: 'Academic', prefixes: ['student', 'parent', 'class', 'exam', 'mark', 'topic', 'support'] },
+  academic: { label: 'Academic', prefixes: ['student', 'interview', 'parent', 'class', 'exam', 'mark', 'topic', 'support'] },
 };
 const ALL = Object.keys(GROUPS);
 
@@ -15,7 +15,7 @@ const SEE = {
   super: ALL, director: ALL, adirector: ALL, manager: ALL,
   fm: ['library'], afm: ['library'], acc: ['library'], aacc: ['library'], storekeeper: ['library'],
   sadmin: ['accounts', 'schools', 'academic'], head: ALL, acad: ['academic'], teacher: ['academic'],
-  bursar: ['library'], librarian: ['library'],
+  bursar: ['library'], librarian: ['library'], secretary: ['academic'], cashier: ['library'], mapokezi: ['library'], amanager: ['library'],
 };
 
 // Everyday actions that would only be noise as notifications (still shown on the Activity page).

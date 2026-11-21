@@ -1,5 +1,7 @@
+import HelpChat from '../components/HelpChat';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { NAV, ALL_PAGES, MY_PAGES, navAccess } from '../nav';
 import { Avatar, Icon, SchoolPill } from '../components/ui';
@@ -56,6 +58,7 @@ export default function Shell() {
           <div><b>{user.fullName}</b><span>{user.roleLabel}</span></div>
           <Icon name="chev" />
         </NavLink>
+        <RoleSwitch onDone={() => setOpen(false)} />
         <nav className="sidenav">
         {NAV.map((g) => {
           const items = g.items.filter((i) => navAccess(me.pages, i, me.role));
@@ -102,8 +105,31 @@ export default function Shell() {
           </div>
         </header>
         <main className="content" ref={contentRef}><Outlet /></main>
+        <HelpChat />
       </div>
     </div>
+  );
+}
+
+// One person, many roles (2026-11-20): "Working as" chooses which of my roles this device uses now.
+// The sidebar, pages, buttons and "To do" follow it. Only shown to people with more than one role.
+function RoleSwitch({ onDone }) {
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+  if (!user.roles || user.roles.length < 2) return null;
+  const change = async (role) => {
+    if (role === user.role) return;
+    setBusy(true);
+    // A fresh start of the app: every page, list and cache is loaded again for the new role.
+    try { await api.post('/me/role', { role }); onDone?.(); window.location.assign('/'); } catch { setBusy(false); }
+  };
+  return (
+    <label className="roleswitch">
+      <span>Working as</span>
+      <select value={user.role} disabled={busy} onChange={(e) => change(e.target.value)} aria-label="Working as">
+        {user.roles.map((r) => <option key={r.role} value={r.role}>{r.label}{r.school ? ` · ${r.school}` : ''}</option>)}
+      </select>
+    </label>
   );
 }
 

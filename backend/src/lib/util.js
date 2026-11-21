@@ -60,6 +60,7 @@ async function audit(req, action, summary, { schoolId = null, detail = null, use
   await trx('audit_log').insert({
     user_id: userId ?? req.user?.id ?? null,
     school_id: schoolId,
+    role: req.user?.role ?? null,   // the role used (one person may hold several)
     action,
     summary,
     detail: detail ? JSON.stringify(detail) : null,

@@ -11,3 +11,7 @@ Claude outputs/
 .env
 node_modules/
 dist/
+
+# Photos of real school papers (names, phones) - keep off the public repo
+docs/School Docs in pics.zip
+docs/pictures of the paperbooks used in the offices/

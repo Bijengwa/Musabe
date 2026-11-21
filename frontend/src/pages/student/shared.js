@@ -18,11 +18,12 @@ export function useClasses(school) {
   const [error, setError] = useState('');
   const reload = useCallback(() => {
     if (!school) return;
-    api.get(`/students/classes?school=${school}`).then((d) => { setLoaded({ school, classes: d.classes }); setError(''); }).catch((e) => setError(e.message));
+    api.get(`/students/classes?school=${school}`).then((d) => { setLoaded({ school, classes: d.classes, levels: d.levels || [], curricula: d.curricula || {} }); setError(''); }).catch((e) => setError(e.message));
   }, [school]);
   useEffect(() => { reload(); }, [reload]);
   useLive(['class', 'student', 'studentimport'], reload);
-  return { classes: loaded?.school === school ? loaded.classes : null, error, reload };
+  const mine = loaded?.school === school ? loaded : null;
+  return { classes: mine ? mine.classes : null, levels: mine?.levels || [], curricula: mine?.curricula || {}, error, reload };
 }
 
 // Text for a class in a drop-down: "P 2 A — PRIMARY TWO A"

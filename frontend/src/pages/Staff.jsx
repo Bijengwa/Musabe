@@ -87,7 +87,7 @@ export default function Staff() {
               return (
                 <tr key={u.id}>
                   <td data-l="Name"><b>{u.fullName}</b>{u.phone && <div className="small muted">{fmtPhone(u.phone)}</div>}</td>
-                  <td data-l="Role">{u.roleLabel}</td>
+                  <td data-l="Role">{u.roleLabel}{u.extraRoles?.length > 0 && <div className="small muted">also: {u.extraRoles.map((x) => x.label).join(', ')}</div>}</td>
                   <td data-l="Place"><SchoolPill code={s?.code} name={s?.shortName || u.schoolShort} /></td>
                   <td data-l="Username" className="muted">@{u.username}</td>
                   <td data-l="Last sign-in" className="small">{fmtWhen(u.lastLoginAt)}</td>
@@ -100,6 +100,7 @@ export default function Staff() {
                       {can('idcards') && <button className="btn sm" onClick={() => setModal({ kind: 'card', user: u })}><Icon name="tag" /> ID card</button>}
                       {u.canManage && <>
                       <button className="btn sm" onClick={() => setModal({ kind: 'edit', user: u })}><Icon name="edit" /> Edit</button>
+                      <button className="btn sm" onClick={() => setModal({ kind: 'roles', user: u })}>Roles</button>
                       <button className={`btn sm${u.resetRequested ? ' p' : ''}`} onClick={() => setModal({ kind: 'reset', user: u })}>Reset password</button>
                       <button className={`btn sm${u.active ? ' danger' : ''}`} onClick={() => (u.active ? setModal({ kind: 'off', user: u }) : toggle(u))}>{u.active ? 'Switch off' : 'Switch on'}</button>
                       </>}
@@ -114,6 +115,7 @@ export default function Staff() {
 
       {modal?.kind === 'card' && <Modal wide title={`ID card · ${modal.user.fullName}`} onClose={() => setModal(null)} footer={<button className="btn" onClick={() => setModal(null)}>Close</button>}>
         <IdCardPanel kind="staff" id={modal.user.id} flush /></Modal>}
+      {modal?.kind === 'roles' && <RolesBox u={modal.user} onClose={() => { setModal(null); load(); }} />}
       {modal?.kind === 'new' && <NewAccount onClose={() => setModal(null)} onDone={(d) => { setModal({ kind: 'creds', data: d }); load(); }} />}
       {modal?.kind === 'edit' && <EditAccount u={modal.user} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); toast('Saved'); }} />}
       {modal?.kind === 'off' && (
@@ -224,6 +226,52 @@ function EditAccount({ u, onClose, onDone }) {
         <p className="small muted">Role: {u.roleLabel}{u.schoolShort ? ` · ${u.schoolShort}` : ''}. To change someone's role, switch this account off and create a new one, so the history stays clear.</p>
         <ErrorNote error={error} />
       </form>
+    </Modal>
+  );
+}
+
+// One person, many roles (2026-11-20): the main role stays; extra roles are added or switched off here.
+// The person chooses "Working as" in the menu. Some pairs are refused (one checks the other's money or goods).
+function RolesBox({ u, onClose }) {
+  const toast = useToast();
+  const schools = useSchools();
+  const [d, setD] = useState(null);
+  const [role, setRole] = useState('');
+  const [school, setSchool] = useState(u.schoolId ? String(u.schoolId) : '');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => api.get(`/users/${u.id}/roles`).then(setD).catch((e) => setError(e.message)), [u.id]);
+  useEffect(() => { load(); }, [load]);
+  const pick = d?.canAdd.find((x) => x.role === role);
+  const add = async () => {
+    setBusy(true); setError('');
+    try { await api.post(`/users/${u.id}/roles`, { role, schoolId: pick?.needsSchool ? Number(school) : null }); toast('Role added'); setRole(''); await load(); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  const remove = async (x) => {
+    setBusy(true); setError('');
+    try { await api.post(`/users/${u.id}/roles/${x.id}/remove`, {}); toast('Role removed'); await load(); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  return (
+    <Modal title={`Roles · ${u.fullName}`} onClose={onClose} footer={<button className="btn p" onClick={onClose}>Done</button>}>
+      {!d ? <Empty>Loading…</Empty> : (
+        <div className="stack">
+          <p className="small muted" style={{ margin: 0 }}>One person keeps one account. Give extra roles here (for example a librarian who is also the School Store-keeper). They choose "Working as" in the menu; everything they do is written with the role they used.</p>
+          <div><b>Main role:</b> {d.main.label}</div>
+          {d.extra.length > 0 && (
+            <div className="stack" style={{ gap: 6 }}>{d.extra.map((x) => (
+              <div key={x.id} className="row" style={{ alignItems: 'center' }}><span className="pill info">{x.label}{x.school ? ` · ${x.school}` : ''}</span><span className="grow" />
+                <button className="btn sm danger" disabled={busy} onClick={() => remove(x)}>Remove</button></div>
+            ))}</div>
+          )}
+          <div className="row" style={{ alignItems: 'end' }}>
+            <label style={{ flex: 1 }}>Add a role<select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">Choose…</option>{d.canAdd.filter((x) => x.role !== d.main.role && !d.extra.some((e) => e.role === x.role)).map((x) => <option key={x.role} value={x.role}>{x.label}</option>)}</select></label>
+            {pick?.needsSchool && schools.length > 0 && <label>School<select value={school} onChange={(e) => setSchool(e.target.value)}><option value="">Choose…</option>{schools.map((sc) => <option key={sc.id} value={sc.id}>{sc.shortName}</option>)}</select></label>}
+            <button className="btn p" disabled={busy || !role || (pick?.needsSchool && schools.length > 0 && !school)} onClick={add}>Add</button>
+          </div>
+          <ErrorNote error={error} />
+        </div>
+      )}
     </Modal>
   );
 }

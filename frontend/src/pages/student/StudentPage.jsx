@@ -9,6 +9,7 @@ import { Empty, ErrorNote, Icon, Modal, Panel, fmtPhone, fmtWhen, tsh, useToast 
 import { ReceiptModal, STATUS_TONE } from '../../components/receipt';
 import StudentForm from './StudentForm';
 import { IdCardPanel } from '../../components/idcard';
+import { InterviewPanel } from '../Interviews';
 import { classOption, useClasses } from './shared';
 
 const RSTATUS = { waiting: 'Waiting at library', part: 'Partly given', given: 'Given' };
@@ -107,6 +108,8 @@ export default function StudentPage() {
           )}
         </Panel>
       </div>
+
+      {s.interview && <InterviewPanel iv={s.interview} />}
 
       <IdCardPanel kind="student" id={s.id} />
 

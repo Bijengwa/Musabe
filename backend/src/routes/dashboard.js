@@ -279,7 +279,7 @@ async function todo(user, school) {
     add(await cnt(db('stock_counts').where('status', 'pending').whereNot('counted_by', user.id)), 'weekly stock checks to confirm', '/counts');
   } else if (user.role === 'storekeeper') {
     add(await cnt(db('purchases').where({ status: 'pending', ordered: false })), 'purchases waiting for Mapokezi to check', '/purchases', 'info');
-    add(await cnt(db('purchases').where({ status: 'checked' })), 'checked by Mapokezi: ready to send', '/purchases');
+    add(await cnt(db('purchases').where({ status: 'checked' })), 'checked by Mapokezi: waiting for the accountant office to confirm', '/purchases', 'info');
     add(await cnt(db('purchases').where({ status: 'pending', ordered: true })), 'orders waiting for the goods (Mapokezi checks them when they arrive)', '/purchases', 'info');
   } else if (user.role === 'mapokezi') {
     add(await cnt(db('purchases').where('status', 'pending')), 'purchases waiting for you to check against the receipts', '/purchases');
@@ -288,6 +288,15 @@ async function todo(user, school) {
     'requisitions with money given: goods will come to check soon', '/requisitions', 'info');
   } else if (user.role === 'cashier') {
     add(await cnt(db('payment_requests').where('status', 'pending')), 'payments waiting for you to give out', '/payments');
+  }
+  // Order Book (2026-11-20).
+  if (pageAccess(user.role, 'orders')) {
+    const od = (st) => sc(db('orders'), 'school_id').where('status', st);
+    if (user.role === 'acad') add(await cnt(od('acad')), "teachers' orders to answer (give or send on)", '/orders');
+    if (user.role === 'head') add(await cnt(od('head')), 'orders to approve', '/orders');
+    if (user.role === 'manager') add(await cnt(od('manager')), 'orders from the schools to approve', '/orders');
+    if (['storekeeper', 'amanager'].includes(user.role)) add(await cnt(od('keeper')), 'orders to buy for: write the requisition', '/orders');
+    if (['acad', 'librarian', 'sstore', 'patron', 'head'].includes(user.role)) add(await cnt(od('rejected').where('written_by', user.id).where('rejected_at', '>', db.raw("now() - interval '7 days'"))), 'of your orders were rejected this week', '/orders', 'info');
   }
   // School requisitions: the signer whose turn it is, and the store-keeper who buys or sends.
   if (pageAccess(user.role, 'requisitions')) {
@@ -301,14 +310,29 @@ async function todo(user, school) {
     if (user.role === 'acad') add(await cnt(sign().where({ status: 'acad', kind: 'academic' })), 'requisitions for lessons to sign', '/requisitions');
     if (user.role === 'sstore') add(await cnt(sign().where({ status: 'acad', kind: 'general' })), 'requisitions from staff to sign', '/requisitions');
     if (user.role === 'storekeeper') {
-      add(await cnt(sign().where('status', 'store')), 'requisitions to sign', '/requisitions');
+      add(await cnt(sign().where('status', 'store')), 'old school requisitions to sign', '/requisitions');
       add(await cnt(rq().where('status', 'approved')), 'approved requisitions to buy or order', '/requisitions');
     }
-    if (user.role === 'manager') add(await cnt(sign().where('status', 'manager')), 'requisitions to sign', '/requisitions');
-    if (['head', 'acad', 'teacher', 'librarian', 'bursar', 'sstore'].includes(user.role)) {
-      add(await cnt(rq().where({ requested_by: user.id, returned: true }).whereIn('status', ['acad', 'head', 'store', 'manager'])), 'of your requisitions were sent back: please correct them', '/requisitions');
+    if (user.role === 'cashier') add(await cnt(rq().whereIn('status', ['approved', 'buying']).whereNotNull('money_back_asked_at')), 'buyers bringing office money back: receive it', '/requisitions');
+    if (user.role === 'amanager') add(await cnt(rq().where({ status: 'approved', requested_by: user.id })), 'of your requisitions are approved: to buy', '/requisitions');
+    // Office buying (2026-11-21): LPOs to sign, confirmed goods to send to the schools.
+    if (user.role === 'acc') add(await cnt(db('lpos').where('status', 'certify').whereNot('prepared_by', user.id)), 'LPOs to certify (Head of Accounts)', '/lpo');
+    if (['manager', 'fm'].includes(user.role)) add(await cnt(db('lpos').where('status', 'authorise').whereNot('prepared_by', user.id).where((w) => w.whereNull('certified_by').orWhereNot('certified_by', user.id))), 'LPOs to authorise', '/lpo');
+    if (user.role === 'storekeeper') add(await cnt(db('purchases as p').where('p.status', 'confirmed').whereNotNull('p.school_id').whereNull('p.delivery_id')
+      .whereExists(db('purchase_lines as l').whereRaw('l.purchase_id = p.id').whereRaw('coalesce(l.confirmed_qty, l.qty) > 0').select(db.raw('1')))), 'confirmed purchases to send to the schools (with QR labels)', '/purchases');
+    if (user.role === 'acc') add(await cnt(db('contracts').whereNull('checked_at').whereNot('created_by', user.id)), 'work agreements to check', '/contracts', 'info');
+    if (user.role === 'aacc') add(await cnt(sign().where('status', 'check').whereNot('requested_by', user.id)), 'requisitions to check (prices) before the Manager', '/requisitions');
+    if (['manager', 'fm'].includes(user.role)) add(await cnt(sign().where('status', 'manager').whereNot('requested_by', user.id)), 'requisitions to approve (money)', '/requisitions');
+    if (['manager', 'fm'].includes(user.role)) add(await cnt(db('payment_requests').where('status', 'review').whereNot('requested_by', user.id)), 'payout vouchers to authorize (money)', '/payments');
+    if (['amanager', 'storekeeper'].includes(user.role)) add(await cnt(db('purchases').where({ went_with: user.id, status: 'pending' }).whereNull('went_with_signed_at')), 'buying forms to sign: you went to the market too', '/purchases');
+    if (['amanager', 'storekeeper'].includes(user.role)) {
+      add(await cnt(rq().where({ requested_by: user.id, returned: true }).whereIn('status', ['check', 'manager'])), 'of your requisitions were sent back: please correct them', '/requisitions');
+      add(await cnt(rq().where({ requested_by: user.id, returned: false }).whereIn('status', ['check', 'manager'])), 'of your requisitions wait for the Assistant Accountant / Manager', '/requisitions', 'info');
     }
-    if (['acad', 'teacher', 'librarian', 'bursar', 'sstore'].includes(user.role)) add(await cnt(rq().where('requested_by', user.id).whereIn('status', ['acad', 'head', 'store', 'manager', 'approved', 'buying', 'arrived', 'sent'])),
+    if (['head', 'acad', 'teacher', 'librarian', 'bursar', 'sstore'].includes(user.role)) {
+      add(await cnt(rq().where({ requested_by: user.id, returned: true }).whereIn('status', ['acad', 'head', 'store', 'check', 'manager'])), 'of your requisitions were sent back: please correct them', '/requisitions');
+    }
+    if (['acad', 'teacher', 'librarian', 'bursar', 'sstore'].includes(user.role)) add(await cnt(rq().where('requested_by', user.id).whereIn('status', ['acad', 'head', 'store', 'check', 'manager', 'approved', 'buying', 'arrived', 'sent'])),
       'of your requisitions are on the way', '/requisitions', 'info');
   }
   // ID cards not yet handed over (the School Admin records them).
@@ -326,6 +350,15 @@ async function todo(user, school) {
     const holds = await mine(db('stock_levels').where('qty', '>', 0)).first();
     if (!done && holds) add(1, 'weekly stock check not done yet this week: count the store', '/counts');
     add(await cnt(mine(db('item_copies').where('status', 'out'))), 'pieces are out and must come back', '/issue', 'info');
+  }
+  // Admission interviews (2026-11-20): children who passed but are not registered as students yet.
+  if (can('students', 'f') && can('interviews') && user.school_id) {
+    add(await cnt(db('admission_interviews').where({ school_id: user.school_id, result: 'passed' }).whereNull('student_id')),
+      'children passed the admission interview: register them as students', '/interviews?result=passed&registered=no', 'info');
+  }
+  if (can('interviews', 'f')) add(await cnt(sc(db('admission_interviews').where('result', 'waiting'), 'school_id')), 'admission interviews waiting for a result', '/interviews?result=waiting', 'info');
+  if (can('classlist', 'f') && user.school_id) {
+    add(await cnt(db('classes').where({ school_id: user.school_id, active: true }).whereNull('level')), 'classes typed by hand: choose their class from the list', '/students/classes');
   }
   if (can('students', 'f') && user.school_id) add(await cnt(db('student_imports').where({ school_id: user.school_id, status: 'pending' })), 'class lists waiting for approval', '/students/upload');
   if (can('staff', 'f')) {
@@ -410,7 +443,8 @@ router.get('/', async (req, res) => {
     case 'librarian':
       Object.assign(d, { open: await open(school, { limit: 10 }), library: await library(school), work: await libraryWork(school) });
       break;
-    case 'storekeeper': {
+    case 'storekeeper':
+    case 'amanager': {
       // No main store: orders and purchases for the schools, deliveries on the way, requisitions to sign or buy.
       const [pu] = await db('purchases').select(db.raw(`(count(*) filter (where status = 'pending' and ordered))::int as ordered,
         (count(*) filter (where status = 'pending' and not ordered))::int as tocount, (count(*) filter (where status = 'checked'))::int as checked,
@@ -420,6 +454,9 @@ router.get('/', async (req, res) => {
         .select('p.id', 'p.number', 'p.supplier', 'p.status', 'p.ordered', 'p.total', 'p.created_at', 's.short_name as school');
       Object.assign(d, { store: { ordered: pu.ordered, toCount: pu.tocount, checked: pu.checked, boughtThisMonth: num(pu.month), onTheWay: dl.n,
         requests: num((await db('stock_requests').where('status', 'pending').count('* as n'))[0].n),
+        orders: num((await db('orders').where('status', 'keeper').count('* as n'))[0].n),
+        toBuy: num((await db('requisitions').where('status', 'approved').modify((q) => { if (u.role === 'amanager') q.where('requested_by', u.id); }).count('* as n'))[0].n),
+        toApprove: num((await db('requisitions').where({ status: 'manager', requested_by: u.id }).count('* as n'))[0].n),
         recent: recent.map((p) => ({ id: p.id, number: p.number, supplier: p.supplier, status: p.status, ordered: p.ordered, total: num(p.total), at: p.created_at, school: p.school })) } });
       break;
     }

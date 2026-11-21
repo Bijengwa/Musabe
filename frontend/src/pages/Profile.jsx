@@ -5,6 +5,8 @@ import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
 import { IdCardPanel } from '../components/idcard';
 import { SignPad } from '../components/signing';
+import { cleanSignature } from '../components/cleanSignature';
+import './requisition.css';
 import { Avatar, Empty, ErrorNote, Icon, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
 
 // My profile: who I am in the system.
@@ -21,6 +23,16 @@ function SigningPanel({ user, refresh }) {
   const [busy, setBusy] = useState(false);
   const [padKey, setPadKey] = useState(0);
   const [current, setCurrent] = useState(null);
+  const [how, setHow] = useState('photo');
+  const photo = (file) => {
+    if (!file) return;
+    setError('');
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { const png = cleanSignature(img); URL.revokeObjectURL(url); if (png) setImage(png); else setError('No signature was found in the photo. Take it again on white paper, closer.'); };
+    img.onerror = () => { URL.revokeObjectURL(url); setError('That file is not a picture.'); };
+    img.src = url;
+  };
   useEffect(() => { if (user.hasSignature) api.get('/me/signature').then((d) => setCurrent(d.image)).catch(() => {}); }, [user.hasSignature]);
   const save = async () => {
     setBusy(true); setError('');
@@ -38,8 +50,23 @@ function SigningPanel({ user, refresh }) {
         <div className="row"><span className={`pill ${user.hasSignature ? 'ok' : 'warn'}`}>{user.hasSignature ? 'Signature saved' : 'No signature yet'}</span>
           <span className={`pill ${user.hasPin ? 'ok' : 'warn'}`}>{user.hasPin ? 'PIN set' : 'No PIN yet'}</span></div>
         {current && <img src={current} alt="My saved signature" style={{ maxHeight: 70, alignSelf: 'flex-start', border: '1px dashed var(--line)', borderRadius: 8, background: '#fff' }} />}
-        <p className="muted small" style={{ margin: 0 }}>{user.hasSignature ? 'Draw again only if you want to change it.' : 'Draw your signature:'}</p>
-        <SignPad key={padKey} onChange={setImage} />
+        <div className="seg" role="tablist">
+          <button type="button" className={how === 'photo' ? 'on' : ''} onClick={() => { setHow('photo'); setImage(null); }}>Photo of my signature on paper</button>
+          <button type="button" className={how === 'draw' ? 'on' : ''} onClick={() => { setHow('draw'); setImage(null); }}>Draw it here</button>
+        </div>
+        {how === 'photo' ? (
+          <>
+            <p className="muted small" style={{ margin: 0 }}>Sign with a blue or black pen on white paper, take a clear photo (or scan) of only the signature, and choose it here. The paper becomes see-through and the empty space is cut off.</p>
+            <input type="file" accept="image/*" aria-label="Photo of the signature" onChange={(e) => photo(e.target.files?.[0])} />
+          </>
+        ) : (
+          <>
+            <p className="muted small" style={{ margin: 0 }}>{user.hasSignature ? 'Draw again only if you want to change it.' : 'Draw your signature:'}</p>
+            <SignPad key={padKey} onChange={setImage} />
+          </>
+        )}
+        {image && <div className="stack" style={{ gap: 4 }}><span className="small muted">It will look like this on the papers:</span>
+          <div style={{ background: '#fff', border: '1px dashed var(--line)', borderRadius: 8, padding: '10px 16px', alignSelf: 'flex-start' }}><div className="rq-sigline" style={{ width: 240 }}><img className="rq-sigimg" src={image} alt="New signature" /></div></div></div>}
         <label>{user.hasPin ? 'New signing PIN (leave empty to keep it)' : 'Signing PIN (4 to 6 digits, not 1234)'}
           <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} /></label>
         <label>Your account password (to confirm)

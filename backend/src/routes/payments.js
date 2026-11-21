@@ -1,5 +1,5 @@
 // Money going out: the Requested Cash Payout Voucher (paper copy, 2026-11-18).
-//   Internal payment:  Assistant Accountant PREPARES it -> Financial Officer (fm) AUTHORIZES or rejects -> Cashier PAYS, the payee signs.
+//   Internal payment:  Assistant Accountant PREPARES it -> Manager or Finance Manager AUTHORIZES or rejects -> Cashier PAYS, the payee signs.
 //   Money to buy (a "float", kind = 'float'): made by the system when the Manager signs a requisition (routes/requisitions.js); the Manager's
 //   signature is the authorization. The Cashier gives exactly that amount; the payee (the buyer) signs. Mapokezi then checks the goods.
 // Every signature is made with the signer's PIN and sealed (lib/seal.js). A paid or rejected voucher is never changed.
@@ -17,9 +17,11 @@ router.use(requireAuth);
 const TZ = 'Africa/Dar_es_Salaam';
 const clean = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
 const money = (n) => `TSh ${Number(n).toLocaleString('en-GB')}`;
-const STATUS = { review: 'Waiting for the Financial Officer', pending: 'Authorized: waiting for the Cashier to pay', paid: 'Paid', rejected: 'Rejected' };
+const STATUS = { review: 'Waiting for the Manager / Finance Manager', pending: 'Authorized: waiting for the Cashier to pay', paid: 'Paid', rejected: 'Rejected' };
 const WRITERS = ['aacc'];       // prepares a voucher (internal payments desk)
-const DECIDERS = ['fm'];        // the Financial Officer authorizes every internal payment
+// Money going out is authorized by the Manager, or the Finance Manager when the Manager is away (2026-11-20). Never their own.
+const { MONEY_APPROVERS, ROLES } = require('../auth/roles');
+const DECIDERS = MONEY_APPROVERS;
 const PAYERS = ['cashier'];     // pays it out
 const intAmount = (v, what) => {
   const n = Number(String(v ?? '').replace(/[,\s]/g, ''));
@@ -92,15 +94,15 @@ router.post('/', requirePage('payments', 'f'), async (req, res) => {
     await trx('payment_requests').insert({ id: pid, number, kind: 'general', status: 'review', purpose, amount, payee_name: payee, cheque_no: chequeNo, contract_ref: contractRef, requested_by: req.user.id });
     await trx('payment_lines').insert(lines.map((l) => ({ payment_id: pid, ...l })));
     await signStamp(trx, req, pid, 'prepared');
-    await audit(req, 'payment.create', `${number}: ${money(amount)} to ${payee} for ${purpose}${contractRef ? ` (${contractRef})` : ''}. Prepared by ${req.user.full_name}. Waiting for the Financial Officer`, { detail: { paymentId: pid } }, trx);
+    await audit(req, 'payment.create', `${number}: ${money(amount)} to ${payee} for ${purpose}${contractRef ? ` (${contractRef})` : ''}. Prepared by ${req.user.full_name}. Waiting for the Manager / Finance Manager`, { detail: { paymentId: pid } }, trx);
     return pid;
   });
   res.status(201).json({ payment: await full(req.user, id) });
 });
 
-// 2. The Financial Officer authorizes (or rejects) an internal payment.
+// 2. The Manager or the Finance Manager authorizes (or rejects) an internal payment.
 router.post('/:id/authorize', requirePage('payments', 'f'), async (req, res) => {
-  if (!DECIDERS.includes(req.user.role)) throw new HttpError(403, 'Only the Financial Officer authorizes a payment.');
+  if (!DECIDERS.includes(req.user.role)) throw new HttpError(403, 'Only the Manager or the Finance Manager authorizes a payment.');
   const approve = req.body?.approve === true;
   const note = clean(req.body?.note, 300) || null;
   if (!approve && !note) throw new HttpError(400, 'Write why it is rejected.');
@@ -112,12 +114,12 @@ router.post('/:id/authorize', requirePage('payments', 'f'), async (req, res) => 
     if (p.requested_by === req.user.id) throw new HttpError(403, 'You cannot authorize a voucher you prepared yourself.');
     if (!approve) {
       await trx('payment_requests').where({ id: p.id }).update({ status: 'rejected', authorized_by: req.user.id, authorized_at: trx.fn.now(), authorize_note: note });
-      await audit(req, 'payment.reject', `${p.number} rejected by the Financial Officer (${req.user.full_name}): ${note}`, { detail: { paymentId: p.id, userId: p.requested_by } }, trx);
+      await audit(req, 'payment.reject', `${p.number} rejected by the ${ROLES[req.user.role].label} (${req.user.full_name}): ${note}`, { detail: { paymentId: p.id, userId: p.requested_by } }, trx);
       return;
     }
     await trx('payment_requests').where({ id: p.id }).update({ status: 'pending', authorized_by: req.user.id, authorized_at: trx.fn.now(), authorize_note: note });
     await signStamp(trx, req, p.id, 'authorized');
-    await audit(req, 'payment.authorized', `${p.number}: ${money(p.amount)} to ${p.payee_name} authorized by the Financial Officer (${req.user.full_name})${note ? `: ${note}` : ''}. Waiting for the Cashier`, { detail: { paymentId: p.id, userId: p.requested_by } }, trx);
+    await audit(req, 'payment.authorized', `${p.number}: ${money(p.amount)} to ${p.payee_name} authorized by the ${ROLES[req.user.role].label} (${req.user.full_name})${note ? `: ${note}` : ''}. Waiting for the Cashier`, { detail: { paymentId: p.id, userId: p.requested_by } }, trx);
   });
   res.json({ payment: await full(req.user, req.params.id) });
 });

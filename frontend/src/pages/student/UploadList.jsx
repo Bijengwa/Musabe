@@ -34,7 +34,7 @@ export default function UploadList() {
     <>
       <PageHead title="Upload class list" sub="One Excel file for one class. Your own class lists work as they are." />
       <ErrorNote error={cErr} />
-      {classes && !active.length ? <Panel><p style={{ margin: 0 }}>Register the classes first. <Link to="/students/classes">Classes</Link></p></Panel> : (
+      {classes && !active.length ? <Panel><p style={{ margin: 0 }}>No classes yet. The Academic Master adds them on <Link to="/students/classes">Classes</Link>.</p></Panel> : (
         <div className="sellgrid">
           <Panel title="New upload">
             <div className="stack">

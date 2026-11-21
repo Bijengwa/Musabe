@@ -62,3 +62,4 @@ Then: **Staff accounts → New account** → create a School Admin for each scho
 | Sidebar items | `frontend/src/nav.js` |
 | Sidebar + hamburger | `frontend/src/layout/Shell.jsx` |
 | Staff accounts screen | `frontend/src/pages/Staff.jsx` |
+

@@ -318,12 +318,16 @@ export function StoreHome({ d }) {
   return (
     <>
       <div className="filters">
-        <Link className="btn p" to="/purchases"><Icon name="cart" /> Buy or order</Link>
-        <Link className="btn" to="/requisitions"><Icon name="file" /> Requisitions</Link>
+        <Link className="btn p" to="/orders"><Icon name="inbox" /> Order Book</Link>
+        <Link className="btn" to="/requisitions/new"><Icon name="file" /> New requisition</Link>
+        <Link className="btn" to="/purchases"><Icon name="cart" /> Buy or order</Link>
         <Link className="btn" to="/labels"><Icon name="tag" /> QR labels</Link>
         <Link className="btn" to="/store"><Icon name="box" /> Items to issue</Link>
       </div>
       <div className="kpis">
+        <Kpi tone={s.orders ? 'warn' : 'ok'} label="Orders from the schools to buy for" value={s.orders} sub="write the requisition" />
+        <Kpi tone={s.toApprove ? 'info' : 'ok'} label="My requisitions with the Manager / FM" value={s.toApprove} />
+        <Kpi tone={s.toBuy ? 'warn' : 'ok'} label="Approved: to buy" value={s.toBuy} sub="after the Cashier gives the money" />
         <Kpi tone={s.ordered ? 'info' : 'ok'} label="Orders: goods not here yet" value={s.ordered} />
         <Kpi tone={s.toCount ? 'warn' : 'ok'} label="Waiting for Mapokezi to check" value={s.toCount} />
         <Kpi tone={s.checked ? 'warn' : 'ok'} label="Checked by Mapokezi: with the accountant" value={s.checked} />
