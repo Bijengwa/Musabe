@@ -15,6 +15,15 @@ const int=(v,min,max,name)=>{const n=Number(v);if(!Number.isInteger(n)||n<min||n
 async function scopedSchool(req,wanted){const id=schoolOf(req.user,wanted);if(!id)throw new HttpError(400,'Choose a school.');return id}
 function grade(pct){if(pct>=75)return 'A';if(pct>=65)return 'B';if(pct>=50)return 'C';if(pct>=40)return 'D';return 'E'}
 
+const FIXED_PRIMARY=[['BABY','BABY CLASS','BC'],['PP1','PREP ONE','PP 1'],['PP2','PREP TWO','PP 2'],['P1','PRIMARY ONE','P 1'],['P2','PRIMARY TWO','P 2'],['P3','PRIMARY THREE','P 3'],['P4','PRIMARY FOUR','P 4'],['P5','PRIMARY FIVE','P 5'],['P6','PRIMARY SIX','P 6'],['P7','PRIMARY SEVEN','P 7']];
+const FIXED_SECONDARY=[['F1','FORM ONE','F 1'],['F2','FORM TWO','F 2'],['F3','FORM THREE','F 3'],['F4','FORM FOUR','F 4']];
+router.get('/class-list', requirePage('students'), async(req,res)=>{
+ const school=await scopedSchool(req,req.query.school);const schoolRow=await db('schools').where({id:school}).first('code');const code=String(schoolRow?.code||'').toLowerCase();const fixed=(code==='boys'||code==='girls')?FIXED_SECONDARY:FIXED_PRIMARY;
+ const saved=await db('classes').where({school_id:school,active:true}).orderBy('level').orderBy('stream');
+ const rows=fixed.map(([key,name,shortName],index)=>{const matches=saved.filter(c=>c.level===key);const base=matches[0]||null;return{id:base?.id||null,key,name,shortName,short_name:shortName,stream:base?.stream||null,index,streams:matches.map(c=>({id:c.id,name:c.stream||null,label:[c.short_name,c.stream].filter(Boolean).join(' ')}))}});
+ res.json({classes:rows,stage:(code==='boys'||code==='girls')?'secondary':'primary'});
+});
+
 router.get('/subjects', requirePage('marks'), async(req,res)=>{
  const school=await scopedSchool(req,req.query.school);
  const rows=await db('academic_subjects').where(w=>w.where({school_id:school}).orWhereNull('school_id')).where({active:true}).orderBy('stage').orderBy('name');
