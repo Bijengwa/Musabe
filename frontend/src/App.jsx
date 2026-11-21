@@ -39,6 +39,7 @@ const Suppliers = lazy(() => import('./pages/Suppliers'));
 const Lpo = lazy(() => import('./pages/Lpo'));
 const Contracts = lazy(() => import('./pages/Contracts'));
 const Vehicles = lazy(() => import('./pages/Vehicles'));
+const Academic = lazy(() => import('./pages/Academic'));
 import ComingSoon from './pages/ComingSoon';
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -46,7 +47,7 @@ import Splash from './splash/Splash';
 
 const SCREENS = { home: Home, staff: Staff, schools: Schools, audit: Audit, items: Items, sell: Sell, receipts: Receipts, give: Give, students: Students,
   stock: Stock, stockin: SendStock, incoming: Incoming, requests: Requests, damage: Damage, payments: Payments, bills: Bills, money: Money, salesdash: SalesDashboard, reports: Reports,
-  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles };
+  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles, academics: Academic };
 
 export default function App() {
   return <><Splash /><Routed /></>;
