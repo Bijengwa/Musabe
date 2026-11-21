@@ -6,17 +6,20 @@ import { api } from '../../api';
 import { ErrorNote, Icon, PhoneInput, phoneProblem } from '../../components/ui';
 import { classOption } from './shared';
 
-const EMPTY = { admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', classId: '', parentName: '', parentPhone: '', note: '' };
+const EMPTY = { admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', classId: '', parentName: '', parentPhone: '', guardians: [], note: '' };
 
 export default function StudentForm({ student, classes, school, defaultClass, initial, extra, id = 'stform', onSaved, onBusy }) {
   const s = student;
   const [f, setF] = useState(() => (s ? {
     admissionNo: s.admissionNo, firstName: s.firstName, middleName: s.middleName || '', lastName: s.lastName,
-    sex: s.sex, classId: String(s.classId || ''), parentName: s.parentName || '', parentPhone: s.parentPhone || '', note: s.note || '',
+    sex: s.sex, classId: String(s.classId || ''), parentName: s.parentName || '', parentPhone: s.parentPhone || '',
+    guardians: (s.guardians || []).map((g) => ({ ...g, phone: g.phone || '' })), note: s.note || '',
   } : { ...EMPTY, ...(initial || {}), classId: defaultClass || '' }));
   const [error, setError] = useState('');
   const [found, setFound] = useState({ probe: '', list: [] });
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
+  const setGuardian = (i, k, v) => setF((x) => ({ ...x, guardians: x.guardians.map((g, n) => n === i ? { ...g, [k]: v } : g) }));
+  const removeGuardian = (i) => setF((x) => ({ ...x, guardians: x.guardians.filter((_, n) => n !== i) }));
   const full = [f.firstName, f.middleName, f.lastName].map((x) => x.trim().toUpperCase()).filter(Boolean).join(' ');
 
   // Similar names already saved (new students only).
@@ -33,6 +36,10 @@ export default function StudentForm({ student, classes, school, defaultClass, in
     e.preventDefault(); setError('');
     if (!f.sex) { setError('Choose Boy or Girl.'); return; }
     if (phoneProblem(f.parentPhone)) { setError(`Phone: ${phoneProblem(f.parentPhone)}`); return; }
+    for (const [i, g] of f.guardians.entries()) {
+      if (!g.fullName?.trim() || !g.relationship) { setError(`Guardian ${i + 1}: full name and relationship are required.`); return; }
+      if (phoneProblem(g.phone)) { setError(`Guardian ${i + 1} phone: ${phoneProblem(g.phone)}`); return; }
+    }
     onBusy?.(true);
     try {
       const body = { ...f, classId: f.classId ? Number(f.classId) : null, schoolId: Number(school), ...(s ? {} : extra || {}) };
@@ -66,6 +73,21 @@ export default function StudentForm({ student, classes, school, defaultClass, in
       <div className="fg">
         <label>Parent / guardian<input value={f.parentName} onChange={(e) => set('parentName', e.target.value)} /></label>
         <label>Parent phone<PhoneInput value={f.parentPhone} onChange={(v) => set('parentPhone', v)} /></label>
+      </div>
+      <div className="panel-subtle stack">
+        <div className="row" style={{ justifyContent: 'space-between' }}><b>Additional guardians</b>
+          <button type="button" className="btn sm" disabled={f.guardians.length >= 10}
+            onClick={() => set('guardians', [...f.guardians, { fullName: '', phone: '', relationship: '' }])}>+ Add guardian</button></div>
+        {!f.guardians.length && <p className="small muted" style={{ margin: 0 }}>The primary Parent / guardian above remains compatible.</p>}
+        {f.guardians.map((g, i) => (
+          <div className="fg" key={g.id || i}>
+            <label>Guardian {i + 1} full name<input value={g.fullName || ''} onChange={(e) => setGuardian(i, 'fullName', e.target.value)} required /></label>
+            <label>Phone<PhoneInput value={g.phone || ''} onChange={(v) => setGuardian(i, 'phone', v)} /></label>
+            <label>Relationship<select value={g.relationship || ''} onChange={(e) => setGuardian(i, 'relationship', e.target.value)} required>
+              <option value="">Choose relationship</option>{['mother', 'father', 'brother', 'sister', 'guardian', 'other'].map((r) => <option key={r} value={r}>{r[0].toUpperCase() + r.slice(1)}</option>)}</select></label>
+            <button type="button" className="btn danger sm" onClick={() => removeGuardian(i)}>Remove</button>
+          </div>
+        ))}
       </div>
       <label>Note<input value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="Optional" /></label>
       <ErrorNote error={error} />

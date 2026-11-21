@@ -24,6 +24,7 @@ const classFull = (c) => (c ? [c.name, c.stream].filter(Boolean).join(' ') : '')
 // P 1, P 2 ... P 10 in number order, then by stream.
 const byShort = (a, b) => classLabel(a).localeCompare(classLabel(b), 'en', { numeric: true, sensitivity: 'base' });
 const SEX = { M: 'Boy', F: 'Girl' };
+const GUARDIAN_RELATIONS = ['mother', 'father', 'brother', 'sister', 'guardian', 'other'];
 
 // Which school a request is about: own school for school staff; ?school= / body.schoolId for administration.
 async function schoolOf(req, given) {
@@ -218,6 +219,51 @@ router.get('/', requirePage('students'), async (req, res) => {
   res.json({ students: rows.map(out) });
 });
 
+function guardianOut(g, byName) {
+  return { id: g.id, fullName: g.full_name, phone: g.phone, relationship: g.relationship,
+    verified: g.verified, verificationMethod: g.verification_method, verificationNote: g.verification_note,
+    verifiedBy: g.verified_by_name || byName?.(g.verified_by) || null, verifiedAt: g.verified_at,
+    createdAt: g.created_at, updatedAt: g.updated_at };
+}
+
+function cleanGuardians(input, schoolId, studentId) {
+  if (input === undefined) return null;
+  if (!Array.isArray(input)) throw new HttpError(400, 'Guardians must be a list.');
+  if (input.length > 10) throw new HttpError(400, 'At most 10 guardians can be recorded for a student.');
+  const ids = new Set();
+  return input.map((g, i) => {
+    const fullName = nameText(g.fullName); const phone = phoneOf(g.phone).phone;
+    const relationship = String(g.relationship || '').trim().toLowerCase();
+    if (!fullName) throw new HttpError(400, `Guardian ${i + 1}: full name is required.`);
+    if (!phone) throw new HttpError(400, `Guardian ${i + 1}: phone must be 10 digits starting with 06 or 07.`);
+    if (!GUARDIAN_RELATIONS.includes(relationship)) throw new HttpError(400, `Guardian ${i + 1}: choose a valid relationship.`);
+    if (g.id != null) {
+      const id = Number(g.id); if (!Number.isInteger(id)) throw new HttpError(400, 'Invalid guardian id.'); ids.add(id);
+    }
+    return { id: g.id != null ? Number(g.id) : null, full_name: fullName, phone, relationship,
+      school_id: schoolId, student_id: studentId,
+      ...(g.verificationMethod !== undefined ? { verification_method: String(g.verificationMethod || '').trim().slice(0, 120) || null } : {}),
+      ...(g.verificationNote !== undefined ? { verification_note: String(g.verificationNote || '').trim().slice(0, 300) || null } : {}) };
+  });
+}
+
+async function replaceGuardians(trx, studentId, schoolId, userId, guardians) {
+  if (guardians === null) return;
+  const existing = await trx('student_guardians').where({ student_id: studentId, school_id: schoolId }).select('id');
+  const allowed = new Set(existing.map((g) => g.id));
+  if (guardians.some((g) => g.id != null && !allowed.has(g.id))) throw new HttpError(400, 'Guardian does not belong to this student.');
+  const keep = new Set(guardians.filter((g) => g.id != null).map((g) => g.id));
+  await trx('student_guardians').where({ student_id: studentId, school_id: schoolId }).whereNotIn('id', [...keep]).del();
+  for (const g of guardians) {
+    const values = { full_name: g.full_name, phone: g.phone, relationship: g.relationship,
+      updated_by: userId, updated_at: trx.fn.now() };
+    if (g.verification_method !== undefined) values.verification_method = g.verification_method;
+    if (g.verification_note !== undefined) values.verification_note = g.verification_note;
+    if (g.id != null) await trx('student_guardians').where({ id: g.id, student_id: studentId, school_id: schoolId }).update(values);
+    else await trx('student_guardians').insert({ ...values, student_id: studentId, school_id: schoolId, created_by: userId });
+  }
+}
+
 // The picker used by other screens (e.g. Sell). Own school, active students, best matches first.
 router.get('/search', async (req, res) => {
   if (!pageAccess(req.user.role, 'students') && !pageAccess(req.user.role, 'sell')) throw new HttpError(403, 'Your account is not allowed to do this.');
@@ -237,11 +283,16 @@ const LIST_COLUMNS = [
   { header: 'S/N', key: 'sn', type: 'int', width: 6 }, { header: 'Admission No.', key: 'adm', width: 14 },
   { header: 'First name', key: 'first', width: 16 },
   { header: 'Middle name', key: 'middle', width: 16 }, { header: 'Last name', key: 'last', width: 16 },
-  { header: 'Sex', key: 'sex', width: 6 }, { header: "Parent's name", key: 'parent', width: 28 }, { header: 'Parent phone', key: 'phone', width: 14 },
+  { header: 'Sex', key: 'sex', width: 6 }, { header: "Parent/guardian", key: 'parent', width: 28 }, { header: 'Parent phone', key: 'phone', width: 14 },
+  { header: 'Guardian 1 Name', key: 'g1name', width: 28 }, { header: 'Guardian 1 Phone', key: 'g1phone', width: 14 }, { header: 'Guardian 1 Relationship', key: 'g1relationship', width: 16 },
+  { header: 'Guardian 2 Name', key: 'g2name', width: 28 }, { header: 'Guardian 2 Phone', key: 'g2phone', width: 14 }, { header: 'Guardian 2 Relationship', key: 'g2relationship', width: 16 },
+  { header: 'Guardian 3 Name', key: 'g3name', width: 28 }, { header: 'Guardian 3 Phone', key: 'g3phone', width: 14 }, { header: 'Guardian 3 Relationship', key: 'g3relationship', width: 16 },
 ];
 const HOW = [
   'One file for ONE class. On the Students page choose the class, then upload the file.',
-  'Your own class list works as it is: the system finds the columns by their names (Admission No., first / middle / last name, Sex, Parents name, Contacts). Other columns (fees, PREM number ...) are ignored.',
+  'Your own class list works as it is: the system finds Admission No., First/Middle/Last name, Sex, and the legacy Parent/guardian + Parent phone or Contacts columns. Other columns (fees, PREM number ...) are ignored.',
+  'Additional guardians: use repeatable columns Guardian 1 Name, Guardian 1 Phone, Guardian 1 Relationship; Guardian 2 ... and Guardian 3 ... are also accepted. A structured format uses "Guardians" or "Guardian 1" with values "Full Name, 07..., relationship" separated by semicolons.',
+  'Guardian relationship values: mother, father, brother, sister, guardian, or other. Names may be written as "Guardian 1 Name"; phone aliases include Guardian 1 Phone, Contact, Mobile, or Tel.',
   'Admission No.: needed for every student. It is the student\'s number in the system.',
   'Sex: M or F.  Phone: 10 digits starting 06 or 07 (0754 123 456). A wrong phone is not saved, but the student is.',
   'A student already in the system (same Admission No.) is updated, or moved to this class. Empty cells never erase what is saved.',
@@ -256,11 +307,25 @@ router.get('/export.xlsx', requirePage('students'), async (req, res) => {
   const rows = (await query.orderBy('s.full_name').select(COLS))
     .sort((a, b) => byShort({ short_name: a.class_short, stream: a.class_stream }, { short_name: b.class_short, stream: b.class_stream }));
   const cls = req.query.class ? await db('classes').where({ id: Number(req.query.class) }).first() : null;
+  const guardianRows = await db('student_guardians').whereIn('student_id', rows.map((s) => s.id)).orderBy('student_id').orderBy('id');
+  const guardiansByStudent = new Map();
+  for (const g of guardianRows) {
+    if (!guardiansByStudent.has(g.student_id)) guardiansByStudent.set(g.student_id, []);
+    guardiansByStudent.get(g.student_id).push(g);
+  }
   await sendExcel(res, `musabe-students${cls ? `-${classLabel(cls).replace(/\W+/g, '-')}` : ''}`, [{
     name: 'Students', title: `Musabe Schools: ${cls ? classLabel(cls) : 'students'} (${rows[0]?.school_short || ''})`,
     columns: [...LIST_COLUMNS, { header: 'Class', key: 'cls', width: 16 }, { header: 'Status', key: 'status', width: 9 }],
-    rows: rows.map((s, i) => ({ sn: i + 1, adm: s.admission_no, first: s.first_name, middle: s.middle_name, last: s.last_name,
-      sex: s.sex, parent: s.parent_name, phone: s.parent_phone, cls: classLabel({ name: s.class_name, short_name: s.class_short, stream: s.class_stream }), status: s.status === 'left' ? 'Left' : 'Active' })),
+    rows: rows.map((s, i) => {
+      const gs = guardiansByStudent.get(s.id) || [];
+      const g = (n) => gs[n - 1] || {};
+      return { sn: i + 1, adm: s.admission_no, first: s.first_name, middle: s.middle_name, last: s.last_name,
+        sex: s.sex, parent: s.parent_name, phone: s.parent_phone,
+        g1name: g(1).full_name, g1phone: g(1).phone, g1relationship: g(1).relationship,
+        g2name: g(2).full_name, g2phone: g(2).phone, g2relationship: g(2).relationship,
+        g3name: g(3).full_name, g3phone: g(3).phone, g3relationship: g(3).relationship,
+        cls: classLabel({ name: s.class_name, short_name: s.class_short, stream: s.class_stream }), status: s.status === 'left' ? 'Left' : 'Active' };
+    }),
   }]);
 });
 
@@ -278,6 +343,14 @@ function columnOf(h) {
   if (/mid+le|^mid\b|second name/.test(t)) return 'middleName';
   if (/last|surname/.test(t)) return 'lastName';
   if (/^(sex|gender|jinsia)$/.test(t)) return 'sex';
+  const repeat = t.match(/^(guardian|guardians?)\s*([123])?(?:\s*[-_/])?\s*(name|full name|phone|contact|mobile|tel|relationship|relation|relationship type)$/);
+  if (repeat) {
+    const n = repeat[2] || '1';
+    const field = /name/.test(repeat[3]) ? 'Name' : /phone|contact|mobile|tel/.test(repeat[3]) ? 'Phone' : 'Relationship';
+    return `guardian${n}${field}`;
+  }
+  if (/^guardian\s*([123])\s*(name|phone|relationship)$/i.test(t)) return null;
+  if (/^guardians?( data| list| details?)?$/.test(t)) return 'guardiansStructured';
   if (/contact|phone|simu|mobile|tel/.test(t)) return 'parentPhone';
   if (/parent|guardian|mzazi/.test(t)) return 'parentName';
   if (/^(name|full name|names|pupils name|students name|student name|jina)$/.test(t)) return 'fullName';
@@ -313,12 +386,37 @@ async function checkFile(buffer, schoolId, classId) {
       const w = nameText(get('fullName')).split(' ').filter(Boolean);
       Object.assign(input, { firstName: w[0] || '', middleName: w.slice(1, -1).join(' '), lastName: w.length > 1 ? w[w.length - 1] : '' });
     } else Object.assign(input, { firstName: get('firstName'), middleName: get('middleName'), lastName: get('lastName') });
+
+    const guardians = [];
+    for (const n of [1, 2, 3]) {
+      const fullName = get(`guardian${n}Name`);
+      const phone = get(`guardian${n}Phone`);
+      const relationship = get(`guardian${n}Relationship`);
+      if (fullName || phone || relationship) guardians.push({ fullName, phone, relationship });
+    }
+    const structured = get('guardiansStructured');
+    if (structured) {
+      for (const piece of structured.split(/[;|]/).map((x) => x.trim()).filter(Boolean)) {
+        const parts = piece.split(/[,/]/).map((x) => x.trim());
+        if (parts.length >= 2) guardians.push({ fullName: parts[0], phone: parts[1], relationship: parts[2] || 'other' });
+      }
+    }
     // Empty rows and rows like "." at the end are skipped.
     if (!nameText(input.firstName) && !nameText(input.lastName) && !admOf(input.admissionNo)) continue;
 
     const { data, errors, warnings } = checkStudent(input);
+    const cleanedGuardians = [];
+    for (let i = 0; i < guardians.length; i++) {
+      const g = guardians[i];
+      const p = phoneOf(g.phone);
+      const rel = String(g.relationship || '').trim().toLowerCase();
+      if (!nameText(g.fullName)) { warnings.push(`Guardian ${i + 1}: full name is missing.`); continue; }
+      if (!p.phone) { warnings.push(`Guardian ${i + 1} phone "${g.phone}" is not a correct 10-digit 06/07 number. Guardian not saved.`); continue; }
+      cleanedGuardians.push({ fullName: nameText(g.fullName), phone: p.phone,
+        relationship: GUARDIAN_RELATIONS.includes(rel) ? rel : 'other' });
+    }
     const line = { row: r.row, admissionNo: data.admission_no, fullName: data.full_name, sex: data.sex, parentName: data.parent_name,
-      parentPhone: data.parent_phone, change: '', from: '', errors, warnings, data };
+      parentPhone: data.parent_phone, guardians: cleanedGuardians, change: '', from: '', errors, warnings, data };
     if (data.admission_no) {
       const key = data.admission_no.toLowerCase();
       if (seen.has(key)) errors.push(`Admission No. ${data.admission_no} is also on row ${seen.get(key)}.`);
@@ -427,9 +525,16 @@ router.post('/imports/:id/approve', requirePage('students', 'f'), async (req, re
       if (l.change === 'No change') continue;
       const d = l.data;
       if (l.change === 'New') {
-        await trx('students').insert({ ...d, school_id: m.school_id, class_id: cls.id, import_id: m.id, created_by: req.user.id, updated_by: req.user.id });
+        const [student] = await trx('students').insert({ ...d, school_id: m.school_id, class_id: cls.id, import_id: m.id, created_by: req.user.id, updated_by: req.user.id }).returning('id');
+        for (const g of l.guardians || []) await trx('student_guardians').insert({ student_id: student.id, school_id: m.school_id,
+          full_name: g.fullName, phone: g.phone, relationship: g.relationship, created_by: req.user.id, updated_by: req.user.id });
       } else {
         await trx('students').where({ id: l.id, school_id: m.school_id }).update({ ...l.set, updated_by: req.user.id, updated_at: trx.fn.now() });
+        if (l.guardians && l.guardians.length) {
+          await trx('student_guardians').where({ student_id: l.id, school_id: m.school_id }).del();
+          for (const g of l.guardians) await trx('student_guardians').insert({ student_id: l.id, school_id: m.school_id,
+            full_name: g.fullName, phone: g.phone, relationship: g.relationship, created_by: req.user.id, updated_by: req.user.id });
+        }
       }
     }
     const parts = [summary.new && `${summary.new} new`, summary.update && `${summary.update} updated`, summary.move && `${summary.move} moved here`, summary.back && `${summary.back} back at school`].filter(Boolean);
@@ -485,7 +590,7 @@ async function getStudent(req) {
 
 router.get('/:id', requirePage('students'), async (req, res) => {
   const s = await getStudent(req);
-  const [by, receipts, history, imp, mates] = await Promise.all([
+  const [by, receipts, history, imp, mates, guardians] = await Promise.all([
     db('users').whereIn('id', [s.created_by, s.updated_by].filter(Boolean)).select('id', 'full_name'),
     db('receipts as r').where('r.student_id', s.id).orderBy('r.sold_at', 'desc').limit(50)
       .select('r.id', 'r.number', 'r.total', 'r.status', 'r.sold_at', 'r.method',
@@ -496,6 +601,9 @@ router.get('/:id', requirePage('students'), async (req, res) => {
     s.import_id ? db('student_imports as m').join('users as u', 'u.id', 'm.uploaded_by').where('m.id', s.import_id).first('m.file_name', 'm.decided_at', 'u.full_name as by') : null,
     // Previous / next student in the same class (by name), to go through a class one by one.
     s.class_id ? db('students').where({ class_id: s.class_id, status: s.status }).orderBy('full_name').orderBy('id').select('id', 'full_name') : [],
+    db('student_guardians').leftJoin('users as v', 'v.id', 'student_guardians.verified_by')
+      .where('student_guardians.student_id', s.id).orderBy('student_guardians.id')
+      .select('student_guardians.*', 'v.full_name as verified_by_name'),
   ]);
   const iv = s.interview_id ? await db('admission_interviews').where({ id: s.interview_id }).first() : null;
   const name = (id) => by.find((u) => u.id === id)?.full_name || null;
@@ -503,6 +611,7 @@ router.get('/:id', requirePage('students'), async (req, res) => {
   res.json({
     student: { ...out(s), createdBy: name(s.created_by), updatedBy: name(s.updated_by),
       addedFrom: imp ? { fileName: imp.file_name, at: imp.decided_at, by: imp.by } : null,
+      guardians: guardians.map((g) => guardianOut(g)),
       interview: iv ? require('./interviews').ivOut(iv) : null },
     receipts: receipts.map((r) => ({ id: r.id, number: r.number, total: r.total, status: r.status, soldAt: r.sold_at, method: r.method, items: r.items })),
     history: history.map((h) => ({ id: h.id, at: h.at, action: h.action, summary: h.summary, by: h.by })),
@@ -540,9 +649,11 @@ router.post('/', requirePage('students', 'f'), async (req, res) => {
     if (!iv) throw new HttpError(404, 'Admission interview not found for this school.');
     if (iv.student_id) throw new HttpError(409, `${iv.full_name} is already registered as a student.`);
   }
+  const cleanedGuardians = cleanGuardians(b.guardians, schoolId, 0);
   const row = await db.transaction(async (trx) => {
     const [r] = await trx('students').insert({ ...data, school_id: schoolId, class_id: cls.id, interview_id: iv?.id || null, created_by: req.user.id, updated_by: req.user.id }).returning('id');
     if (iv) await trx('admission_interviews').where({ id: iv.id }).update({ student_id: r.id, updated_at: db.fn.now() });
+    if (cleanedGuardians) await replaceGuardians(trx, r.id, schoolId, req.user.id, cleanedGuardians.map((g) => ({ ...g, student_id: r.id })));
     return r;
   });
   await audit(req, 'student.create', `Added student ${data.full_name} (${data.admission_no}) to ${classLabel(cls)}${iv ? ' from the admission interview' : ''}`, { schoolId, detail: { studentId: row.id, interviewId: iv?.id } });
@@ -551,6 +662,23 @@ router.post('/', requirePage('students', 'f'), async (req, res) => {
 
 const FIELD_LABEL = { admission_no: 'admission no.', first_name: 'first name', middle_name: 'middle name', last_name: 'last name',
   sex: 'sex', parent_name: 'parent', parent_phone: 'phone', note: 'note', class_id: 'class', status: 'status' };
+
+router.patch('/:id/guardians/:guardianId/verify', async (req, res) => {
+  if (!['sadmin', 'head', 'acad', 'teacher', 'super'].includes(req.user.role)) throw new HttpError(403, 'Only school staff can verify guardians.');
+  const s = await getStudent(req);
+  const g = await db('student_guardians').where({ id: Number(req.params.guardianId), student_id: s.id, school_id: s.school_id }).first();
+  if (!g) throw new HttpError(404, 'Guardian not found.');
+  const method = String(req.body?.verificationMethod || '').trim().slice(0, 120);
+  const note = String(req.body?.verificationNote || '').trim().slice(0, 300);
+  if (!method) throw new HttpError(400, 'Record the verification method, for example phone call by school staff.');
+  await db('student_guardians').where({ id: g.id }).update({ verified: true, verification_method: method,
+    verification_note: note || null, verified_by: req.user.id, verified_at: db.fn.now(), updated_by: req.user.id, updated_at: db.fn.now() });
+  await audit(req, 'student.guardian.verify', `Verified guardian ${g.full_name} for ${s.full_name} (${method})`,
+    { schoolId: s.school_id, detail: { studentId: s.id, guardianId: g.id } });
+  const row = await db('student_guardians as g').leftJoin('users as v', 'v.id', 'g.verified_by')
+    .where('g.id', g.id).first('g.*', 'v.full_name as verified_by_name');
+  res.json({ guardian: guardianOut(row) });
+});
 
 router.patch('/:id', requirePage('students', 'f'), async (req, res) => {
   const s = await getStudent(req);
@@ -574,6 +702,10 @@ router.patch('/:id', requirePage('students', 'f'), async (req, res) => {
     await db('students').where({ id: s.id }).update({ ...data, updated_by: req.user.id, updated_at: db.fn.now() });
     const action = changed.includes('status') ? (data.status === 'left' ? 'student.left' : 'student.back') : changed.includes('class_id') ? 'student.move' : 'student.update';
     await audit(req, action, `Changed ${changed.map((k) => FIELD_LABEL[k]).join(', ')} for ${data.full_name} (${data.admission_no})`, { schoolId: s.school_id, detail: { studentId: s.id } });
+  }
+  if (b.guardians !== undefined) {
+    const cleaned = cleanGuardians(b.guardians, s.school_id, s.id);
+    await db.transaction(async (trx) => { await replaceGuardians(trx, s.id, s.school_id, req.user.id, cleaned); });
   }
   res.json({ student: out(await base().where('s.id', s.id).first(COLS)) });
 });

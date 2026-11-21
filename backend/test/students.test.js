@@ -50,10 +50,10 @@ async function classFile(rows, { shifted = false } = {}) {
 }
 const ADM = (n) => `${tag}${n}`.toUpperCase();
 const P2 = () => [
-  [20251821878, ADM(1), 'aaron', 'alberto', 'mgulunde', 'm', 'ALBERTO ALFRED MGULUNDE', '759426581'],     // lost 0 in phone
-  [20253235252, ADM(2), 'ABIGAEL', 'ANTHONY', 'KASOTA', 'f', 'JUSTINA VICTUS MOSHA', '0768-279191'],
-  [null, ADM(3), 'ALVIN', ' ', 'BENARD', 'm', 'JACKLINE PASTORY NUHI', 716399442],                       // no middle name
-  [20253235262, ADM(4), 'ANDREW', 'JOHNSON', 'YOHANA', 'm', 'JOHNSON YOHANA MWAMBO', '0714-83523'],     // bad phone: warning only
+  [20251821878, ADM(1), 'aaron', 'alberto', 'mgulunde', 'm', 'DANIEL MUSABE DAMIAN', '079 530 9020'],
+  [20253235252, ADM(2), 'ABIGAEL', 'ANTHONY', 'KASOTA', 'f', 'DANIEL MUSABE DAMIAN', '0768279191'],
+  [null, ADM(3), 'ALVIN', ' ', 'BENARD', 'm', 'DANIEL MUSABE DAMIAN', '0716399442'],
+  [20253235262, ADM(4), 'ANDREW', 'JOHNSON', 'YOHANA', 'm', 'DANIEL MUSABE DAMIAN', '079530902']
 ];
 
 test.before(async () => {
@@ -97,11 +97,14 @@ test('Excel in the school\'s own layout: columns found, phones cleaned, fees ign
   assert.equal(summary.errors, 0);
   assert.deepEqual(summary.otherSheets, ['PRIMARY II RE-ADJUSTMENT 2026']);
   assert.equal(lines[0].fullName, 'AARON ALBERTO MGULUNDE');
-  assert.equal(lines[0].parentPhone, '0759426581');
+  assert.equal(lines[0].parentPhone, '0795309020');
+  assert.equal(lines[0].parentName, 'DANIEL MUSABE DAMIAN');
   assert.equal(lines[1].parentPhone, '0768279191');
   assert.equal(lines[2].fullName, 'ALVIN BENARD');
+  assert.equal(lines[2].parentPhone, '0716399442');
   assert.equal(lines[3].parentPhone, null);
   assert.match(lines[3].warnings.join(' '), /not a correct mobile number/);
+  assert.equal(summary.shifted, 0);
   const ok = await as('sadmin', 'POST', `/api/students/imports/${up1}/approve`);
   assert.equal(ok.status, 200, JSON.stringify(ok.json));
   const list = await as('sadmin', 'GET', `/api/students?class=${cls.id}`);
@@ -139,6 +142,32 @@ test('Mistakes block approval and show the row; shifted rows are warned', { skip
   assert.ok(rs.json.summary.errors >= 1); // first row lost its sex
   assert.match((await as('sadmin', 'POST', `/api/students/imports/${s.json.id}/approve`)).json.error, /mistake|moved one row/);
   await as('sadmin', 'POST', `/api/students/imports/${s.json.id}/discard`);
+});
+
+test('Multiple guardians: create, show, verify and remove; Tanzanian phone normalization', { skip }, async () => {
+  const a = await as('sadmin', 'POST', '/api/students', {
+    admissionNo: ADM(20), firstName: 'guardian', lastName: 'student', sex: 'M', classId: cls.id,
+    parentName: 'DANIEL MUSABE DAMIAN', parentPhone: '0795309020',
+    guardians: [{ fullName: 'Amina Musabe', phone: '079 530 9020', relationship: 'mother' },
+      { fullName: 'Juma Musabe', phone: '0754123456', relationship: 'brother' }]
+  });
+  assert.equal(a.status, 201, JSON.stringify(a.json));
+  const id = a.json.student.id;
+  let p = await as('sadmin', 'GET', `/api/students/${id}`);
+  assert.equal(p.status, 200);
+  assert.equal(p.json.student.guardians.length, 2);
+  assert.equal(p.json.student.guardians[0].phone, '0795309020');
+  const guardianId = p.json.student.guardians[0].id;
+  const v = await as('sadmin', 'PATCH', `/api/students/${id}/guardians/${guardianId}/verify`, {
+    verificationMethod: 'Phone call by school staff', verificationNote: 'Confirmed by calling 0795309020'
+  });
+  assert.equal(v.status, 200, JSON.stringify(v.json));
+  assert.equal(v.json.guardian.verified, true);
+  assert.equal((await as('bursar', 'PATCH', `/api/students/${id}/guardians/${guardianId}/verify`, { verificationMethod: 'phone' })).status, 403);
+  const edited = await as('sadmin', 'PATCH', `/api/students/${id}`, { guardians: [{ id: guardianId, fullName: 'Amina Musabe', phone: '0795309020', relationship: 'mother' }] });
+  assert.equal(edited.status, 200, JSON.stringify(edited.json));
+  p = await as('sadmin', 'GET', `/api/students/${id}`);
+  assert.equal(p.json.student.guardians.length, 1);
 });
 
 test('Add, edit, move and mark as left; admission numbers stay unique', { skip }, async () => {

@@ -16,13 +16,13 @@ const RSTATUS = { waiting: 'Waiting at library', part: 'Partly given', given: 'G
 
 export default function StudentPage() {
   const { id } = useParams();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const edit = can('students', 'f');
   const navigate = useNavigate();
   const toast = useToast();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
-  const [modal, setModal] = useState(null); // edit | move | left | receipt id
+  const [modal, setModal] = useState(null); // edit | move | left | receipt id | verify guardian
   const load = useCallback(() => api.get(`/students/${id}`).then((x) => { setD({ id, ...x }); setError(''); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['student', 'receipt', 'give'], load);
@@ -109,6 +109,23 @@ export default function StudentPage() {
         </Panel>
       </div>
 
+      <Panel title="Guardians" sub={d.guardians?.length ? `${d.guardians.length} recorded` : 'Primary guardian only'} flush>
+        {!d.guardians?.length ? <Empty>No additional guardians recorded.</Empty> : (
+          <div className="list">
+            {d.guardians.map((g) => (
+              <div className="li" key={g.id}>
+                <div className="grow"><b>{g.fullName}</b><span>{g.relationship[0].toUpperCase() + g.relationship.slice(1)} · {g.phone ? <a href={`tel:${g.phone}`}>{fmtPhone(g.phone)}</a> : 'No phone'}</span>
+                  {g.verified && <span className="small muted">Verified by {g.verifiedBy || 'school staff'} · {g.verificationMethod}{g.verificationNote ? ` · ${g.verificationNote}` : ''}</span>}
+                </div>
+                <div className="row"><span className={`pill ${g.verified ? 'ok' : 'bad'}`}>{g.verified ? 'Verified' : 'Not verified'}</span>
+                  {!g.verified && ['sadmin', 'head', 'acad', 'teacher', 'super'].includes(user?.role) &&
+                    <button type="button" className="btn sm p" onClick={() => setModal({ verifyGuardian: g })}>Verify</button>}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+
       {s.interview && <InterviewPanel iv={s.interview} />}
 
       <IdCardPanel kind="student" id={s.id} />
@@ -132,8 +149,31 @@ export default function StudentPage() {
           <p style={{ margin: 0 }}><b>{s.fullName}</b> will no longer appear for the bursar or in class lists. Nothing is deleted: receipts and history stay, and you can bring the student back any time.</p>
         </Modal>
       )}
+      {modal?.verifyGuardian && <VerifyGuardianModal studentId={s.id} guardian={modal.verifyGuardian} onClose={() => setModal(null)} onSaved={() => { setModal(null); toast('Guardian verified'); load(); }} />}
       {typeof modal === 'number' && <ReceiptModal id={modal} onClose={() => setModal(null)} />}
     </>
+  );
+}
+
+function VerifyGuardianModal({ studentId, guardian, onClose, onSaved }) {
+  const [method, setMethod] = useState('Phone call by school staff');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const save = async () => {
+    setBusy(true); setError('');
+    try { await api.patch(`/students/${studentId}/guardians/${guardian.id}/verify`, { verificationMethod: method, verificationNote: note }); onSaved(); }
+    catch (e) { setError(e.message); setBusy(false); }
+  };
+  return (
+    <Modal title={`Verify ${guardian.fullName}`} onClose={onClose}
+      footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" disabled={busy || !method.trim()} onClick={save}>{busy ? 'Saving…' : 'Verify guardian'}</button></>}>
+      <div className="stack">
+        <label>Verification method<input value={method} onChange={(e) => setMethod(e.target.value)} required /></label>
+        <label>Note<textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Example: called on 0795309020 and confirmed relationship" /></label>
+        <ErrorNote error={error} />
+      </div>
+    </Modal>
   );
 }
 
