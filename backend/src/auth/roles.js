@@ -40,11 +40,11 @@ const parse = (s) =>
   Object.fromEntries(s.trim().split(/\s+/).map((x) => { const [k, v] = x.split(':'); return [k, v || 'f']; }));
 
 const ACCESS = {
-  super:     parse('home books:v orders:v useitems:v schools staff students:v labels idcards requisitions:v issue:v purchases:v counts:v items:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v payments:v year:v watch:v classes:v marks:v support:v reports audit settings interviews:v classlist'),
-  director:  parse('home books:v orders:v useitems:v schools:v staff:v students:v idcards:v requisitions:v issue:v purchases:v counts:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v items:v payments:v year:v watch:v classes:v marks:v support:v reports audit:v interviews:v'),
+  super:     parse('home books:v orders:v useitems:v schools staff students:v labels idcards requisitions:v issue:v purchases:v counts:v items:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v payments:v academics year:v watch:v classes:v marks:v support:v reports audit settings interviews:v classlist'),
+  director:  parse('home books:v orders:v useitems:v schools:v staff:v students:v idcards:v requisitions:v issue:v purchases:v counts:v receipts:v bills:v money:v salesdash:v requests:v stockin:v stock:v damage:v items:v payments:v academics year:v watch:v classes:v marks:v support:v reports audit:v interviews:v'),
   // Assistant Director (agreed 2026-11-17): own, smaller access — meetings and academics, not money or stock.
   // The academic secretary works under this office.
-  adirector: parse('home students:v idcards:v year watch classes marks:v support:v reports audit:v interviews'),
+  adirector: parse('home students:v idcards:v academics year watch classes marks:v support:v reports audit:v interviews'),
   manager:   parse('home books:v orders useitems:v schools:v staff:v students:v requisitions issue:v purchases:v counts:v receipts:v bills:v money:v requests:v stockin:v stock:v damage:v items:v payments year:v watch:v classes:v support:v reports audit:v interviews:v'),
   // Library and stock (agreed 2026-11-11 to 2026-11-17):
   // - Store-keeper (administration, one person): registers items the schools use but do not sell, sends stock to a
@@ -67,9 +67,9 @@ const ACCESS = {
   acc:       parse('home books:v useitems:v students:v requisitions:v issue:v purchases counts items:v requests:v receipts:v bills money salesdash stock damage payments:v reports audit'),
   aacc:      parse('home books:v useitems:v students:v requisitions issue:v purchases counts items:v receipts:v bills:v money:v salesdash:v requests:v stock:v damage:v payments reports audit:v'),
   sadmin:    parse('home staff students labels idcards classes:v reports audit:v interviews:v'),
-  head:      parse('home orders staff:v students:v idcards:v issue:v counts:v items:v receipts:v bills:v damage:v year watch classes marks:v bank:v support reports audit:v interviews:v'),
-  acad:      parse('home orders students:v year watch classes marks bank support reports classlist interviews:v'),
-  teacher:   parse('home students:v year watch classes marks bank support'),
+  head:      parse('home orders staff:v students:v idcards:v issue:v counts:v items:v receipts:v bills:v damage:v academics year watch classes marks:v bank:v support reports audit:v interviews:v'),
+  acad:      parse('home orders students:v academics year watch classes marks bank support reports classlist interviews:v'),
+  teacher:   parse('home students:v academics year watch classes marks bank support'),
   bursar:    parse('home students:v items:v sell receipts bills money:v reports'),
   librarian: parse('home orders useitems:v items:v issue labels counts give incoming requests damage receipts:v reports'),
 };

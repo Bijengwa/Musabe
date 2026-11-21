@@ -135,6 +135,7 @@ router.post('/classes', requirePage('classlist', 'f'), async (req, res) => {
   const curriculum = readCurriculum(b.curriculum, l);
   const streams = [...new Set((Array.isArray(b.streams) ? b.streams : [b.stream]).map((x) => keep(x) || null))];
   if (streams.length > 12) throw new HttpError(400, 'At most 12 streams at once.');
+  if (streams.some((x) => !x)) throw new HttpError(400, 'Fixed classes are created by the system. Add a named stream, for example A or PINK.');
   if (streams.some((x) => x && x.length > 30)) throw new HttpError(400, 'A stream name is too long.');
   const made = await db.transaction(async (trx) => {
     const rows = [];

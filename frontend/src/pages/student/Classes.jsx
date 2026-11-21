@@ -24,15 +24,15 @@ export default function Classes() {
   const noLevel = (classes || []).filter((c) => !c.level && c.active);
   return (
     <>
-      <PageHead title="Classes" sub={edit ? 'Choose the class from the list, add its streams and the curriculum it follows.' : 'Classes and streams of the school. The Academic Master adds and changes them.'}>
-        {edit && <button className="btn p" onClick={() => setModal({})}><Icon name="plus" /> Add class</button>}
+      <PageHead title="Classes" sub={edit ? 'BABY CLASS to FORM FOUR is fixed. Create only streams under each fixed class.' : 'Fixed classes and streams. The Academic Master adds or changes streams.'}>
+        {edit && <button className="btn p" onClick={() => setModal({})}><Icon name="plus" /> Add stream</button>}
       </PageHead>
       <ErrorNote error={error} />
       {edit && noLevel.length > 0 && (
-        <div className="warnnote"><Icon name="alert" /><span><b>{noLevel.length} class{noLevel.length === 1 ? ' was' : 'es were'} typed by hand before.</b> Press <b>Edit</b> and choose the class from the list, so the system knows its level.</span></div>
+        <div className="warnnote"><Icon name="alert" /><span><b>{noLevel.length} unknown class record{noLevel.length === 1 ? ' exists' : 's exist'}.</b> Match it to one of the fixed BABY CLASS–FORM FOUR levels; new class names can no longer be created.</span></div>
       )}
       <Panel flush>
-        {!classes ? <Empty>Loading…</Empty> : !classes.length ? <Empty>{edit ? 'No classes yet. Press "Add class", choose e.g. FORM ONE and type its streams.' : 'No classes yet. The Academic Master adds them.'}</Empty> : (
+        {!classes ? <Empty>Loading…</Empty> : !classes.length ? <Empty>{edit ? 'No fixed classes found. Run the standard class migration first.' : 'No fixed classes yet. Ask the Academic Master to apply the standard class setup.'}</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>Short</th><th>Class</th><th>Stream</th><th>Curriculum</th><th className="n">Students</th><th className="n">Boys</th><th className="n">Girls</th>{edit && <th />}</tr></thead>
             <tbody>{classes.map((c) => (
@@ -53,7 +53,7 @@ export default function Classes() {
       </Panel>
       <p className="small muted" style={{ margin: 0 }}>
         Classes are in school order (lowest first). A class with students cannot be switched off: move them first.
-        {!edit && user.role === 'sadmin' && ' To add a class or a stream, ask the Academic Master.'}
+        {!edit && user.role === 'sadmin' && ' To add a stream, ask the Academic Master.'}
       </p>
       {modal && <ClassForm cls={modal.id ? modal : null} classes={classes || []} levels={levels} curricula={curricula} school={school}
         onClose={() => setModal(null)} onSaved={(msg) => { toast(msg); reload(); setModal(null); }} />}
@@ -85,17 +85,17 @@ function ClassForm({ cls, classes, levels, curricula, school, onClose, onSaved }
   };
   const show = (st) => [lv?.shortName || cls?.shortName, st.toUpperCase()].filter(Boolean).join(' ');
   return (
-    <Modal title={cls ? `Edit ${cls.label}` : 'Add class'} onClose={onClose}
+    <Modal title={cls ? `Edit ${cls.label}` : 'Add stream to a fixed class'} onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn p" form="clsform" disabled={busy || (!level && !cls)}>{busy ? 'Saving…' : 'Save'}</button></>}>
       <form id="clsform" className="stack" onSubmit={save}>
-        {cls?.level ? <p style={{ margin: 0 }}>Class: <b>{cls.name}</b> ({cls.shortName})</p> : (
-          <label>Class<select value={level} onChange={(e) => pickLevel(e.target.value)} required autoFocus>
-            <option value="">Choose the class</option>
-            {levels.map((l) => <option key={l.key} value={l.key}>{l.shortName} — {l.name}{have(l.key).length ? ` (has ${have(l.key).map((c) => c.stream || 'no stream').join(', ')})` : ''}</option>)}
+        {cls?.level ? <p style={{ margin: 0 }}>Fixed class: <b>{cls.name}</b> ({cls.shortName})</p> : (
+          <label>Fixed class<select value={level} onChange={(e) => pickLevel(e.target.value)} required autoFocus>
+            <option value="">Choose the fixed class</option>
+            {levels.map((l) => <option key={l.key} value={l.key}>{l.shortName} — {l.name}</option>)}
           </select></label>
         )}
-        {cls && !cls.level && <p className="small muted" style={{ margin: 0 }}>Typed by hand before as <b>{cls.fullName}</b>. Choose the class it is; the name becomes the built-in one.</p>}
+        {cls && !cls.level && <p className="small muted" style={{ margin: 0 }}>Old/unknown class. This must be corrected to a fixed BABY CLASS–FORM FOUR level.</p>}
         <label>{cls ? 'Stream' : 'Streams'}<input value={streams} onChange={(e) => setStreams(e.target.value)} placeholder={cls ? 'Empty = no stream' : 'e.g. A, B, C  or  PINK, BLUE  (empty = one class)'} /></label>
         <label>Curriculum<select value={curriculum} onChange={(e) => setCurriculum(e.target.value)}>
           <option value="">Not set</option>{Object.entries(curricula).map(([k, t]) => <option key={k} value={k}>{t}</option>)}

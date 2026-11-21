@@ -53,6 +53,7 @@ export const NAV = [
     { key: 'vehicles', label: 'Vehicles', icon: 'key', path: '/vehicles', ready: true },
   ] },
   { group: 'Academic', items: [
+    { key: 'academics', label: 'Teaching & Academics', icon: 'grid', path: '/academics', ready: true },
     { key: 'year', label: 'Year progress', icon: 'trend', path: '/year', step: 'Step 3: Academic' },
     { key: 'watch', label: 'Students to watch', icon: 'flag', path: '/watch', step: 'Step 3: Academic' },
     { key: 'classes', label: 'Class progress', icon: 'grid', path: '/classes', step: 'Step 3: Academic' },
