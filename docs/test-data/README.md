@@ -1,3 +1,12 @@
+# Test data: items, opening stock and students
+
+## Student guardian workbook
+
+- `2000-students-guardian-template.xlsx` contains 2,000 fictional student rows and the exact student/guardian columns supported by the class-list template.
+- Every row has the primary parent DANIEL MUSABE DAMIAN as Father and a second Guardian 1 as Mother or Guardian.
+- Guardian 2 and Guardian 3 are optional and included only on some rows.
+- Parent and guardian phone cells are text-formatted Tanzanian 10-digit numbers beginning 06 or 07.
+
 # Test data: items and opening stock
 
 Load in this order:
