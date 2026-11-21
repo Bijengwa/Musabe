@@ -82,7 +82,7 @@ function out(b, user) {
     total: b.total, note: b.note, status, statusLabel: STATUS[status], expiresAt: b.expires_at, createdBy: b.created_by_name, createdAt: b.created_at,
     paidRef: b.paid_ref, paidBy: b.paid_by_name, paidAt: b.paid_at, receiptId: b.receipt_id, receiptNumber: b.receipt_number,
     cancelledBy: b.cancelled_by_name, cancelledAt: b.cancelled_at, cancelReason: b.cancel_reason,
-    canPay: can && b.status === 'pending' && !expired, canRenew: can && b.status === 'pending' && user.role === 'bursar',
+    canPay: can && ['acc', 'aacc'].includes(user.role) && b.status === 'pending' && !expired, canRenew: can && b.status === 'pending' && user.role === 'bursar',
     canCancel: can && b.status === 'pending',
   };
 }
@@ -182,6 +182,7 @@ async function lockBill(trx, req) {
 
 // Paid: write the receipt now (gap-free number), with the prices on the control number.
 router.post('/:id/paid', requirePage('bills', 'f'), async (req, res) => {
+  if (!['acc', 'aacc'].includes(req.user.role)) throw new HttpError(403, 'Only the Accountant or Assistant Accountant confirms a control-number payment.');
   const paidRef = clean(req.body?.paidRef, 60).toUpperCase();
   if (paidRef.length < 4) throw new HttpError(400, 'Type the bank or mobile money transaction number of this payment.');
   if (req.body?.controlNo != null) {
