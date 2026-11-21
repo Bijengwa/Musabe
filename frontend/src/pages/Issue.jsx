@@ -90,8 +90,6 @@ function Give() {
         <ScanBox onScan={onScan} busy={busy} />
         <div className="filters" style={{ marginTop: 10 }}>
           <button className="btn sm" onClick={() => setFind(true)}><Icon name="search" /> Find the person by name</button>
-          {!needsPerson && <button className="btn sm" onClick={() => { const n = window.prompt('Where does it go? (e.g. KITCHEN, OFFICE, STAFF ROOM)'); if (n && n.trim().length >= 3) setPerson({ type: 'dept', name: n.trim().toUpperCase() }); }}>
-            <Icon name="building" /> Give to a place (kitchen, office)</button>}
         </div>
         <ErrorNote error={error} />
         {done && <p className="okline"><Icon name="check" /> {done.number}: {done.lines.map((l) => `${l.qty} × ${l.item}`).join(', ')} given to {done.toName}.</p>}
@@ -112,9 +110,8 @@ function Give() {
         )}
         {cart.length > 0 && (
           <div className="stack" style={{ padding: 16 }}>
-            {needsPerson && person?.type === 'dept' && <p className="err">Things that come back are given to a person. Scan a student or staff ID.</p>}
             <label>Note (not required)<input value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} placeholder="e.g. for Form 2 Biology practical" /></label>
-            <button className="btn p big" disabled={busy || !person || cart.some((l) => !l.qty) || (needsPerson && person.type === 'dept')} onClick={save}>
+            <button className="btn p big" disabled={busy || !person || cart.some((l) => !l.qty)} onClick={save}>
               {busy ? 'Saving…' : person ? `Give ${cart.reduce((s, l) => s + l.qty, 0)} to ${person.name}` : 'Scan the person first'}</button>
           </div>
         )}
