@@ -10,7 +10,8 @@ const db0 = require('../db');
 const sms = require('./sms');
 const { HttpError, audit } = require('./util');
 
-const SECRET = process.env.SEAL_SECRET || process.env.DATABASE_PASSWORD || 'musabe-dev-seal-secret';
+const SECRET = process.env.SEAL_SECRET || (process.env.NODE_ENV === 'production' ? '' : crypto.randomBytes(32).toString('hex'));
+if (!SECRET) throw new Error('SEAL_SECRET is required when NODE_ENV=production.');
 const BIG = Number(process.env.SIGN_SMS_FROM) || 1000000;
 const MAX_FAILS = 5;
 const LOCK_MIN = 15;

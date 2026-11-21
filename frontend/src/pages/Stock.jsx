@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtWhen, tsh, useToast } from '../components/ui';
 import { useSchoolQs } from '../components/common';
 
 const TABS = [['', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['short', 'Owed more than in stock']];
@@ -54,7 +54,7 @@ export default function Stock() {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.rows.length ? <Empty>No items match.</Empty> : (
+        {!data ? <SkeletonTable rows={8} columns={8} /> : !data.rows.length ? <Empty>No items match.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr>
               <th className="stick">Item</th>{all && <th>School</th>}<th className="n">In stock</th><th className="n">Paid, not given</th><th className="n">Free</th>

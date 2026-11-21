@@ -5,7 +5,7 @@ import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
 import { useSchools, useScope } from '../layout/scope';
 import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
-import { CopyBox, Empty, Icon, Kpi, Modal, Panel, SchoolPill, fmtWhen } from '../components/ui';
+import { CopyBox, Empty, Icon, Kpi, Modal, PageSkeleton, Panel, SkeletonTable, SchoolPill, fmtWhen } from '../components/ui';
 import { AcademicHome, AccountantHome, BursarHome, CashierHome, DirectorHome, FinanceHome, HeadHome, LibrarianHome, ManagerHome, MapokeziHome, SchoolAdminHome, SuperHome, ToDo, useDashboard, StoreHome } from './home/RoleHomes';
 
 const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'];
@@ -33,7 +33,7 @@ export default function Home() {
       {error && !d ? (
         <div className="warnnote" role="alert"><Icon name="alert" /><span><b>The home page could not load.</b> {error}{' '}
           <button className="linkbtn" onClick={reload}>Try again</button></span></div>
-      ) : !d ? <Empty>Loading…</Empty> : <><ToDo items={d.todo} /><Role d={d} /></>}
+      ) : !d ? <PageSkeleton kpis /> : <><ToDo items={d.todo} /><Role d={d} /></>}
       {isAccountAdmin && <><h2 className="sectionh">Staff accounts</h2><AccountsHome /></>}
     </>
   );
@@ -55,7 +55,7 @@ function AccountsHome() {
   useEffect(load, [scope, user.role]);
   useLive(['user', 'auth', 'audit'], load);
 
-  if (!users) return <Empty>Loading…</Empty>;
+  if (!users) return <SkeletonTable rows={5} columns={5} />;
   const active = users.filter((u) => u.active);
   const requests = users.filter((u) => u.resetRequested && u.active && u.canManage);
   const neverIn = active.filter((u) => u.tempPassword);

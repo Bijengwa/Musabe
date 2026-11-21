@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, fmtPhone, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtPhone, fmtWhen, tsh, useToast } from '../components/ui';
 import { ControlSlip, PrintSlipButton, useSchoolQs } from '../components/common';
 import { PrintButton, ReceiptBook } from '../components/receipt';
 
@@ -49,7 +49,7 @@ export default function Bills() {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.bills.length ? <Empty>No control numbers here.</Empty> : (
+        {!data ? <SkeletonTable rows={8} columns={7} /> : !data.bills.length ? <Empty>No control numbers here.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Control no.</th><th>Made</th>{all && <th>School</th>}<th>Student</th><th className="n">Amount</th><th>Status</th><th>Receipt</th></tr></thead>
             <tbody>{data.bills.map((b) => (

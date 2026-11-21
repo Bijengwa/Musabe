@@ -65,7 +65,9 @@ function checkConfig() {
     if (!ORIGINS.length) problems.push('APP_ORIGIN is not set (the https address of the system, e.g. https://musabe.example.com).');
     if (ORIGINS.some((o) => !o.startsWith('https://'))) problems.push('APP_ORIGIN must start with https://');
     if (!process.env.TRUST_PROXY) warnings.push('TRUST_PROXY is not set: client addresses will be the proxy address. Set it to the Nginx address (e.g. 127.0.0.1).');
-    if (!process.env.SEAL_SECRET) warnings.push('SEAL_SECRET is not set: seals on signed papers use a weak default. Set a long random text once and never change it.');
+    if (!process.env.SEAL_SECRET) problems.push('SEAL_SECRET is required in production to authenticate signed papers.');
+    const liveTotal = Number(process.env.LIVE_MAX_TOTAL) || 2000;
+    if (liveTotal > 2000 && !process.env.REDIS_URL) problems.push('REDIS_URL is required when LIVE_MAX_TOTAL exceeds 2000 (shared live/rate-limit coordination).');
     if (process.env.SUPERADMIN_PASSWORD) warnings.push('SUPERADMIN_PASSWORD is still in .env. Remove it after the first sign-in.');
     if (process.env.DATABASE_HOST && !['localhost', '127.0.0.1'].includes(process.env.DATABASE_HOST) && process.env.DATABASE_SSL !== 'true')
       problems.push('The database is on another machine but DATABASE_SSL is not true.');
