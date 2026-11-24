@@ -5,7 +5,7 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
 import { useSchools, useScope } from '../layout/scope';
-import { Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 
 const digits = (v) => String(v ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 8);
 
@@ -87,7 +87,7 @@ function ItemList() {
 
       <ErrorNote error={error} />
       <Panel flush>
-        {!shown ? <Empty>Loading…</Empty> : !shown.length ? <Empty>{status === 'archived' ? 'No stopped items.' : 'No items match.'}</Empty> : (
+        {!shown ? <Loading /> : !shown.length ? <Empty>{status === 'archived' ? 'No stopped items.' : 'No items match.'}</Empty> : (
           <div className="tw"><table className="itemtable">
             <thead><tr>
               <th className="sn">S/N</th><th className="stick">Item</th><th>Category</th>
@@ -216,7 +216,7 @@ function History({ item, onClose }) {
   return (
     <Modal title={`Price history: ${item.name}`} onClose={onClose}>
       <ErrorNote error={error} />
-      {!rows ? <Empty>Loading…</Empty> : !rows.length ? <Empty>No price changes yet. These prices came from the sales book.</Empty> : (
+      {!rows ? <Loading /> : !rows.length ? <Empty>No price changes yet. These prices came from the sales book.</Empty> : (
         <div className="list hist">
           {rows.map((r) => (
             <div className="li" key={r.id}>

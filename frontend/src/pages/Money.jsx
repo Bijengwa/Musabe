@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Kpi, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Kpi, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { DateRange, todayStr, useSchoolQs } from '../components/common';
 
 const TONE = { ok: 'ok', short: 'bad', over: 'warn' };
@@ -48,7 +48,7 @@ export default function Money() {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.rows.length ? <Empty>No receipts by bursars in these days.</Empty> : (
+        {!data ? <Loading /> : !data.rows.length ? <Empty>No receipts by bursars in these days.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Day</th>{!mine && <th>Bursar</th>}{all && <th>School</th>}<th className="n">Receipts</th><th className="n">Cash</th><th className="n">Bank</th>
               <th className="n">Mobile</th><th className="n">Control no.</th><th className="n">Total</th><th>Check</th></tr></thead>

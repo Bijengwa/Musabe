@@ -5,7 +5,7 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
 import { useScope } from '../layout/scope';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SchoolPill, fmtWhen, tsh } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SchoolPill, fmtWhen, tsh, Loading } from '../components/ui';
 import { ReceiptModal, StatusPill, waited } from '../components/receipt';
 
 const STATUSES = [['', 'All'], ['open', 'Not given yet'], ['part', 'Partly given'], ['given', 'Given'], ['late', 'Late']];
@@ -68,7 +68,7 @@ export default function Receipts() {
 
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.receipts.length ? <Empty>No receipts match.</Empty> : (
+        {!data ? <Loading /> : !data.receipts.length ? <Empty>No receipts match.</Empty> : (
           <div className="tw"><table className="stafftable rtable">
             <thead><tr>
               <th className="stick">Receipt</th><th>Date</th>{all && <th>School</th>}<th>Student</th><th className="n">Amount</th><th>Payment</th><th>Library</th><th>Bursar</th>

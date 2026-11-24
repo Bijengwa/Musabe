@@ -13,6 +13,7 @@ const { requireAuth, requirePage } = require('../auth/session');
 const { ROLES, pageAccess } = require('../auth/roles');
 const { sendExcel, readExcel } = require('../lib/excel');
 const stock = require('../lib/stock');
+const { makeGrns, placeOf, PLACES } = require('../lib/places');
 
 const { uploadLimit } = require('../lib/guard');
 const router = express.Router();
@@ -317,6 +318,12 @@ async function afterConfirm(trx, req, d, confirmed, shorts) {
   const left = await trx('delivery_lines').where({ delivery_id: d.id }).whereNull('received_qty').count('* as n');
   const done = Number(left[0].n) === 0;
   if (done) await trx('deliveries').where({ id: d.id }).update({ status: 'received', received_at: trx.fn.now() });
+  if (done) { // every line confirmed: each place that received goods now has a GRN for the Bursar to check
+    const school = await trx('schools').where({ id: d.school_id }).first();
+    for (const g of await makeGrns(trx, d, school, req.user.id)) {
+      await audit(req, 'grn.create', `${g.number} written for ${d.number}: the Bursar checks it, then the Head Master approves it`, { schoolId: d.school_id, detail: { grnId: g.id, deliveryId: d.id } }, trx);
+    }
+  }
   if (done && d.requisition_id) {
     const r = await trx('requisitions').where({ id: d.requisition_id, status: 'sent' }).first();
     if (r) {
@@ -328,6 +335,15 @@ async function afterConfirm(trx, req, d, confirmed, shorts) {
   await audit(req, 'delivery.confirm', `${done ? 'Received all of' : 'Confirmed part of'} ${d.number}: ${confirmed.join(', ')}`,
     { schoolId: d.school_id, detail: { deliveryId: d.id } }, trx);
   if (shorts.length) await audit(req, 'delivery.short', `${d.number}: less arrived than was sent. ${shorts.join('; ')}`, { schoolId: d.school_id, detail: { deliveryId: d.id } }, trx);
+}
+
+// When the school keeps its places apart, the Librarian receives library things and the School Store-keeper the rest.
+async function mayReceive(trx, req, d, itemId) {
+  const s = await trx('schools').where({ id: d.school_id }).first('places_strict');
+  if (!s?.places_strict) return true;
+  const it = await trx('items').where({ id: itemId }).first('category');
+  const place = placeOf(it.category);
+  return (req.user.role === 'sstore' && place === 'school_store') || (req.user.role === 'librarian' && place === 'library');
 }
 
 async function lockDelivery(trx, req) {
@@ -344,6 +360,7 @@ router.post('/deliveries/:id/lines/:line/confirm', requirePage('incoming', 'f'),
     const line = await trx('delivery_lines').where({ id: Number(req.params.line) || 0, delivery_id: d.id }).first();
     if (!line) throw new HttpError(404, 'This line is not on the delivery.');
     if (line.received_qty != null) throw new HttpError(409, `${line.item_name} is already confirmed.`);
+    if (!(await mayReceive(trx, req, d, line.item_id))) throw new HttpError(403, `${line.item_name} is kept in the ${PLACES[placeOf((await trx('items').where({ id: line.item_id }).first('category')).category)].label.toLowerCase()}: its own keeper receives it.`);
     const received = b.receivedQty === undefined ? line.qty : Number(b.receivedQty);
     const note = clean(b.note, 200) || null;
     const short = await confirmLine(trx, req, d, line, received, note);
@@ -356,7 +373,10 @@ router.post('/deliveries/:id/lines/:line/confirm', requirePage('incoming', 'f'),
 router.post('/deliveries/:id/confirm-all', requirePage('incoming', 'f'), async (req, res) => {
   await db.transaction(async (trx) => {
     const d = await lockDelivery(trx, req);
-    const lines = await trx('delivery_lines').where({ delivery_id: d.id }).whereNull('received_qty').orderBy('id');
+    const all = await trx('delivery_lines').where({ delivery_id: d.id }).whereNull('received_qty').orderBy('id');
+    const lines = [];
+    for (const l of all) if (await mayReceive(trx, req, d, l.item_id)) lines.push(l);
+    if (!lines.length && all.length) throw new HttpError(403, 'The lines left on this delivery belong to the other keeper of the school.');
     for (const l of lines) await confirmLine(trx, req, d, l, l.qty, null);
     await afterConfirm(trx, req, d, lines.map((l) => `${l.qty} × ${l.item_name}`), []);
   });

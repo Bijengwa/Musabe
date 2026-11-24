@@ -7,6 +7,7 @@ const GROUPS = {
   accounts: { label: 'Accounts & sign-in', prefixes: ['user', 'auth', 'profile', 'idcard'] },
   schools: { label: 'Schools', prefixes: ['school'] },
   academic: { label: 'Academic', prefixes: ['student', 'interview', 'parent', 'class', 'exam', 'mark', 'topic', 'support'] },
+  duty: { label: 'Duty & roll call', prefixes: ['duty', 'rollcall'] },
 };
 const ALL = Object.keys(GROUPS);
 
@@ -14,7 +15,7 @@ const ALL = Object.keys(GROUPS);
 const SEE = {
   super: ALL, director: ALL, adirector: ALL, manager: ALL,
   fm: ['library'], afm: ['library'], acc: ['library'], aacc: ['library'], storekeeper: ['library'],
-  sadmin: ['accounts', 'schools', 'academic'], head: ALL, acad: ['academic'], teacher: ['academic'],
+  sadmin: ['accounts', 'schools', 'academic', 'duty'], head: ALL, acad: ['academic', 'duty'], teacher: ['academic', 'duty'], second: ['academic', 'duty'],
   bursar: ['library'], librarian: ['library'], secretary: ['academic'], cashier: ['library'], mapokezi: ['library'], amanager: ['library'],
 };
 

@@ -10,7 +10,7 @@ import { useSchools } from '../layout/scope';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast, DetailSkeleton, Loading } from '../components/ui';
 import { todayStr, useSchoolQs } from '../components/common';
 import { PrintButton } from '../components/barcode';
 import { PinBox, SealBadge, SealQR, verifyUrl } from '../components/signing';
@@ -63,7 +63,7 @@ function RList() {
       <div className="filters"><div className="seg">{tabs.map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <ErrorNote error={error} />
       {status === 'mine' ? (
-        !data ? <Empty>Loading…</Empty> : !rows.length ? <Empty>Nothing is waiting for you.</Empty> : (
+        !data ? <Loading /> : !rows.length ? <Empty>Nothing is waiting for you.</Empty> : (
           <div className="rq-cards">{rows.map((r) => (
             <Link key={r.id} to={`/requisitions/${r.id}`} className={`rq-card${r.turn === 'correct' ? ' back' : ''}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="no">{r.number}</span><span className="small">{fmtWhen(r.requestedAt)}</span></div>
@@ -76,7 +76,7 @@ function RList() {
         )
       ) : (
         <Panel flush>
-          {!data ? <Empty>Loading…</Empty> : !rows.length ? <Empty>Nothing here.</Empty> : (
+          {!data ? <Loading /> : !rows.length ? <Empty>Nothing here.</Empty> : (
             <div className="tw"><table className="stafftable">
               <thead><tr><th>No.</th><th>School</th><th className="stick">Details of request</th><th>Applicant</th><th className="n">Total (TSh)</th><th>Signed</th><th>Status</th><th /></tr></thead>
               <tbody>{rows.map((r) => (
@@ -204,7 +204,7 @@ function Page() {
   useLive(['requisition', 'purchase', 'delivery', 'payment'], load);
   const run = async (fn, msg) => { setBusy(true); setError(''); try { await fn(); if (msg) toast(msg); await load(); return true; } catch (e) { setError(e.message); return false; } finally { setBusy(false); } };
 
-  if (id && !r) return <div className="rq-wrap"><Link to="/requisitions" className="btn sm">← All requisitions</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (id && !r) return <div className="rq-wrap"><Link to="/requisitions" className="btn sm">← All requisitions</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
 
   // ---------- writing (new, or correcting a requisition that was sent back) ----------
   const used = rows.filter((x) => x.name.trim() || x.qty || x.cost || x.total);

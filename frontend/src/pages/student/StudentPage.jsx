@@ -5,24 +5,26 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { useLive } from '../../live';
-import { Empty, ErrorNote, Icon, Modal, Panel, fmtPhone, fmtWhen, tsh, useToast } from '../../components/ui';
+import { Empty, ErrorNote, Icon, Modal, Panel, Tabs, fmtPhone, fmtWhen, tsh, useToast, DetailSkeleton } from '../../components/ui';
 import { ReceiptModal, STATUS_TONE } from '../../components/receipt';
 import StudentForm from './StudentForm';
 import { IdCardPanel } from '../../components/idcard';
 import { InterviewPanel } from '../Interviews';
 import { classOption, useClasses } from './shared';
 
+const VERIFIERS = ['sadmin', 'head', 'acad', 'teacher', 'super'];
 const RSTATUS = { waiting: 'Waiting at library', part: 'Partly given', given: 'Given' };
 
 export default function StudentPage() {
   const { id } = useParams();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const edit = can('students', 'f');
   const navigate = useNavigate();
   const toast = useToast();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
-  const [modal, setModal] = useState(null); // edit | move | left | receipt id
+  const [tab, setTab] = useState('overview');
+  const [modal, setModal] = useState(null); // edit | move | left | receipt id | verify guardian
   const load = useCallback(() => api.get(`/students/${id}`).then((x) => { setD({ id, ...x }); setError(''); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['student', 'receipt', 'give'], load);
@@ -44,7 +46,7 @@ export default function StudentPage() {
     catch (e) { toast(e.message); }
   };
 
-  if (!d || d.id !== id) return <><div className="crumbs"><Link to="/students">← Students</Link></div><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</>;
+  if (!d || d.id !== id) return <><div className="crumbs"><Link to="/students">← Students</Link></div><ErrorNote error={error} />{!error && <DetailSkeleton />}</>;
   const { student: s, receipts, history, place } = d;
   const spent = receipts.reduce((n, r) => n + r.total, 0);
 
@@ -84,43 +86,82 @@ export default function StudentPage() {
       </div>
       <ErrorNote error={error} />
 
+      <Tabs label="Student sections" value={tab} onChange={setTab} tabs={[
+        ['overview', 'Overview'], ['guardians', 'Guardians', s.guardians.length], ['receipts', 'Receipts', receipts.length || null],
+        ['card', 'ID card'], ['history', 'History', history.length || null],
+      ]} />
+
+      <div role="tabpanel" aria-labelledby={`tab-${tab}`} key={tab} className="tabpanel">
+      {tab === 'overview' && <>
       <div className="grid2">
-        <Panel title="Details">
-          <div className="kvgrid">
-            <span>Class</span><b>{s.classFullName ? `${s.classFullName} (${s.className})` : '—'}</b>
-            <span>Parent / guardian</span><b>{s.parentName || '—'}</b>
-            <span>Phone</span><b>{s.parentPhone ? <a href={`tel:${s.parentPhone}`}>{fmtPhone(s.parentPhone)}</a> : '—'}</b>
-            {s.note && <><span>Note</span><b>{s.note}</b></>}
-            <span>Added</span><b>{s.addedFrom ? `From Excel ${s.addedFrom.fileName}, by ${s.addedFrom.by}, ${fmtWhen(s.addedFrom.at)}` : `By ${s.createdBy || '—'}, ${fmtWhen(s.createdAt)}`}</b>
-            <span>Last change</span><b>{s.updatedBy ? `${s.updatedBy}, ` : ''}{fmtWhen(s.updatedAt)}</b>
-          </div>
-        </Panel>
-        <Panel title="Receipts" sub={receipts.length ? `${receipts.length} · TSh ${tsh(spent)}` : ''} flush>
-          {!receipts.length ? <Empty>Nothing bought yet.</Empty> : (
-            <div className="list">
-              {receipts.map((r) => (
-                <button key={r.id} className="li libtn" disabled={!can('receipts')} onClick={() => setModal(r.id)}>
-                  <div className="grow"><b><span className="rnum sm">{r.number}</span> · TSh {tsh(r.total)}</b><span>{r.items} · {fmtWhen(r.soldAt)}</span></div>
-                  <span className={`pill ${STATUS_TONE[r.status]}`}>{RSTATUS[r.status]}</span>
-                </button>
-              ))}
+          <Panel title="Details">
+            <div className="kvgrid">
+              <span>Class</span><b>{s.classFullName ? `${s.classFullName} (${s.className})` : '—'}</b>
+              <span>Guardians</span><b>{s.guardians.length ? s.guardians.map((g) => g.fullName).join(', ') : 'None yet'}</b>
+              {s.note && <><span>Note</span><b>{s.note}</b></>}
+              <span>Added</span><b>{s.addedFrom ? `From Excel ${s.addedFrom.fileName}, by ${s.addedFrom.by}, ${fmtWhen(s.addedFrom.at)}` : `By ${s.createdBy || '—'}, ${fmtWhen(s.createdAt)}`}</b>
+              <span>Last change</span><b>{s.updatedBy ? `${s.updatedBy}, ` : ''}{fmtWhen(s.updatedAt)}</b>
+            </div>
+          </Panel>
+          <Panel title="Brothers and sisters" sub="Other students with the same guardian phone" flush>
+            {!d.siblings?.length ? <Empty>None in this school.</Empty> : (
+              <div className="list">
+                {d.siblings.map((x) => (
+                  <Link key={x.id} className="li libtn" to={`/students/${x.id}`}><div className="grow"><b>{x.fullName}</b><span>{x.className || 'No class'}{x.status === 'left' ? ' · left school' : ''}</span></div></Link>
+                ))}
+              </div>
+            )}
+          </Panel>
+      </div>
+      {s.interview && <InterviewPanel iv={s.interview} />}
+      </>}
+      {tab === 'guardians' && <>
+          <Panel title="Guardians" sub={s.guardians.length ? `${s.guardians.length} saved` : 'None saved yet'} flush
+            right={edit && <button className="btn sm" onClick={() => setModal('edit')}><Icon name="edit" /> Edit guardians</button>}>
+            {!s.guardians.length ? <Empty>No guardian saved. Use Edit to add the guardians (full names, phone, relationship).</Empty> : (
+              <div className="list">
+                {s.guardians.map((g, i) => (
+                  <div className="li" key={g.id}>
+                    <span className="gnum muted">{i + 1}</span>
+                    <div className="grow"><b>{g.fullName}</b><span>{g.relationshipLabel} · <a href={`tel:${g.phone}`}>{fmtPhone(g.phone)}</a></span>
+                      {g.verified && <span className="small muted">Verified by {g.verifiedBy || 'school staff'} · {g.verificationMethod}{g.verificationNote ? ` · ${g.verificationNote}` : ''}</span>}
+                    </div>
+                    <div className="row"><span className={`pill sm ${g.verified ? 'ok' : ''}`}>{g.verified ? 'Verified' : 'Not verified'}</span>
+                      {!g.verified && VERIFIERS.includes(user?.role) &&
+                        <button type="button" className="btn sm p" onClick={() => setModal({ verifyGuardian: g })}>Verify</button>}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+      </>}
+      {tab === 'receipts' && <>
+          <Panel title="Receipts" sub={receipts.length ? `${receipts.length} · TSh ${tsh(spent)}` : ''} flush>
+            {!receipts.length ? <Empty>Nothing bought yet.</Empty> : (
+              <div className="list">
+                {receipts.map((r) => (
+                  <button key={r.id} className="li libtn" disabled={!can('receipts')} onClick={() => setModal(r.id)}>
+                    <div className="grow"><b><span className="rnum sm">{r.number}</span> · TSh {tsh(r.total)}</b><span>{r.items} · {fmtWhen(r.soldAt)}</span></div>
+                    <span className={`pill ${STATUS_TONE[r.status]}`}>{RSTATUS[r.status]}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Panel>
+      </>}
+      {tab === 'card' && <IdCardPanel kind="student" id={s.id} />}
+      {tab === 'history' && <>
+        <Panel title="History" sub="Every change to this student" flush>
+          {!history.length && !s.addedFrom ? <Empty>No changes since the student was added.</Empty> : (
+            <div className="list hist">
+              {history.map((h) => <div className="li" key={h.id}><Icon name="clock" /><div className="grow"><b className="fw5">{h.summary}</b><span>{h.by || 'System'} · {fmtWhen(h.at)}</span></div></div>)}
+              {s.addedFrom && <div className="li"><Icon name="excel" /><div className="grow"><b className="fw5">Added from the class list {s.addedFrom.fileName}</b><span>{s.addedFrom.by} · {fmtWhen(s.addedFrom.at)}</span></div></div>}
             </div>
           )}
         </Panel>
+
+      </>}
       </div>
-
-      {s.interview && <InterviewPanel iv={s.interview} />}
-
-      <IdCardPanel kind="student" id={s.id} />
-
-      <Panel title="History" sub="Every change to this student" flush>
-        {!history.length && !s.addedFrom ? <Empty>No changes since the student was added.</Empty> : (
-          <div className="list hist">
-            {history.map((h) => <div className="li" key={h.id}><Icon name="clock" /><div className="grow"><b className="fw5">{h.summary}</b><span>{h.by || 'System'} · {fmtWhen(h.at)}</span></div></div>)}
-            {s.addedFrom && <div className="li"><Icon name="excel" /><div className="grow"><b className="fw5">Added from the class list {s.addedFrom.fileName}</b><span>{s.addedFrom.by} · {fmtWhen(s.addedFrom.at)}</span></div></div>}
-          </div>
-        )}
-      </Panel>
 
       {modal === 'edit' && classes && (
         <EditModal s={s} classes={classes} onClose={() => setModal(null)} onSaved={(st) => { setModal(null); toast(`${st.fullName} saved`); load(); }} />
@@ -132,8 +173,31 @@ export default function StudentPage() {
           <p style={{ margin: 0 }}><b>{s.fullName}</b> will no longer appear for the bursar or in class lists. Nothing is deleted: receipts and history stay, and you can bring the student back any time.</p>
         </Modal>
       )}
+      {modal?.verifyGuardian && <VerifyGuardianModal studentId={s.id} guardian={modal.verifyGuardian} onClose={() => setModal(null)} onSaved={() => { setModal(null); toast('Guardian verified'); load(); }} />}
       {typeof modal === 'number' && <ReceiptModal id={modal} onClose={() => setModal(null)} />}
     </>
+  );
+}
+
+function VerifyGuardianModal({ studentId, guardian, onClose, onSaved }) {
+  const [method, setMethod] = useState('Phone call by school staff');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const save = async () => {
+    setBusy(true); setError('');
+    try { await api.patch(`/students/${studentId}/guardians/${guardian.id}/verify`, { verificationMethod: method, verificationNote: note }); onSaved(); }
+    catch (e) { setError(e.message); setBusy(false); }
+  };
+  return (
+    <Modal title={`Verify ${guardian.fullName}`} onClose={onClose}
+      footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" disabled={busy || !method.trim()} onClick={save}>{busy ? 'Saving…' : 'Verify guardian'}</button></>}>
+      <div className="stack">
+        <label>Verification method<input value={method} onChange={(e) => setMethod(e.target.value)} required /></label>
+        <label>Note<textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Example: called on 0795309020 and confirmed relationship" /></label>
+        <ErrorNote error={error} />
+      </div>
+    </Modal>
   );
 }
 

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, fmtWhen, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, fmtWhen, useToast, DetailSkeleton, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 
 const fmt = (n) => Number(n).toLocaleString('en-GB', { maximumFractionDigits: 3 });
@@ -39,7 +39,9 @@ function Folders() {
         {d?.canWrite && <button className="btn p" onClick={() => setAdding(true)}><Icon name="plus" /> New folder</button>}
       </PageHead>
       <ErrorNote error={error} />
-      {!d ? <Empty>Loading…</Empty> : !d.folders.length ? <Panel><Empty>No folders yet.{d.canWrite ? ' Press "New folder", e.g. FOODS.' : ''}</Empty></Panel> : (
+      {!d ? <Loading /> : !d.folders.length ? <Panel><Empty icon="book" title="No folders yet"
+        steps={['Make a folder, e.g. FOODS.', 'Put the items in it: MCHELE, SUKARI, UNGA...', 'Write what came in, where it went and what was used. What is left is counted for you.']}
+        action={d.canWrite && <button className="btn p" onClick={() => setAdding(true)}><Icon name="plus" /> New folder</button>} /></Panel> : (
         <div className="kpis">{d.folders.map((f) => (
           <Link key={f.id} to={`/store-books/${f.id}`} className="kpi" style={{ textDecoration: 'none', color: 'inherit' }}>
             <span className="kl"><Icon name="book" /> Folder</span><b style={{ fontSize: 20 }}>{f.name}</b><span className="small muted">{f.items} item{f.items === 1 ? '' : 's'}</span>
@@ -57,6 +59,7 @@ function Folders() {
 }
 
 function Folder() {
+  const navigate = useNavigate();
   const { fid } = useParams();
   const toast = useToast();
   const [d, setD] = useState(null);
@@ -70,7 +73,7 @@ function Folder() {
   const addItem = async () => {
     try { await api.post(`/store-books/${fid}/items`, f); toast(`${f.name.toUpperCase()} added`); setAdding(false); setF({ name: '', unit: 'kg', reorderLevel: '' }); await load(); } catch (e) { setError(e.message); }
   };
-  if (!d) return <><Link to="/store-books" className="btn sm">← Store books</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</>;
+  if (!d) return <><Link to="/store-books" className="btn sm">← Store books</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</>;
   const low = d.items.filter((i) => i.low).length;
   return (
     <>
@@ -165,7 +168,7 @@ function ItemBook() {
   const load = useCallback(() => api.get(`/store-books/items/${iid}`).then((x) => { setD(x); setError(''); return api.get(`/store-books/${x.item.folderId}`).then((y) => setPlaces(y.places)); }).catch((e) => setError(e.message)), [iid]);
   useEffect(() => { load(); }, [load]);
   useLive(['book'], load);
-  if (!d) return <><Link to="/store-books" className="btn sm">← Store books</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</>;
+  if (!d) return <><Link to="/store-books" className="btn sm">← Store books</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</>;
   const it = d.item;
   return (
     <>

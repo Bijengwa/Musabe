@@ -18,20 +18,21 @@ function listen(app) {
 }
 
 // Send a request. `from` = local address to connect from (127.0.0.1 = through Nginx on the same server).
-function request({ port, host = '127.0.0.1', from, method = 'GET', path, headers = {}, body, cookie }) {
+function request({ port, host = '127.0.0.1', from, method = 'GET', path, headers = {}, body, rawBody, cookie, binary }) {
   return new Promise((resolve, reject) => {
-    const data = body === undefined ? null : JSON.stringify(body);
+    const data = rawBody || (body === undefined ? null : JSON.stringify(body));
     const req = http.request({
       host, port, method, path, localAddress: from || undefined,
-      headers: { ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
+      headers: { ...(data ? { 'Content-Type': rawBody ? 'application/octet-stream' : 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
         ...(cookie ? { Cookie: cookie } : {}), ...headers },
     }, (res) => {
-      let text = '';
-      res.on('data', (c) => { text += c; });
+      const chunks = [];
+      res.on('data', (c) => { chunks.push(Buffer.from(c)); });
       res.on('end', () => {
+        const all = Buffer.concat(chunks); const text = binary ? '' : all.toString('utf8');
         let json = null;
         try { json = JSON.parse(text); } catch { /* not json */ }
-        resolve({ status: res.statusCode, headers: res.headers, json });
+        resolve({ status: res.statusCode, headers: res.headers, json, body: binary ? all : text });
       });
     });
     req.on('error', reject);

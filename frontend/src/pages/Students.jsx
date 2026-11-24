@@ -8,7 +8,9 @@ import AddStudent from './student/AddStudent';
 import UploadList from './student/UploadList';
 import MoveStudents from './student/MoveStudents';
 import Classes from './student/Classes';
+import ClassPage from './student/ClassPage';
 import ParentRequests from './student/ParentRequests';
+import BulkEdit from './student/BulkEdit';
 
 export default function Students() {
   return (
@@ -17,7 +19,9 @@ export default function Students() {
       <Route path="new" element={<AddStudent />} />
       <Route path="upload" element={<UploadList />} />
       <Route path="move" element={<MoveStudents />} />
+      <Route path="bulk" element={<BulkEdit />} />
       <Route path="classes" element={<Classes />} />
+      <Route path="classes/:id" element={<ClassPage />} />
       <Route path="parents" element={<ParentRequests />} />
       <Route path="review/:id" element={<StudentReview />} />
       <Route path=":id" element={<StudentPage />} />

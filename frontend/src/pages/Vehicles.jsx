@@ -4,7 +4,7 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, useToast, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 
 export default function Vehicles() {
@@ -26,7 +26,9 @@ export default function Vehicles() {
       <ErrorNote error={error} />
       {d && <div className="kpis"><Kpi tone="hi" label="Vehicles in use" value={d.vehicles.filter((v) => v.active).length} /><Kpi tone={d.noDriver ? 'warn' : 'ok'} label="Without a responsible driver" value={d.noDriver} /></div>}
       <Panel flush>
-        {!d ? <Empty>Loading…</Empty> : !d.vehicles.length ? <Empty>No vehicles yet.</Empty> : (
+        {!d ? <Loading /> : !d.vehicles.length ? <Empty icon="swap" title="No vehicles yet"
+          steps={['Add each school vehicle with its plate number.', 'Name the driver who is responsible for it now.', 'Change the driver here whenever it is handed over; the history is kept.']}
+          action={edit && <button className="btn p" onClick={() => setModal({ kind: 'vehicle' })}><Icon name="plus" /> Add vehicle</button>} /> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Plate</th><th>Make / model</th><th>Use</th><th>School</th><th>Responsible driver</th><th>Phone</th><th>Since</th><th /></tr></thead>
             <tbody>{d.vehicles.map((v) => (
@@ -90,7 +92,7 @@ function History({ v, onClose }) {
   useEffect(() => { api.get(`/vehicles/${v.id}`).then(setD).catch(() => {}); }, [v.id]);
   return (
     <Modal title={`${v.plate}: drivers`} onClose={onClose} footer={<button className="btn" onClick={onClose}>Close</button>}>
-      {!d ? <Empty>Loading…</Empty> : !d.drivers.length ? <Empty>No driver recorded yet.</Empty> : (
+      {!d ? <Loading /> : !d.drivers.length ? <Empty>No driver recorded yet.</Empty> : (
         <div className="tw"><table className="stafftable"><thead><tr><th>Driver</th><th>Phone</th><th>From</th><th>To</th><th>Recorded by</th></tr></thead>
           <tbody>{d.drivers.map((x) => <tr key={x.id}><td><b>{x.name}</b>{x.licence && <div className="small muted">{x.licence}</div>}</td><td className="nowrap">{x.phone ? fmtPhone(x.phone) : ''}</td><td className="nowrap">{x.from}</td><td className="nowrap">{x.to || <span className="pill ok">Now</span>}</td><td className="small">{x.by}</td></tr>)}</tbody></table></div>
       )}

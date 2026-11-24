@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, useToast } from '../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, useToast, Loading } from '../components/ui';
 import { useSchoolQs } from '../components/common';
 import { LabelSheet, PrintButton } from '../components/barcode';
 import { CardSheet, IdCardPanel } from '../components/idcard';
@@ -62,7 +62,7 @@ function Items() {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !rows.length ? <Empty>No items.</Empty> : (
+        {!data ? <Loading /> : !rows.length ? <Empty>No items.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Item</th><th>Category</th><th>System barcode</th><th>Maker's barcode</th><th className="n">In my store</th><th className="n">Labels to print</th></tr></thead>
             <tbody>{rows.map((i) => (
@@ -138,7 +138,7 @@ function Pieces() {
       </Panel>
       {item && (
         <Panel title={`Pieces of ${item.name}`} flush right={<PrintButton label={`Print all ${inStore.length} in the store`} disabled={!inStore.length}><LabelSheet labels={toLabels(inStore)} /></PrintButton>}>
-          {!shown ? <Empty>Loading…</Empty> : !shown.length ? <Empty>No piece has a barcode yet.</Empty> : (
+          {!shown ? <Loading /> : !shown.length ? <Empty>No piece has a barcode yet.</Empty> : (
             <div className="tw"><table className="lines"><thead><tr><th>Barcode</th><th>State</th><th>With</th></tr></thead>
               <tbody>{shown.map((c) => (
                 <tr key={c.id}><td className="mono">{c.code}</td>
@@ -198,7 +198,7 @@ function Cards({ initialKind }) {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {needSchool ? <Empty>Choose a school at the top of the page to see its students.</Empty> : !list ? <Empty>Loading…</Empty> : !shown.length ? <Empty>Nobody here.</Empty> : (
+        {needSchool ? <Empty>Choose a school at the top of the page to see its students.</Empty> : !list ? <Loading /> : !shown.length ? <Empty>Nobody here.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr>
               {canIssue && <th className="ck"><input type="checkbox" aria-label="Tick all not issued" checked={allTicked}

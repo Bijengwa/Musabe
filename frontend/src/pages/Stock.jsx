@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { useSchoolQs } from '../components/common';
 
 const TABS = [['', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['short', 'Owed more than in stock']];
@@ -106,7 +106,7 @@ function StockCard({ r, onClose }) {
     <Modal wide title={`${r.name} · ${r.school}`} onClose={onClose} footer={<button className="btn" onClick={onClose}>Close</button>}>
       <ErrorNote error={error} />
       <p className="small muted" style={{ marginTop: 0 }}>In stock now: <b>{r.qty}</b>. Every movement, newest first. Nothing here can be changed or deleted.</p>
-      {!moves ? <Empty>Loading…</Empty> : !moves.length ? <Empty>No movements yet. Stock starts when the finance office sends it and the librarian confirms.</Empty> : (
+      {!moves ? <Loading /> : !moves.length ? <Empty>No movements yet. Stock starts when the finance office sends it and the librarian confirms.</Empty> : (
         <div className="tw"><table className="lines">
           <thead><tr><th>Date</th><th>Movement</th><th>Paper</th><th className="n">In</th><th className="n">Out</th><th className="n">Balance</th><th>By</th></tr></thead>
           <tbody>{moves.map((m) => (

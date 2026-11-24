@@ -112,10 +112,10 @@ test('Secretary enters interviews (form and Excel); School Admin registers the c
 
   // School Admin registers Juma from the interview.
   const [cls] = await db('classes').insert({ school_id: boys.id, level: 'F1', name: 'FORM ONE', short_name: 'F 1', stream: `R${tag}`.toUpperCase().slice(0, 10) }).returning('*');
-  r = await as('sadmin', 'POST', '/api/students', { admissionNo: `IV${tag}`.slice(0, 18), firstName: 'Juma', middleName: 'Ally', lastName: `Test${nt}`, sex: 'M', classId: cls.id, interviewId: iv.id });
+  r = await as('sadmin', 'POST', '/api/students', { admissionNo: `IV${tag}`.slice(0, 18), firstName: 'Juma', middleName: 'Ally', lastName: `Test${nt}`, sex: 'M', classId: cls.id, interviewId: iv.id, guardians: [{ fullName: 'ALLY JUMA HASSANI', phone: '0754 555 666', relationship: 'father' }] });
   assert.equal(r.status, 201, JSON.stringify(r.json));
   const sid = r.json.student.id;
-  assert.equal((await as('sadmin', 'POST', '/api/students', { admissionNo: `IW${tag}`.slice(0, 18), firstName: 'Juma', lastName: 'Two', sex: 'M', classId: cls.id, interviewId: iv.id })).status, 409, 'registered once');
+  assert.equal((await as('sadmin', 'POST', '/api/students', { admissionNo: `IW${tag}`.slice(0, 18), firstName: 'Juma', lastName: 'Two', sex: 'M', classId: cls.id, interviewId: iv.id, guardians: [{ fullName: 'ALLY JUMA HASSANI', phone: '0754 555 666', relationship: 'father' }] })).status, 409, 'registered once');
   r = await as('head', 'GET', `/api/students/${sid}`);
   assert.equal(r.status, 200); assert.equal(r.json.student.interview.previousSchool, 'IGOGO PRIMARY'); assert.equal(r.json.student.interview.total, 142);
   r = await as('head', 'GET', `/api/interviews/${iv.id}`);

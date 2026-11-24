@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { Empty, ErrorNote, ExcelButton, Kpi, tsh } from '../components/ui';
+import { ErrorNote, ExcelButton, Kpi, tsh, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 import { PrintButton } from '../components/barcode';
 import './requisition.css';
@@ -54,7 +54,7 @@ export default function GoodsSummary() {
         <Kpi label="Cash" value={`TSh ${tsh(d.cash)}`} /><Kpi label="Credit" value={`TSh ${tsh(d.credit)}`} tone={d.credit ? 'warn' : undefined} />
         <Kpi label="Without a receipt" value={d.noReceipt} tone={d.noReceipt ? 'bad' : 'ok'} />
       </div>}
-      {!d ? <Empty>Loading…</Empty> : <Sheet d={d} />}
+      {!d ? <Loading /> : <Sheet d={d} />}
     </div>
   );
 }

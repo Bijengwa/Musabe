@@ -79,6 +79,7 @@ export type Receipt = {
 };
 export type Bill = {
   id: number; controlNo: string; total: number; createdAt: string; expiresAt: string; paidAt: string | null;
+  claimRef: string | null; claimNetwork: string | null; claimAt: string | null; lipa: { network: string; number: string; name: string }[];
   status: 'pending' | 'paid' | 'cancelled' | 'expired'; lines: { item: string; qty: number; amount: number }[];
 };
 export type Issued = { id: number; number: string; at: string; item: string; unit: string; qty: number; comesBack: boolean; returned: 'good' | 'damaged' | 'lost' | null; returnedAt: string | null };

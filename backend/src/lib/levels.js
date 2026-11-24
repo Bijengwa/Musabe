@@ -4,9 +4,10 @@
 //
 // curriculum: which syllabus the level follows by default. The Academic Master can change it per class
 // (e.g. FORM FOUR 2027 still on the OLD curriculum, FORM ONE to THREE on the NEW one).
-//   new    = new curriculum (2023, "mtaala ulioboreshwa")
-//   old    = old curriculum (being phased out)
+//   new    = shown as "2027 curriculum" (TIE 2023, "mtaala ulioboreshwa"; P1–P6, PP2, F1–F3 in 2027)
+//   old    = shown as "2026 and before curriculum" (P7 and F4 in 2027: the last groups on it)
 //   school = the school's own (no government syllabus, e.g. Baby Class)
+// The school asked (2026-11-23) never to show the words "new" and "old": the keys stay, only the labels say the year.
 
 const pre = [
   { key: 'BABY', name: 'BABY CLASS', short: 'BC', curriculum: 'school' },
@@ -30,7 +31,7 @@ const secondary = [
 // Levels of each school, by schools.code. A school not listed here gets every level.
 const BY_SCHOOL = { pre, boys: secondary, girls: secondary };
 const ALL = [...pre, ...secondary];
-const CURRICULA = { new: 'New curriculum (2023)', old: 'Old curriculum', school: "School's own" };
+const CURRICULA = { new: '2027 curriculum', old: '2026 and before curriculum', school: "School's own" };
 
 const levelsFor = (schoolCode) => BY_SCHOOL[schoolCode] || ALL;
 const levelOf = (key) => ALL.find((l) => l.key === key) || null;

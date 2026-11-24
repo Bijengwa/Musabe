@@ -3,6 +3,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth, requirePage } = require('../auth/session');
+const { dutyTodo } = require('../lib/duty');
 const { ROLES, pageAccess, DAMAGE_APPROVERS, ISSUERS, PURCHASE_CONFIRMERS, CARD_ISSUERS } = require('../auth/roles');
 const { LATE_HOURS } = require('./receipts');
 const { classLabel } = require('./students');
@@ -120,7 +121,7 @@ async function students(schoolId) {
   const rows = await db('classes as c').where({ 'c.school_id': schoolId, 'c.active': true })
     .leftJoin('students as st', (j) => j.on('st.class_id', 'c.id').andOn(db.raw("st.status = 'active'")))
     .groupBy('c.id').select('c.*', db.raw(`count(st.id)::int as n, (count(st.id) filter (where st.sex='M'))::int as boys, (count(st.id) filter (where st.sex='F'))::int as girls,
-      (count(st.id) filter (where st.parent_phone is null))::int as no_phone`));
+      (count(st.id) filter (where not exists (select 1 from student_guardians g where g.student_id = st.id)))::int as no_phone`));
   const classes = rows.map((c) => ({ id: c.id, label: classLabel(c), name: c.name, n: c.n, boys: c.boys, girls: c.girls, noPhone: c.no_phone }))
     .sort((a, b) => a.label.localeCompare(b.label, 'en', { numeric: true }));
   return { total: classes.reduce((s, c) => s + c.n, 0), boys: classes.reduce((s, c) => s + c.boys, 0), girls: classes.reduce((s, c) => s + c.girls, 0),
@@ -335,6 +336,8 @@ async function todo(user, school) {
     if (['acad', 'teacher', 'librarian', 'bursar', 'sstore'].includes(user.role)) add(await cnt(rq().where('requested_by', user.id).whereIn('status', ['acad', 'head', 'store', 'check', 'manager', 'approved', 'buying', 'arrived', 'sent'])),
       'of your requisitions are on the way', '/requisitions', 'info');
   }
+  // Teacher on Duty and roll call (2026-11-23): roll calls not taken, duty reports, weeks with nobody on duty.
+  for (const x of await dutyTodo(db, user)) add(x.n, x.label, x.link, x.tone);
   // ID cards not yet handed over (the School Admin records them).
   if (CARD_ISSUERS.includes(user.role) && user.school_id) {
     const n = await cnt(db('students as s').where({ 's.school_id': user.school_id, 's.status': 'active' })

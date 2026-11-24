@@ -1,0 +1,6214 @@
+[
+{
+"ref": "PRE",
+"title": "Pre-primary Education Syllabus (2023)",
+"source": "Curriculum and Syllabus for Pre-primary Education 2023 (English).pdf",
+"language": "en",
+"topics": [
+{
+"level": "PP",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of the skills of arts, creativity and sports",
+"no": "1.1",
+"text": "Perform theatre arts",
+"periods": 30,
+"items": [
+{
+"text": "(a) Sing",
+"periods": 30
+},
+{
+"text": "(b) Recite poems",
+"periods": null
+},
+{
+"text": "(c) Recite ngonjera",
+"periods": null
+},
+{
+"text": "(d) Act",
+"periods": null
+},
+{
+"text": "(e) Play musical instruments",
+"periods": null
+},
+{
+"text": "(f) Dance",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of the skills of arts, creativity and sports",
+"no": "1.2",
+"text": "Create handmade works of arts",
+"periods": 46,
+"items": [
+{
+"text": "(a) Create objects",
+"periods": 46
+},
+{
+"text": "(b) Draw pictures and shapes",
+"periods": null
+},
+{
+"text": "(c) Weave articles",
+"periods": null
+},
+{
+"text": "(d) Thread objects",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of the skills of arts, creativity and sports",
+"no": "1.3",
+"text": "Use creative skills that involve body movements",
+"periods": 39,
+"items": [
+{
+"text": "(a) Play games that involve small muscles",
+"periods": 39
+},
+{
+"text": "(b) Play games that involve large muscles",
+"periods": null
+},
+{
+"text": "(c) Create sports materials",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "2.0",
+"main": "\u0007Kuthamini utamaduni wa jamii yake, elimu ya imani na tunu za taifa 1 Umahiri mahususi huu utafundishwa na viongozi wa Imani husika katika kipindi cha dini",
+"no": "2.1",
+"text": "Kuthamini alama na tunu za taifa",
+"periods": 28,
+"items": [
+{
+"text": "(a) Kubaini alama za taifa",
+"periods": 28
+},
+{
+"text": "(b) Kubaini tunu za taifa (uzalendo, uwajibikaji na lugha ya taifa)",
+"periods": null
+},
+{
+"text": "(c) Kuelezea Muungano wa Tanganyika na Zanzibar",
+"periods": null
+},
+{
+"text": "(d) Kutaja majina ya viongozi wa kitaifa",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "2.0",
+"main": "\u0007Kuthamini utamaduni wa jamii yake, elimu ya imani na tunu za taifa 1 Umahiri mahususi huu utafundishwa na viongozi wa Imani husika katika kipindi cha dini",
+"no": "2.2",
+"text": "\u0007Kuthamini vyakula vya Kitanzania",
+"periods": 18,
+"items": [
+{
+"text": "(a) Kubaini vyakula vinavyopatikana katika jamii yake",
+"periods": 18
+},
+{
+"text": "(b) Kubaini vyakula vinavyopatikana katika jamii nyingine",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "2.0",
+"main": "\u0007Kuthamini utamaduni wa jamii yake, elimu ya imani na tunu za taifa 1 Umahiri mahususi huu utafundishwa na viongozi wa Imani husika katika kipindi cha dini",
+"no": "2.3",
+"text": "Kuthamini mavazi ya Kitanzania",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kubainisha mavazi ya Kitanzania yanayovaliwa katika mazingira yake",
+"periods": 15
+},
+{
+"text": "(b) Kuonesha mavazi mbalimbali yanayovaliwa katika jamii yake",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "2.0",
+"main": "\u0007Kuthamini utamaduni wa jamii yake, elimu ya imani na tunu za taifa 1 Umahiri mahususi huu utafundishwa na viongozi wa Imani husika katika kipindi cha dini",
+"no": "2.4",
+"text": "Kuonesha matendo ya kiimani kulingana na imani yake",
+"periods": 39,
+"items": [
+{
+"text": "(a) Kubaini imani yake",
+"periods": 39
+},
+{
+"text": "(b) Kubaini matendo ya kiimani",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of early language and communication on skills",
+"no": "3.1",
+"text": "Listen in various contexts",
+"periods": 34,
+"items": [
+{
+"text": "(a) Distinguish sounds and voices in one’s environment",
+"periods": 34
+},
+{
+"text": "(b) Follow the given instructions",
+"periods": null
+},
+{
+"text": "(c) Listen to stories",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of early language and communication on skills",
+"no": "3.2",
+"text": "Converse in various contexts",
+"periods": 30,
+"items": [
+{
+"text": "(a) Narrate various events",
+"periods": 30
+},
+{
+"text": "(b) Ask and solve riddles",
+"periods": null
+},
+{
+"text": "(c) Sing",
+"periods": null
+},
+{
+"text": "(d) Tell stories",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of early language and communication on skills",
+"no": "3.3",
+"text": "Read at early stages",
+"periods": 67,
+"items": [
+{
+"text": "(a) Use early reading skills",
+"periods": 67
+},
+{
+"text": "(b) Observe pictures",
+"periods": null
+},
+{
+"text": "(c) Pronounce first sounds of names of pictures, words and objects",
+"periods": null
+},
+{
+"text": "(d) Relate sounds with letter shapes",
+"periods": null
+},
+{
+"text": "(e) Read syllables and words",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of early language and communication on skills",
+"no": "3.4",
+"text": "Write at early stages",
+"periods": 35,
+"items": [
+{
+"text": "(a) Follow the stages of writing letters",
+"periods": 35
+},
+{
+"text": "(b) Write letters",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of early language and communication on skills",
+"no": "3.5",
+"text": "Communicate in various contexts",
+"periods": 30,
+"items": [
+{
+"text": "(a) Greet and bid farewell",
+"periods": 30
+},
+{
+"text": "(b) Observe the principles of communication",
+"periods": null
+},
+{
+"text": "(c) Talk about oneself in various contexts",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "4.0",
+"main": "Relate with one another",
+"no": "4.1",
+"text": "Value oneself and others",
+"periods": 18,
+"items": [
+{
+"text": "(a) Introduce oneself and others",
+"periods": 18
+},
+{
+"text": "(b) Demonstrate acts of good behaviour",
+"periods": null
+},
+{
+"text": "(c) Identify one’s rights and responsibilities",
+"periods": null
+},
+{
+"text": "(d) Identify works done by family members and other people",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "4.0",
+"main": "Relate with one another",
+"no": "4.2",
+"text": "Control feelings in different contexts",
+"periods": 16,
+"items": [
+{
+"text": "(a) Mention things he/she likes and dislikes",
+"periods": 16
+},
+{
+"text": "(b) Explain how to control feelings",
+"periods": null
+},
+{
+"text": "(c) Do actions that communicate feelings",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "4.0",
+"main": "Relate with one another",
+"no": "4.3",
+"text": "Demonstrate mastery of the skills of self-reliance",
+"periods": 14,
+"items": [
+{
+"text": "(a) Do acts of self-reliance",
+"periods": 14
+},
+{
+"text": "(b) Arrange objects in a correct order",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "4.0",
+"main": "Relate with one another",
+"no": "4.4",
+"text": "Demonstrate mastery of the skills for collaboration",
+"periods": 13,
+"items": [
+{
+"text": "(a) Collaborate in various contexts",
+"periods": 13
+},
+{
+"text": "(b) Taking turns in play and different activities",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "4.0",
+"main": "Relate with one another",
+"no": "4.5",
+"text": "Solve challenges in daily life",
+"periods": 19,
+"items": [
+{
+"text": "(a) Play games that develop the skills of solving challenges",
+"periods": 19
+},
+{
+"text": "(b) Demonstrate how to deal with challenges",
+"periods": null
+},
+{
+"text": "(c) Use ICT to solve problems",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.1",
+"text": "Take care of the body",
+"periods": 22,
+"items": [
+{
+"text": "(a) Identify parts of the body and their functions",
+"periods": 22
+},
+{
+"text": "(b) Clean the body",
+"periods": null
+},
+{
+"text": "(c) Care for clothes",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.2",
+"text": "Appreciate different types of food",
+"periods": 12,
+"items": [
+{
+"text": "(a) Identify different types of food",
+"periods": 12
+},
+{
+"text": "(b) Explain table manners",
+"periods": null
+},
+{
+"text": "(c) Preserve food",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.3",
+"text": "Keep the dishes",
+"periods": 10,
+"items": [
+{
+"text": "(a) Use food utensils",
+"periods": 10
+},
+{
+"text": "(b) Do the dishes",
+"periods": null
+},
+{
+"text": "(c) Keep the dishes",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.4",
+"text": "Observing things found in the environment",
+"periods": 24,
+"items": [
+{
+"text": "(a) Mention objects found in the environment",
+"periods": 24
+},
+{
+"text": "(b) Distinguish objects found in the environment",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.5",
+"text": "Clean the environment",
+"periods": 17,
+"items": [
+{
+"text": "(a) Do cleanliness in his/her environment",
+"periods": 17
+},
+{
+"text": "(b) Explain the impact of unclean environment",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.6",
+"text": "Avoid risky environment",
+"periods": 19,
+"items": [
+{
+"text": "(a) Identify risky behaviours",
+"periods": 19
+},
+{
+"text": "(b) Identify risky environments",
+"periods": null
+},
+{
+"text": "(c) Demonstrate how to avoid risky environments",
+"periods": null
+},
+{
+"text": "(d) Identify safety signs in one’s environment",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "5.0",
+"main": "Take care of health and environment",
+"no": "5.7",
+"text": "Take precaution against various diseases",
+"periods": 15,
+"items": [
+{
+"text": "(a) Identify infectious diseases",
+"periods": 15
+},
+{
+"text": "(b) Protect oneself against diseases",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "6.0",
+"main": "Use early numeracy skills, science and ICT Ministry of Education and Culture. (2004). National curriculum guidelines on early childhood education and care in Finland. Finish National Agency for Education. Ministry of Education Culture and Human Resources. (2009). National curriculum framework: Pre-primary 3-5 years. Mauritius Institute of Education and Early Childhood Care and Education. Ministry of Education Science and Technology (2016). Curriculum and Syllabus for Pre-Primary Education. Tanzania Institute of Education. National Board of Education in Finland (2000). Core curriculum for pre-school education. University Press Helsinki. Republic of Ghana (2018). National pre-tertiary education curriculum framework for developing subject curricula. Ministry of Education. Republic of Kenya (2019). Basic education curriculum framework: nurturing every learner’s potential. Kenya Institute of Curriculum Development. Republic of Namibia. (2015). Pre-primary syllabus english version. Ministry of Education. Republic of South Africa. (2015).The South African National Curriculum Framework for Children from Birth to Four. Department of Basic Education. Serikali ya Jamhuri ya Muungano ya Tanzania. (2022). Muungano wa Tanganyika na Zanzibar: Chimbuko, Misingi na Maendeleo: URT. Taasisi ya Elimu Tanzania. (2022). Ripoti ya maoni ya wadau kuhusu uboreshaji wa mitaala ya elimu ya awali, msingi, sekondari na ualimu. Tanzania Institute of Education. Wizara ya Elimu, Sayansi na Teknolojia (2016). Mtaala na Muhtasari wa Elimu ya Awali. Taasisi ya Elimu Tanzania",
+"no": "6.1",
+"text": "Use the environment to develop arithmetic concepts and critical thinking",
+"periods": 62,
+"items": [
+{
+"text": "(a) Identify objects that develop the concept of number in the environment",
+"periods": 62
+},
+{
+"text": "(b) Identify figures",
+"periods": null
+},
+{
+"text": "(c) Sort things based on their characteristics",
+"periods": null
+},
+{
+"text": "(d) Identify measurements",
+"periods": null
+},
+{
+"text": "(e) Count numbers 1-20",
+"periods": null
+},
+{
+"text": "(f) Write numbers 1-20",
+"periods": null
+},
+{
+"text": "(g) Add using real objects and ICT",
+"periods": null
+},
+{
+"text": "(h) Subtract using real objects and ICT",
+"periods": null
+},
+{
+"text": "(i) Identify the Tanzanian banknotes and coins",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "6.0",
+"main": "Use early numeracy skills, science and ICT Ministry of Education and Culture. (2004). National curriculum guidelines on early childhood education and care in Finland. Finish National Agency for Education. Ministry of Education Culture and Human Resources. (2009). National curriculum framework: Pre-primary 3-5 years. Mauritius Institute of Education and Early Childhood Care and Education. Ministry of Education Science and Technology (2016). Curriculum and Syllabus for Pre-Primary Education. Tanzania Institute of Education. National Board of Education in Finland (2000). Core curriculum for pre-school education. University Press Helsinki. Republic of Ghana (2018). National pre-tertiary education curriculum framework for developing subject curricula. Ministry of Education. Republic of Kenya (2019). Basic education curriculum framework: nurturing every learner’s potential. Kenya Institute of Curriculum Development. Republic of Namibia. (2015). Pre-primary syllabus english version. Ministry of Education. Republic of South Africa. (2015).The South African National Curriculum Framework for Children from Birth to Four. Department of Basic Education. Serikali ya Jamhuri ya Muungano ya Tanzania. (2022). Muungano wa Tanganyika na Zanzibar: Chimbuko, Misingi na Maendeleo: URT. Taasisi ya Elimu Tanzania. (2022). Ripoti ya maoni ya wadau kuhusu uboreshaji wa mitaala ya elimu ya awali, msingi, sekondari na ualimu. Tanzania Institute of Education. Wizara ya Elimu, Sayansi na Teknolojia (2016). Mtaala na Muhtasari wa Elimu ya Awali. Taasisi ya Elimu Tanzania",
+"no": "6.2",
+"text": "Do scientific experiments",
+"periods": 42,
+"items": [
+{
+"text": "(a) Observe things in the surrounding environment",
+"periods": 42
+},
+{
+"text": "(b) Do simple scientific experiments",
+"periods": null
+}
+]
+},
+{
+"level": "PP",
+"mainNo": "6.0",
+"main": "Use early numeracy skills, science and ICT Ministry of Education and Culture. (2004). National curriculum guidelines on early childhood education and care in Finland. Finish National Agency for Education. Ministry of Education Culture and Human Resources. (2009). National curriculum framework: Pre-primary 3-5 years. Mauritius Institute of Education and Early Childhood Care and Education. Ministry of Education Science and Technology (2016). Curriculum and Syllabus for Pre-Primary Education. Tanzania Institute of Education. National Board of Education in Finland (2000). Core curriculum for pre-school education. University Press Helsinki. Republic of Ghana (2018). National pre-tertiary education curriculum framework for developing subject curricula. Ministry of Education. Republic of Kenya (2019). Basic education curriculum framework: nurturing every learner’s potential. Kenya Institute of Curriculum Development. Republic of Namibia. (2015). Pre-primary syllabus english version. Ministry of Education. Republic of South Africa. (2015).The South African National Curriculum Framework for Children from Birth to Four. Department of Basic Education. Serikali ya Jamhuri ya Muungano ya Tanzania. (2022). Muungano wa Tanganyika na Zanzibar: Chimbuko, Misingi na Maendeleo: URT. Taasisi ya Elimu Tanzania. (2022). Ripoti ya maoni ya wadau kuhusu uboreshaji wa mitaala ya elimu ya awali, msingi, sekondari na ualimu. Tanzania Institute of Education. Wizara ya Elimu, Sayansi na Teknolojia (2016). Mtaala na Muhtasari wa Elimu ya Awali. Taasisi ya Elimu Tanzania",
+"no": "6.3",
+"text": "Use ICT tools to communicate in various contexts",
+"periods": 52,
+"items": [
+{
+"text": "(a) Identify ICT tools",
+"periods": 52
+},
+{
+"text": "(b) Create various ICT models",
+"periods": null
+},
+{
+"text": "(c) Use a computer to perform various activities",
+"periods": null
+},
+{
+"text": "(d) Use various ICT tools",
+"periods": null
+}
+]
+}
+]
+},
+{
+"ref": "STD12",
+"title": "Primary Education Syllabus Standard I-II (2023)",
+"source": "Std I-II - Primary Education Syllabus (English).pdf",
+"language": "en",
+"topics": [
+{
+"level": "P1",
+"mainNo": "1.0",
+"main": "Listening and speaking",
+"no": "1.1",
+"text": "Develop listening and speaking skills in different contexts",
+"periods": 105,
+"items": [
+{
+"text": "(a) Imitate different sounds (e.g.sounds of animals, hands clap etc.)",
+"periods": 105
+},
+{
+"text": "(b) Relate words with familiar objects found in the environment (e.g. home, school, market, hospital, playgrounds)",
+"periods": null
+},
+{
+"text": "(c) Follow the simple instructions given at school and home (e.g. go out, stand up, jump, clap your hands, touch your head and sit down)",
+"periods": null
+},
+{
+"text": "(d) Introduce oneself and others",
+"periods": null
+},
+{
+"text": "(e) Name parts of the body orally",
+"periods": null
+},
+{
+"text": "(f) Use common greetings and say goodbye to others",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.1",
+"text": "Recognise letter sounds",
+"periods": 92,
+"items": [
+{
+"text": "(a) Pronounce letter sounds a-z",
+"periods": 92
+},
+{
+"text": "(b) Identify individual sounds in simple words (initial, middle, and last sounds)",
+"periods": null
+},
+{
+"text": "(c) Identify words with the same last sound (rhyming) and words with the same first sound (alliteration)",
+"periods": null
+},
+{
+"text": "(d) Blend individual sounds to form simple words",
+"periods": null
+},
+{
+"text": "(e) Pronounce words with short vowel sounds (e.g. bat, mat, red, hit, hot, cup)",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.2",
+"text": "Recognise letter-sound relationships",
+"periods": 92,
+"items": [
+{
+"text": "(a) Associate letters with sounds",
+"periods": 92
+},
+{
+"text": "(b) Read single syllable words with simple structure (vowel consonant-at, consonant-vowel-consonant -cat)",
+"periods": null
+},
+{
+"text": "(c) Read words with two consonant clusters (e.g. bl, cl, fl, gl, pl, sl, br, cr, dr, fr, gr, pr, tr, sc, sk, sm, sn, sp, st, sw, and tw)",
+"periods": null
+},
+{
+"text": "(d) Read words with consonant digraphs (e.g. th, ch, sh, ph)",
+"periods": null
+},
+{
+"text": "(e) Read words with vowel digraphs (Target: ai, ay, ee, ea, oa and oe)",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.3",
+"text": "Read fluently",
+"periods": 61,
+"items": [
+{
+"text": "(a) Read short simple sentences",
+"periods": 61
+},
+{
+"text": "(b) Use basic punctuation marks (full stop and question mark)",
+"periods": null
+},
+{
+"text": "(c) Read grade appropriate texts with appropriate pronunciation",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "3.0",
+"main": "Writing",
+"no": "3.1",
+"text": "Develop pre-writing skills",
+"periods": 75,
+"items": [
+{
+"text": "(a) Practise activities that build motor skills (holding a pencil, sitting posture, moulding letter shapes)",
+"periods": 75
+},
+{
+"text": "(b) Trace letter shapes",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "3.0",
+"main": "Writing",
+"no": "3.2",
+"text": "Develop basic writing skills",
+"periods": 100,
+"items": [
+{
+"text": "(a) Write small and capital letters step-by step",
+"periods": 100
+},
+{
+"text": "(b) Join letters to form simple words",
+"periods": null
+},
+{
+"text": "(c) Join words to form simple sentences",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "4.0",
+"main": "Arithmetic",
+"no": "4.1",
+"text": "Recognise the concept of numbers",
+"periods": 100,
+"items": [
+{
+"text": "(a) Master/learn the concept of numbers using object found in the environment",
+"periods": 100
+},
+{
+"text": "(b) Identify numbers in numerals and words (1-100)",
+"periods": null
+},
+{
+"text": "(c) Trace, copy and write numbers (1-10)",
+"periods": null
+},
+{
+"text": "(d) Arrange numbers sequentially (1-100)",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "4.0",
+"main": "Arithmetic",
+"no": "4.2",
+"text": "Use mathematical operations",
+"periods": 100,
+"items": [
+{
+"text": "(a) Identify numbers in tens and ones",
+"periods": 100
+},
+{
+"text": "(b) Use real objects/ ICT to understand the concept of addition",
+"periods": null
+},
+{
+"text": "(c) Add numbers to get a sum not exceeding 99",
+"periods": null
+},
+{
+"text": "(d) Use real objects/ICT to understand the concept of subtraction",
+"periods": null
+},
+{
+"text": "(e) Subtract number in the range of 0-99",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "4.0",
+"main": "Arithmetic",
+"no": "4.3",
+"text": "Use mathematical concepts",
+"periods": 45,
+"items": [
+{
+"text": "(a) Identify basic shapes",
+"periods": 45
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "5.0",
+"main": "Kumudu stadi za awali za Kiswahili",
+"no": "5.1",
+"text": "Kumudu stadi za awali za kusoma",
+"periods": 105,
+"items": [
+{
+"text": "(a) Kubaini sauti za irabu (a, e, i, o, u) katika maneno",
+"periods": 105
+},
+{
+"text": "(b) Kutambua sauti za konsonanti (b, m, k, d, n); (l, t, p, s, f, j); (g, y, z, h, r, w, v, ch) kwenye maneno",
+"periods": null
+},
+{
+"text": "(c) Kuunganisha sauti za konsonanti na irabu ili kuunda silabi",
+"periods": null
+},
+{
+"text": "(d) Kuunganisha kwa kutamka sauti za konsonanti na irabu zilizounda silabi na silabi zilizounda maneno",
+"periods": null
+},
+{
+"text": "(e) Kutambua sauti za herufi mwambatano (sh, th, mb, ny, ng, nd, kw, mw) kwenye maneno",
+"periods": null
+},
+{
+"text": "(f) Kuunganisha sauti za herufi mwambatano (sh, th, mb, ny, ng, nd, kw, mw) na irabu ili kuunda silabi",
+"periods": null
+},
+{
+"text": "(g) Kuunganisha silabi kwa kutamka ili kuunda maneno",
+"periods": null
+},
+{
+"text": "(h) Kuhusianisha sauti na herufi za irabu (a, e, i, o, u) katika matini",
+"periods": null
+},
+{
+"text": "(i) Kuhusianisha sauti na herufi za konsonanti (b, m, k, d, n); (l, t, p, s, f, j g, y, z, h, r, w, v, ch) katika matini",
+"periods": null
+},
+{
+"text": "(j) Kuhusianisha sauti na herufi za konsonanti mwambatano (sh, th, mb, ny, ng, nd, kw, mw) katika matini",
+"periods": null
+},
+{
+"text": "(k) Kutambua majina ya namba",
+"periods": null
+},
+{
+"text": "(l) Kuunganisha silabi kusoma maneno",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.1",
+"text": "Appreciate one’s culture and that of other people",
+"periods": 18,
+"items": [
+{
+"text": "(a) Identify Tanzanian foods",
+"periods": 18
+},
+{
+"text": "(b) Identify various Tanzania clothing",
+"periods": null
+},
+{
+"text": "(c) Dance and sing traditional songs",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.2",
+"text": "Demonstrate religious tolerance",
+"periods": 14,
+"items": [
+{
+"text": "(a) Explain beliefs of other people",
+"periods": 14
+},
+{
+"text": "(b) Participate in social activities",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.3",
+"text": "Demonstrate ethical practices",
+"periods": 10,
+"items": [
+{
+"text": "(a) Perform action that demonstrate ethics",
+"periods": 10
+},
+{
+"text": "(b) Perform activities showing care for others",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.4",
+"text": "Create simple works of arts",
+"periods": 14,
+"items": [
+{
+"text": "(a) Use hands to plait, draw and paint",
+"periods": 14
+},
+{
+"text": "(b) Sing songs and recite poems",
+"periods": null
+},
+{
+"text": "(c) Perform simple dances and plays",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.5",
+"text": "Participate in various sports",
+"periods": 14,
+"items": [
+{
+"text": "(a) Perform simple body exercises (agility, body balance and coordination)",
+"periods": 14
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "7.0",
+"main": "Care for health and environment",
+"no": "7.1",
+"text": "Care for one’s health and that of immediate community",
+"periods": 35,
+"items": [
+{
+"text": "(a) Care for one’s body",
+"periods": 35
+},
+{
+"text": "(b) Care for one’s clothes",
+"periods": null
+}
+]
+},
+{
+"level": "P1",
+"mainNo": "7.0",
+"main": "Care for health and environment",
+"no": "7.2",
+"text": "Protect oneself from hazardous environment/ situations/ substances",
+"periods": 35,
+"items": [
+{
+"text": "(a) Avoid hazardous environments/ situations/ substances",
+"periods": 35
+},
+{
+"text": "(b) Identify road signs and other safety signs in the environment",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "1.0",
+"main": "Listening and speaking",
+"no": "1.1",
+"text": "Develop listening and speaking skills in different contexts",
+"periods": 105,
+"items": [
+{
+"text": "(a) Use singular and plural forms of names of objects found in the environment",
+"periods": 105
+},
+{
+"text": "(b) Express days of the week and months of the year",
+"periods": null
+},
+{
+"text": "(c) Listen and respond to simple sentences and stories",
+"periods": null
+},
+{
+"text": "(d) Engage in simple conversations (asking and responding to questions, making polite requests, taking turns to talk about simple daily activities etc.)",
+"periods": null
+},
+{
+"text": "(e) Engage in telling grade appropriate stories (Target: tell, role-play)",
+"periods": null
+},
+{
+"text": "(f) Narrate simple events",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.1",
+"text": "Recognise letter sounds",
+"periods": 81,
+"items": [
+{
+"text": "(a) Manipulate phonemes (delete, add and substitute sound to form new words)",
+"periods": 81
+},
+{
+"text": "(b) Pronounce words with long vowel sounds (e.g. cake, rain, boat, toad, wild, stake, fume, roll, moth, slow and stay)",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.2",
+"text": "Recognise letter-sound relationships",
+"periods": 72,
+"items": [
+{
+"text": "(a) Read words with three consonant clusters (e.g. str, spr, scr)",
+"periods": 72
+},
+{
+"text": "(b) Identify and recite similar and different sounds in words ( e.g. bad-bat, sip-zip)",
+"periods": null
+},
+{
+"text": "(c) Read simple words with familiar suffixes (e.g. –s, –es, – ing, –ed)",
+"periods": null
+},
+{
+"text": "(d) Read multisyllabic words (e.g. watermelon-4, sunflower-3, & oven-2)",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.3",
+"text": "Read fluently",
+"periods": 72,
+"items": [
+{
+"text": "(a) Read grade appropriate stories with appropriate pronunciation, tone and speed (40 words per minute)",
+"periods": 72
+},
+{
+"text": "(b) Read grade appropriate stories and observe basic punctuation marks (target: full stop, comma, exclamation and question marks)",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "2.0",
+"main": "Reading",
+"no": "2.4",
+"text": "Read for comprehension",
+"periods": 20,
+"items": [
+{
+"text": "(a) Read grade appropriate texts for comprehension",
+"periods": 20
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "3.0",
+"main": "Writing",
+"no": "3.1",
+"text": "Develop basic writing skills",
+"periods": 100,
+"items": [
+{
+"text": "(a) Write texts using joined-up hand writing",
+"periods": 100
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "3.0",
+"main": "Writing",
+"no": "3.2",
+"text": "Apply basic writing skills",
+"periods": 75,
+"items": [
+{
+"text": "(a) Write simple texts and use basic punctuation marks (target: full stops, comma and question marks)",
+"periods": 75
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "4.0",
+"main": "Arithmetic",
+"no": "4.1",
+"text": "Use mathematical operations",
+"periods": 200,
+"items": [
+{
+"text": "(a) Identify numbers in hundreds",
+"periods": 200
+},
+{
+"text": "(b) Add numbers to get a sum not exceeding 999",
+"periods": null
+},
+{
+"text": "(c) Subtract numbers in the range of 100-999",
+"periods": null
+},
+{
+"text": "(d) Arrange real objects in groups of equal numbers to demonstrate the concept of multiplication as repeated addition",
+"periods": null
+},
+{
+"text": "(e) Multiply single digit numbers not exceeding 100",
+"periods": null
+},
+{
+"text": "(f) Arrange real objects in groups of equal numbers to demonstrate the concept of division as repeated subtraction",
+"periods": null
+},
+{
+"text": "(g) Divide numbers not exceeding100 without a remainder",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "4.0",
+"main": "Arithmetic",
+"no": "4.2",
+"text": "Use mathematical concepts",
+"periods": 45,
+"items": [
+{
+"text": "(a) Recognise the concepts of whole, half, quarter, third and two-thirds using real objects and ICT tools",
+"periods": 45
+},
+{
+"text": "(b) Identify parts of a whole thing using common fraction symbols ( 1, 1 ect.) 4 2",
+"periods": null
+},
+{
+"text": "(c) Use measurement skills in various contexts",
+"periods": null
+},
+{
+"text": "(d) Use basic shapes to create complex shapes",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "5.0",
+"main": "Kumudu stadi za awali za Kiswahili",
+"no": "5.1",
+"text": "Kumudu stadi za awali za kusikiliza na kuzungumza katika miktadha mbalimbali",
+"periods": 105,
+"items": [
+{
+"text": "(a) Kusimulia matukio sahili katika mktadha wa nyumbani na shuleni",
+"periods": 105
+},
+{
+"text": "(b) Kusikiliza hadithi sahili na kujibu maswali",
+"periods": null
+},
+{
+"text": "(c) Kusimulia hadithi sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "5.0",
+"main": "Kumudu stadi za awali za Kiswahili",
+"no": "5.2",
+"text": "Kumudu stadi za awali za kusoma",
+"periods": null,
+"items": [
+{
+"text": "(a) Kuunganisha sauti za herufi mwambatano na irabu kusoma silabi (gh, ng’, nj, sw, bw, jw, tw, dh, pw, vw, fw, mw, ml, kw, pw, ft, lw)",
+"periods": null
+},
+{
+"text": "(b) Kutamka maneno yenye silabi mwambatano",
+"periods": null
+},
+{
+"text": "(c) Kutambua sauti za herufi zinazounda maneno katika sentensi",
+"periods": null
+},
+{
+"text": "(d) Kuhusianisha sauti na herufi (sh, th, mb, ny, ng, nd, kw, mw) katika matini",
+"periods": null
+},
+{
+"text": "(e) Kuunganisha sauti za herufi mwambatano zenye konsonanti mbili na irabu ili kuunda silabi (gh, ng’, nz, nj, sw, bw, gw, tw, dh, pw, vy, fy, my, ml, kw, py, ft, lw) na kutambulisha herufi mwambatano zenye maneno ya kukopa (bl, sp, sk, pt, st, ks, kt, pl, al, ar)",
+"periods": null
+},
+{
+"text": "(f) Kuunganisha silabi kusoma maneno yenye konsonanti tatu na irabu (njwa, nywe, shwa, ngwa, mbwe, ndwa, ng’we)",
+"periods": null
+},
+{
+"text": "(g) Kutambua majina ya siku za wiki na miezi",
+"periods": null
+},
+{
+"text": "(h) Kuunganisha maneno na kusoma sentensi",
+"periods": null
+},
+{
+"text": "(i) Kusoma kifungu cha habari/ hadithi sahili (kwa umri sahihi) kwa kuzingatia matamshi sahihi ya maneno",
+"periods": null
+},
+{
+"text": "(j) Kusoma kifungu cha habari/ hadithi linganifu kwa kasi stahiki (maneno 50 kwa dakika)",
+"periods": null
+},
+{
+"text": "(k) Kusoma kifungu cha habari/ hadithi sahili kwa hisia na kwa kuzingatia alama za uandishi (nukta, mkato, alama ya kuuliza, na alama ya mshangao)",
+"periods": null
+},
+{
+"text": "(l) Kutafsiri na kuelezea picha",
+"periods": null
+},
+{
+"text": "(m) Kubashiri maudhui ya matini kwa usahihi kwa kutumia picha, jina la hadithi na msamiati uliochaguliwa",
+"periods": null
+},
+{
+"text": "(n) Kusikiliza habari/hadithi sahili kwa ufahamu",
+"periods": null
+},
+{
+"text": "(o) Kusoma kifungu cha habari/ hadithi sahihi kwa ufahamu",
+"periods": null
+},
+{
+"text": "(p) Kusoma kwa sauti hadithi kifungu cha habari",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.1",
+"text": "Appreciate one’s culture and that of other people",
+"periods": 20,
+"items": [
+{
+"text": "(a) Identify a variety of Tanzanian traditional houses",
+"periods": 20
+},
+{
+"text": "(b) Identify various Tanzanian socio-cultural activities",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.2",
+"text": "Demonstrate religious tolerance",
+"periods": 15,
+"items": [
+{
+"text": "(a) Relate faith and values",
+"periods": 15
+},
+{
+"text": "(b) Appreciate actions associated with other people’s beliefs",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.3",
+"text": "Create simple works of arts",
+"periods": 25,
+"items": [
+{
+"text": "(a) Use hand to weave, mould, sew and decorate",
+"periods": 25
+},
+{
+"text": "(b) Recite panegyric songs and perform comedy",
+"periods": null
+},
+{
+"text": "(c) Perform simple dances and plays",
+"periods": null
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "6.0",
+"main": "Appreciate culture, arts and sports",
+"no": "6.4",
+"text": "Participate in various sports",
+"periods": 10,
+"items": [
+{
+"text": "(a) Play simple games",
+"periods": 10
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "7.0",
+"main": "Care for health and environment",
+"no": "7.1",
+"text": "Observe objects found in the environment",
+"periods": 30,
+"items": [
+{
+"text": "(a) Make simple observations of living and non-living things found in the immediate environment",
+"periods": 30
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "7.0",
+"main": "Care for health and environment",
+"no": "7.2",
+"text": "Protect oneself from hazardous environment/ situation substances",
+"periods": 20,
+"items": [
+{
+"text": "(a) Observe road signs and other safety signs in the environment",
+"periods": 20
+}
+]
+},
+{
+"level": "P2",
+"mainNo": "7.0",
+"main": "Care for health and environment",
+"no": "7.3",
+"text": "Demonstrate positive attitude towards the environment",
+"periods": 20,
+"items": [
+{
+"text": "(a) Participate in environmental activities at school",
+"periods": 20
+}
+]
+}
+]
+},
+{
+"ref": "MATH",
+"title": "Mathematics Standard III-VI (2023)",
+"source": "Std III-VI - Mathematics (English).pdf",
+"language": "en",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.1",
+"text": "Demonstrate an understanding of the concept of numbers",
+"periods": 52,
+"items": [
+{
+"text": "(a) Recognise the value of a digit in a multi-digit whole number",
+"periods": 52
+},
+{
+"text": "(b) Read and write multi-digit whole numbers",
+"periods": null
+},
+{
+"text": "(c) Compare whole numbers using symbols =, <, and >",
+"periods": null
+},
+{
+"text": "(d) Identify sequences in whole numbers",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.2",
+"text": "Demonstrate an understanding of basic numerical operations",
+"periods": 30,
+"items": [
+{
+"text": "(a) Addition and subtraction of whole numbers",
+"periods": 30
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.3",
+"text": "Demonstrate an understanding of measurements",
+"periods": 22,
+"items": [
+{
+"text": "(a) Recognise measurements of length, mass and volume",
+"periods": 22
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.4",
+"text": "Demonstrate an understanding of elementary geometry",
+"periods": 30,
+"items": [
+{
+"text": "(a) Explain the concept of shape",
+"periods": null
+},
+{
+"text": "(b) Explain a point, line, line segment, and a ray",
+"periods": 30
+},
+{
+"text": "(c) Construct plain figures using points, lines and line segments",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.5",
+"text": "Demonstrate an understanding of elementary mathematical skills",
+"periods": 26,
+"items": [
+{
+"text": "(a) Use division of objects to explain the concept of fraction",
+"periods": 26
+},
+{
+"text": "(b) Addition and subtraction of fractions of the same denominator",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary application of mathematics",
+"no": "2.1",
+"text": "Demonstrate an understanding of the mathematics of time",
+"periods": 36,
+"items": [
+{
+"text": "(a) Describe units of measuring time",
+"periods": 36
+},
+{
+"text": "(b) Describe time in 12-hour format",
+"periods": null
+},
+{
+"text": "(c) Describe time in 24-hour format",
+"periods": null
+},
+{
+"text": "(d) Recognise number of hours in a day, days in a week, weeks in a month, months in a year",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary application of mathematics",
+"no": "2.2",
+"text": "Demonstrate an understanding of financial mathematics",
+"periods": 38,
+"items": [
+{
+"text": "(a) Recognise the denomination of Tanzanian currency in shillings and cents",
+"periods": 38
+},
+{
+"text": "(b) Addition and subtraction of Tanzanian currency",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.1",
+"text": "Demonstrate an understanding of the concept of numbers",
+"periods": 12,
+"items": [
+{
+"text": "(a) Recognise Roman numbers (up to M)",
+"periods": 12
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.2",
+"text": "Demonstrate an understanding of basic numerical operations",
+"periods": 26,
+"items": [
+{
+"text": "(a) Multiplication and division of whole numbers",
+"periods": 26
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.3",
+"text": "Demonstrate an understanding of measurements",
+"periods": 38,
+"items": [
+{
+"text": "(a) Convert between the various components of the measures of length, mass, and volume (millimetres to kilometres, miligrams to tonnes, and millilitres to litres)",
+"periods": 38
+},
+{
+"text": "(b) Addition and subtraction of measurements for length, mass and volume",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.4",
+"text": "Demonstrate an understanding of elementary geometry",
+"periods": 32,
+"items": [
+{
+"text": "(a) Calculate the perimeters and areas of plane figures (rectangle, square and triangle)",
+"periods": 32
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.5",
+"text": "Demonstrate an understanding of elementary mathematical skills",
+"periods": 66,
+"items": [
+{
+"text": "(a) Compare fractions by using =, <, and > signs",
+"periods": 66
+},
+{
+"text": "(b) Multiplication and division of fractions",
+"periods": null
+},
+{
+"text": "(c) Explain the concept of decimals",
+"periods": null
+},
+{
+"text": "(d) Addition and subtraction of decimals",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary application of mathematics",
+"no": "2.1",
+"text": "Demonstrate an understanding of the mathematics of time",
+"periods": 34,
+"items": [
+{
+"text": "(a) Convert between the components of measures of time (seconds to hours)",
+"periods": 34
+},
+{
+"text": "(b) Addition and subtraction of time",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary application of mathematics",
+"no": "2.2",
+"text": "Demonstrate an understanding of financial mathematics",
+"periods": 26,
+"items": [
+{
+"text": "(a) Multiplication and division of Tanzanian currency",
+"periods": 26
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.1",
+"text": "Demonstrate an understanding of measurements",
+"periods": 44,
+"items": [
+{
+"text": "(a) Multiplication of measurements for length, mass and volume",
+"periods": 44
+},
+{
+"text": "(b) Division of measurements for length, mass and volume",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.2",
+"text": "Demonstrate an understanding of elementary geometry",
+"periods": 62,
+"items": [
+{
+"text": "(a) Explain the concept of pi",
+"periods": 62
+},
+{
+"text": "(b) Calculate the circumference of a circle",
+"periods": null
+},
+{
+"text": "(c) Calculate the area of a circle",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.3",
+"text": "Demonstrate an understanding of elementary of mathematical skills",
+"periods": 68,
+"items": [
+{
+"text": "(a) Identify even, odd and prime numbers",
+"periods": 68
+},
+{
+"text": "(b) Calculate factors and multiples of numbers not exceeding three digits",
+"periods": null
+},
+{
+"text": "(c) Calculate the Lowest Common Multiple (LCM) and Greatest Common Factor (GCF) of whole numbers",
+"periods": null
+},
+{
+"text": "(d) Addition and subtraction of fractions with different denominators",
+"periods": null
+},
+{
+"text": "(e) Addition and subtraction of mixed fractions",
+"periods": null
+},
+{
+"text": "(f) Multiplication of decimals",
+"periods": null
+},
+{
+"text": "(g) Divide numbers to obtain an answer with no more than three decimal places",
+"periods": null
+},
+{
+"text": "(h) Convert percentages into fractions and decimals",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.4",
+"text": "Demonstrate an elementary understanding of algebra",
+"periods": 54,
+"items": [
+{
+"text": "(a) Explain the concept of algebra",
+"periods": 54
+},
+{
+"text": "(b) Identify term, variables, and coefficients in algebraic expressions",
+"periods": null
+},
+{
+"text": "(c) Write algebraic equations",
+"periods": null
+},
+{
+"text": "(d) Simplify algebraic expressions using the right sequence of mathematical operations",
+"periods": null
+},
+{
+"text": "(e) Calculate simple equations",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary application of mathematics",
+"no": "2.1",
+"text": "Demonstrate an understanding of financial mathematics",
+"periods": null,
+"items": [
+{
+"text": "(a) Solve problems involving sale and purchase",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.1",
+"text": "Demonstrate an understanding of measurements",
+"periods": 18,
+"items": [
+{
+"text": "(a) Solve problems involving distance and time",
+"periods": 18
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.2",
+"text": "Demonstrate an understanding of elementary geometry",
+"periods": 102,
+"items": [
+{
+"text": "(a) Calculate the area and volume of three dimensional figures (rectangular parallelepiped, square parallelepiped and cylinder)",
+"periods": 102
+},
+{
+"text": "(b) Calculate degree of angles in plane figures (triangle, rectangle and circle)",
+"periods": null
+},
+{
+"text": "(c) Describe types of triangles and Pythagoras’ theorem",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of elementary mathematical skills",
+"no": "1.3",
+"text": "Demonstrate an understanding of elementary mathematical skills",
+"periods": 52,
+"items": [
+{
+"text": "(a) Calculate the square of a number",
+"periods": 52
+},
+{
+"text": "(b) Calculate the square root of a number",
+"periods": null
+},
+{
+"text": "(c) Explain the concept of integers",
+"periods": null
+},
+{
+"text": "(d) Perform operations in integers",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary application of mathematics",
+"no": "2.1",
+"text": "Demonstrate an understanding of elementary statistics and its applications",
+"periods": 62,
+"items": [
+{
+"text": "(a) Explain the concept of statistics",
+"periods": 62
+},
+{
+"text": "(b) Find the mean, median and mode of ungrouped data",
+"periods": null
+},
+{
+"text": "(c) Interpretation and presentation of data using statistical diagrams (pie charts and histograms)",
+"periods": null
+}
+]
+}
+]
+},
+{
+"ref": "SCI",
+"title": "Science Standard III-VI (2023)",
+"source": "Std III-VI - Science (English).pdf",
+"language": "en",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.1",
+"text": "Demonstrate an elementary understanding of scientific theories",
+"periods": 44,
+"items": [
+{
+"text": "(a) Explain the concept of science (meaning and branches of science)",
+"periods": 44
+},
+{
+"text": "(b) Describe the human sensory organs",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.2",
+"text": "Make simple scientific observations",
+"periods": 44,
+"items": [
+{
+"text": "(a) Identify different objects in the environment",
+"periods": 44
+},
+{
+"text": "(b) Identify living and non-living things",
+"periods": null
+},
+{
+"text": "(c) Identify the main groups of living things (plants and animals)",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary scientific skills",
+"no": "2.1",
+"text": "Conduct simple scientific experiments",
+"periods": 43,
+"items": [
+{
+"text": "(a) Describe basic steps in conducting a scientific investigations",
+"periods": 43
+},
+{
+"text": "(b) Conduct elementary experiments on various living and non-living things",
+"periods": null
+},
+{
+"text": "(c) Care for living things in the environment",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of ICT skills",
+"no": "3.1",
+"text": "Use ICT for learning",
+"periods": 44,
+"items": [
+{
+"text": "(a) Use ICT to play simple games that promote ability to explain scientific phenomena and concepts",
+"periods": 44
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.1",
+"text": "Demonstrate an elementary understanding of scientific theories",
+"periods": 30,
+"items": [
+{
+"text": "(a) Explain the basic principles of health (balanced diet, physical exercises, personal and environmental hygiene, safety signs and symbols)",
+"periods": 30
+},
+{
+"text": "(b) Describe types of common human diseases (Modes of transimission, causes, control and preventions)",
+"periods": null
+},
+{
+"text": "(c) Explain the concept of matter (types and characteristics)",
+"periods": null
+},
+{
+"text": "(d) Explain the concept of combustion (meaning, causes and effects)",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.2",
+"text": "Make simple scientific observations",
+"periods": 30,
+"items": [
+{
+"text": "(a) Investigate the life cycle of insect vectors (housefly, cockroach and mosquito)",
+"periods": 30
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.3",
+"text": "Demonstrate a basic understanding of types of energy and their uses",
+"periods": 30,
+"items": [
+{
+"text": "(a) Describe types of energy (heat, light and sound energy) and their uses",
+"periods": 30
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary scientific skills",
+"no": "2.1",
+"text": "Conduct elementary scientific experiments",
+"periods": 30,
+"items": [
+{
+"text": "(a) Conduct simple experiments to investigate the states of matter",
+"periods": 30
+},
+{
+"text": "(b) Conduct simple experiments to demostrate importance of air in combustion",
+"periods": null
+},
+{
+"text": "(c) Conduct simple experiments on heat, light and sound energy",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of elementary ICT skills",
+"no": "3.1",
+"text": "Use ICT for learning",
+"periods": 25,
+"items": [
+{
+"text": "(a) Use ICT to draw and arrange various shapes in a logical sequence",
+"periods": 25
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "4.0",
+"main": "Design simple computer programme",
+"no": "4.1",
+"text": "Design simple computer programme",
+"periods": 30,
+"items": [
+{
+"text": "(a) Develop simple games that use a single shape by using block-based programming language",
+"periods": 30
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.1",
+"text": "Demonstrate an elementary understanding of scientific theories",
+"periods": 45,
+"items": [
+{
+"text": "(a) Explain the human digestive system (meaning, parts and their functions)",
+"periods": 45
+},
+{
+"text": "(b) Explain the human reproductive systems",
+"periods": null
+},
+{
+"text": "(c) Explain the growth in animals and plants",
+"periods": null
+},
+{
+"text": "(d) Explain the stages of development of the human body",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.2",
+"text": "Demonstrate a basic understanding of types of energy and their uses",
+"periods": 45,
+"items": [
+{
+"text": "(a) Explain the concept of magnetism (meaning, properties and applications)",
+"periods": 45
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary scientific skills",
+"no": "2.1",
+"text": "Conduct elementary scientific experiments",
+"periods": 45,
+"items": [
+{
+"text": "(a) Conduct simple scientific experiments on growth in animals and plants",
+"periods": 45
+},
+{
+"text": "(b) Conduct simple experiments to demonstrate magnetic properties",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Design simple computer programme",
+"no": "3.1",
+"text": "Design simple computer programme",
+"periods": 40,
+"items": [
+{
+"text": "(a) Develop simple games that use two shapes by using block-based programming language",
+"periods": 40
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.1",
+"text": "Demonstrate elementary understanding of scientific theories",
+"periods": 45,
+"items": [
+{
+"text": "(a) Explain respiratory systems in animals and plants (meaning, parts and mechanisms)",
+"periods": 45
+},
+{
+"text": "(b) Explain the concept of acids and bases (meaning, properties, source and uses)",
+"periods": null
+},
+{
+"text": "(c) Explain the concept of a machine (meaning, type and uses)",
+"periods": null
+},
+{
+"text": "(d) Explain the concepts of floating and sinking",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of scientific theories",
+"no": "1.2",
+"text": "Demostrarte a basic understanding of types of energy and their uses",
+"periods": 45,
+"items": [
+{
+"text": "(a) Explain the concept of electricity (meaning, sources and uses)",
+"periods": 45
+},
+{
+"text": "(b) Describe simple electric circuit (parts, type, symbols and constructions)",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of elementary scientific skills",
+"no": "2.1",
+"text": "Conduct elementary scientific experiments",
+"periods": 45,
+"items": [
+{
+"text": "(b) Conduct simple experiments about machines",
+"periods": null
+},
+{
+"text": "(c) Conduct simple experiments on floating or sinking",
+"periods": null
+},
+{
+"text": "(d) Conduct experiments on simple electric circuits",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Design simple computer programme",
+"no": "3.1",
+"text": "Design simple computer programme",
+"periods": 40,
+"items": [
+{
+"text": "(a) Develop simple games that use more than two shapes using a block-based programming languages",
+"periods": 40
+}
+]
+}
+]
+},
+{
+"ref": "ENG",
+"title": "English Standard III-VI (2023)",
+"source": "Std III-VI - English.pdf",
+"language": "en",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.1",
+"text": "Develop listening and speaking skills",
+"periods": 30,
+"items": [
+{
+"text": "(a) Write dictated words",
+"periods": 30
+},
+{
+"text": "(b) Listen and respond to questions based on simple stories from familiar contexts (home, school)",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.2",
+"text": "Develop phonemic awareness and pronunciation of English letters",
+"periods": 64,
+"items": [
+{
+"text": "(a) Read aloud simple short stories",
+"periods": 64
+},
+{
+"text": "(b) Read short, simple texts for comprehension",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.3",
+"text": "Use appropriate grammar and vocabulary both orally and in writing",
+"periods": 38,
+"items": [
+{
+"text": "(a) Use personal pronouns",
+"periods": 38
+},
+{
+"text": "(b) Express possession using the verbs have and has",
+"periods": null
+},
+{
+"text": "(c) Express routines and ongoing activities in school and home contexts (target: simple present tense, present continuous tense)",
+"periods": null
+},
+{
+"text": "(d) Use conjunctions in oral and written contexts (target: and, but)",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.1",
+"text": "Read a variety of simple texts appropriately",
+"periods": 56,
+"items": [
+{
+"text": "(a) Read two-syllable and grade-appropriate words",
+"periods": 56
+},
+{
+"text": "(b) Read multi-syllable and grade-appropriate words",
+"periods": null
+},
+{
+"text": "(c) Read aloud a variety of grade-level texts",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.1",
+"text": "Demonstrate knowledge of the basic features of spoken language",
+"periods": 56,
+"items": [
+{
+"text": "(a) Identify words with short and long vowels (e.g., ship/ sheep, full/ fool, to/too)",
+"periods": 56
+},
+{
+"text": "(b) Pronounce words with long vowel sounds with speed and fluency",
+"periods": null
+},
+{
+"text": "(c) Read short phrases and simple sentences with short and long vowels",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.1",
+"text": "Develop vocabulary by relating words with objects in the environment",
+"periods": 22,
+"items": [
+{
+"text": "(a) Associate words with objects found in different contexts (e.g., home, hospital, market, bus station)",
+"periods": 22
+},
+{
+"text": "(b) Match objects with their respective characteristics",
+"periods": null
+},
+{
+"text": "(c) Construct short sentences using vocabulary referring to objects found in different settings",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.2",
+"text": "Use appropriate grammar and vocabulary both orally and in writing",
+"periods": 40,
+"items": [
+{
+"text": "(a) Talk about quantity using appropriate words (e.g., some, many, any, much)",
+"periods": 40
+},
+{
+"text": "(b) Express location using appropriate prepositions of place and time (target: in, at, on, under, inside, outside, over, near)",
+"periods": null
+},
+{
+"text": "(c) Express past events (target: simple past tense, past continuous tense)",
+"periods": null
+},
+{
+"text": "(d) Use conjunctions in oral and written contexts (target: so, because)",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.1",
+"text": "Respond appropriately in a familiar communicative context",
+"periods": 42,
+"items": [
+{
+"text": "Participate in simple dialogues about school, market and home contexts",
+"periods": 42
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.2",
+"text": "Read appropriately a variety of simple texts",
+"periods": 30,
+"items": [
+{
+"text": "(a) Read aloud grade-level simple texts with appropriate intonation",
+"periods": 30
+},
+{
+"text": "(b) Read grade-level simple texts of different natures fluently",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.1",
+"text": "Demonstrate knowledge of the basic features of spoken language",
+"periods": 35,
+"items": [
+{
+"text": "(a) Pronounce words with similar sounds (e.g., see/sea, by/bye/buy, right/write)",
+"periods": 35
+},
+{
+"text": "(b) Convey simple ideas using words with similar sounds",
+"periods": null
+},
+{
+"text": "(c) Use words with opposite meanings in spoken contexts",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.2",
+"text": "Produce short written messages using appropriate grammar and vocabulary",
+"periods": 30,
+"items": [
+{
+"text": "(a) Identify the form and content of wishes and messages",
+"periods": 30
+},
+{
+"text": "(b) Write wishes and messages to parents, teachers and friends",
+"periods": null
+},
+{
+"text": "(c) Prepare a schedule of daily routines",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.3",
+"text": "Demonstrate basic skills in creative writing",
+"periods": 35,
+"items": [
+{
+"text": "(a) Write simple sentences using visual/ audiovisual stimuli (e.g., pictures, charts, diagrams)",
+"periods": 35
+},
+{
+"text": "(b) Write simple guided paragraphs using appropriate and punctuation marks (target: and, but, comma, full stop, question marks)",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.1",
+"text": "Develop vocabulary by relating words with objects in the environment",
+"periods": 22,
+"items": [
+{
+"text": "(a) Find synonyms and antonyms of targeted words in different texts",
+"periods": 22
+},
+{
+"text": "(b) Solve word puzzles from various media",
+"periods": null
+},
+{
+"text": "(c) Construct short passages using vocabulary referring to objects found in different settings",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.2",
+"text": "Use appropriate grammar and vocabulary both orally and in writing",
+"periods": 24,
+"items": [
+{
+"text": "(a) Compare things based on size, quality and quantity (e.g., big-bigger-biggest, much-more-most)",
+"periods": 24
+},
+{
+"text": "(b) Express location using appropriate prepositions of direction (target: towards, between, beside, from, into, onto, through, across)",
+"periods": null
+},
+{
+"text": "(c) Express possession using adjectives and pronouns (target: my, mine, yours, his, her, hers, their, theirs)",
+"periods": null
+},
+{
+"text": "(d) Express completed and unfinished actions (structure: present perfect, past perfect tense)",
+"periods": null
+},
+{
+"text": "(e) Use conjunctions in oral and written contexts (target: too… to, either …or, neither…nor)",
+"periods": null
+},
+{
+"text": "(f) Use active and passive voices to communicate in different contexts",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.1",
+"text": "Comprehend information presented orally",
+"periods": 30,
+"items": [
+{
+"text": "(a) Follow oral instructions to accomplish a task (e.g., operating equipment and making objects)",
+"periods": 30
+},
+{
+"text": "(b) Listen to grade-appropriate myths, fairy tales and fables presented through audio/ audiovisual channels and respond accordingly",
+"periods": null
+},
+{
+"text": "(c) Identify major and minor ideas in a story",
+"periods": null
+},
+{
+"text": "(d) Summarise issues found in the texts heard",
+"periods": null
+},
+{
+"text": "(e) Retell oral texts",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.2",
+"text": "Construct meaning from simple texts",
+"periods": 22,
+"items": [
+{
+"text": "(a) Read grade-appropriate texts to identify their basic components and contents",
+"periods": 22
+},
+{
+"text": "(b) Deduce the general meaning of a text",
+"periods": null
+},
+{
+"text": "(c) Summarise issues found in the texts read",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.3",
+"text": "Respond appropriately in a familiar communicative context",
+"periods": 24,
+"items": [
+{
+"text": "(a) Identify main points in conversations",
+"periods": 24
+},
+{
+"text": "(b) Respond to compliments, apologies, wishes and sympathy messages",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.4",
+"text": "Read appropriately a variety of simple texts",
+"periods": 24,
+"items": [
+{
+"text": "(a) Read aloud grade-level simple texts with the correct rhythm",
+"periods": 24
+},
+{
+"text": "(b) Reading grade-level prose and poetry with accuracy and appropriate speed",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communicate effectively in a different context",
+"no": "3.1",
+"text": "Demonstrate knowledge of the basic features of spoken language",
+"periods": 34,
+"items": [
+{
+"text": "(a) Practise connected speech by linking words(e.g. they’ll, won’t, there’s)",
+"periods": 34
+},
+{
+"text": "(b) Practise connected speech by deleting some sounds (e.g. next door –> nexdoor dad take –> datake most common –> moscommon used to –> useto",
+"periods": null
+},
+{
+"text": "(c) Use question tags",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communicate effectively in a different context",
+"no": "3.2",
+"text": "Produce short and basic oral messages with a logical structure and intelligible pronunciation",
+"periods": 10,
+"items": [
+{
+"text": "(a) Make statements about objects and ideas that can be judged as true or false",
+"periods": 10
+},
+{
+"text": "(b) Present simple speeches about self and family members on familiar topics (e.g. my pet, my brother, birthday party, wedding)",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communicate effectively in a different context",
+"no": "3.3",
+"text": "Produce short written messages using appropriate grammar and vocabulary",
+"periods": 20,
+"items": [
+{
+"text": "(a) Identify the form and content of appreciation, thanks and apology notes",
+"periods": 20
+},
+{
+"text": "(b) Write appreciation, thanks and apology notes to teachers, friends and parents",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communicate effectively in a different context",
+"no": "3.4",
+"text": "Demonstrate basic skills in creative writing",
+"periods": 14,
+"items": [
+{
+"text": "(a) Create a journal to record inspiring things (at home, at school, from TV and radio programmes, etc.)",
+"periods": 14
+},
+{
+"text": "(b) Devise a topic for a poem from the ideas recorded in a journal",
+"periods": null
+},
+{
+"text": "(c) Use basic figures of speech (simile, metaphor, personification) to write a four-line stanza",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.1",
+"text": "Develop vocabulary by relating words with objects in the environment",
+"periods": 20,
+"items": [
+{
+"text": "(a) Compose a dialogue using vocabulary referring to objects found in different settings",
+"periods": 20
+},
+{
+"text": "(b) Compose a story using vocabulary referring to objects found in different settings",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of basic English language skills",
+"no": "1.2",
+"text": "Use appropriate grammar and vocabulary both orally and in writing",
+"periods": 24,
+"items": [
+{
+"text": "(a) Express nationalities using appropriate adjectives (e.g. Tanzanian, Japanese, Norwegian)",
+"periods": 24
+},
+{
+"text": "(b) Use relative pronouns in appropriate contexts (e.g., who, whose, whom)",
+"periods": null
+},
+{
+"text": "(c) Express future actions (structure: will, shall, going to)",
+"periods": null
+},
+{
+"text": "(d) Use conjunctions in oral and written contexts (target: yet, despite, in spite of, so… that)",
+"periods": null
+},
+{
+"text": "(e) Express concession (target: although, though)",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.1",
+"text": "Comprehend information presented orally",
+"periods": 18,
+"items": [
+{
+"text": "(a) Report information heard from a speech",
+"periods": 18
+},
+{
+"text": "(b) Participate in dialogues on grade appropriate topical issues",
+"periods": null
+},
+{
+"text": "(c) Engage in oral discussions on topical issues (e.g. environment, gender, corruption)",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.2",
+"text": "Construct meaning from simple texts",
+"periods": 20,
+"items": [
+{
+"text": "(a) Interpret figurative and idiomatic language from a text (e.g. idioms, riddles, proverbs)",
+"periods": 20
+},
+{
+"text": "(b) Infer meaning from a text",
+"periods": null
+},
+{
+"text": "(c) Relate the content of a text with real life",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Comprehend oral and written information",
+"no": "2.3",
+"text": "Respond appropriately in a familiar communicative context",
+"periods": 20,
+"items": [
+{
+"text": "(a) Give an appropriate and logical conclusion to a conversation",
+"periods": 20
+},
+{
+"text": "(b) Debate on topical issues (e.g. gender, entrepreneurship, corruption, education)",
+"periods": null
+},
+{
+"text": "(c) Give appropriate responses to riddles",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.1",
+"text": "Demonstrate knowledge of the basic features of spoken language",
+"periods": 30,
+"items": [
+{
+"text": "(a) Express feelings using appropriate intonation patterns (e.g., surprise, shock, happiness, sadness)",
+"periods": 30
+},
+{
+"text": "(b) Use appropriate backchannels in conversations (e.g. so, well, right, uh-huh, wow, yeah, really)",
+"periods": null
+},
+{
+"text": "(c) Report messages received orally (virtually and face to face)",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.2",
+"text": "Produce short and basic oral messages with a logical structure and intelligible pronunciation",
+"periods": 20,
+"items": [
+{
+"text": "Engage in discussions on a variety of topical issues and defend arguments",
+"periods": 20
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.3",
+"text": "Produce short written messages using appropriate grammar and vocabulary",
+"periods": 28,
+"items": [
+{
+"text": "(a) Develop skills for taking notes from oral presentations",
+"periods": 28
+},
+{
+"text": "(b) Taking notes from various oral presentations (e.g. speech, lecture, discussion and audio/ audiovisual materials)",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Communicate effectively in different contexts",
+"no": "3.4",
+"text": "Demonstrate basic skills in creative writing",
+"periods": 30,
+"items": [
+{
+"text": "Develop a plan for a story (target: setting & plot)",
+"periods": 30
+}
+]
+}
+]
+},
+{
+"ref": "KIS",
+"title": "Kiswahili Darasa la III-VI (2023)",
+"source": "Std III-VI - Kiswahili.pdf",
+"language": "sw",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.1",
+"text": "Kutambua matamshi ya sauti mbalimbali katika silabi, maneno, sentensi na habari",
+"periods": 21,
+"items": [
+{
+"text": "(a) Kutamka sauti za herufi mwambatano ngw, ndw, njw, mbw na nzw",
+"periods": 21
+},
+{
+"text": "(b) Kutamka sauti mwambatano katika silabi, maneno, sentensi na habari",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.2",
+"text": "Kuendeleza mazungumzo katika miktadha mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kutumia msamiati unaohusiana na maisha ya kila siku katika kuanzisha na kuendeleza mazungumzo kwa kujiamini katika miktadha mbalimbali",
+"periods": 22
+},
+{
+"text": "(b) Kubaini maneno yenye maana sawa na kinyume katika mazungumzo",
+"periods": null
+},
+{
+"text": "(c) Kuelezea vitu vilivyomo kwenye mazingira katika umoja na wingi",
+"periods": null
+},
+{
+"text": "(d) Kuuliza na kujibu maswali",
+"periods": null
+},
+{
+"text": "(e) Kubadili kiimbo kulingana na hisia au muktadha wa mazungumzo",
+"periods": null
+},
+{
+"text": "(f) Kuanzisha na kumalizia vitendawili, methali na nahau katika mazungumzo",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.3",
+"text": "Kutumia maandishi katika mawasiliano kulingana na miktadha mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kuandika kifungu cha habari kwa kutumia alama za uakifishaji: nukta (.), mshangao (!), kiulizo (?) na mkato (,)",
+"periods": 22
+},
+{
+"text": "(b) Kuandika kifungu cha habari kwa kutumia viunganishi vya ushikamani",
+"periods": null
+},
+{
+"text": "(c) Kutumia alama za uakifishaji kwa usahihi wakati wa kuandika imla",
+"periods": null
+},
+{
+"text": "(d) Kutumia vihusishi (nyuma ya, mbele ya, juu ya, kando ya, chini ya, katikati ya na pembeni ya) katika uandishi",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.1",
+"text": "Kuonesha stadi za kusikiliza na kuelewa",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusikiliza mazungumzo kwa kuzingatia mambo ya msingi katika miktadha mbalimbali",
+"periods": 22
+},
+{
+"text": "(b) Kutumia maneno aliyoyasikia katika miktadha mingine ya mazungumzo",
+"periods": null
+},
+{
+"text": "(c) Kutumia kamusi kupata maana ya msamiati mpya uliojitokeza katika matini fupi sahili",
+"periods": null
+},
+{
+"text": "(d) Kujibu kwa usahihi maswali yanayotokana na matini",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.2",
+"text": "Kusoma matini kwa ufasaha na ufahamu",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusoma matini fupi na sahili kwa kasi mwafaka na matamshi sahihi",
+"periods": 22
+},
+{
+"text": "(b) Kusoma sentensi kwa kuzingatia kupanda na kushuka kwa mawimbi ya sauti",
+"periods": null
+},
+{
+"text": "(c) Kueleza ujumbe mkuu uliomo katika matini fupi aliyoisoma",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.1",
+"text": "Kuandika matini mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kuandika sentensi mbalimbali kwa usahihi",
+"periods": 22
+},
+{
+"text": "(b) Kupanga katika mtiririko sahihi sentensi zilizochanganywa",
+"periods": null
+},
+{
+"text": "(c) Kuandika matini fupi kwa kuzingatia mpangilio sahihi wa maneno na alama za uakifishaji",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.2",
+"text": "Kuchanganua mawazo yaliyowasilishwa katika matini mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kubainisha msamiati uliojitokeza katika matini fupi sahili",
+"periods": 22
+},
+{
+"text": "(b) Kuchambua mawazo makuu yanayojitokeza katika matini fupi sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.3",
+"text": "Kuonesha stadi za awali za ubunifu wa kazi mbalimbali za Kiswahili",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusimulia hadithi fupi sahili",
+"periods": 22
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.1",
+"text": "Kuendeleza mazungumzo katika miktadha mbalimbali",
+"periods": 38,
+"items": [
+{
+"text": "(a) Kulinganisha vitu kwa kutumia maneno (kuliko, zaidi ya, kama, mithili ya na mfano wa) katika miktadha mbalimbali",
+"periods": 38
+},
+{
+"text": "(b) Kusimulia matukio kwa kuzingatia njeo za wakati: uliopo (-na-), uliopita (-li-), ujao (-ta-); na hali timilifu (-me-) na mazoea (hu-)",
+"periods": null
+},
+{
+"text": "(c) Kujieleza kwa kujiamini",
+"periods": null
+},
+{
+"text": "(d) Kuunga mkono au kupinga wazo kwa hoja na mifano rahisi",
+"periods": null
+},
+{
+"text": "(e) Kutumia nahau na methali katika mazungumzo",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.2",
+"text": "Kutumia maandishi katika mawasiliano kulingana na miktadha mbalimbali",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kutunga matini sahili kwa kutumia alama za uakifishaji: kistari kifupi (-), mkwaju (/), mabano na funga na fungua semi (“ ”)",
+"periods": 30
+},
+{
+"text": "(b) Kutumia nyakati na hali kwa usahihi katika uandishi wa kifungu cha habari",
+"periods": null
+},
+{
+"text": "(c) Kuandika matini sahili kwa kuzingatia mtiririko sahihi wa mawazo",
+"periods": null
+},
+{
+"text": "(d) Kuandika barua ya kirafiki kwa kuzingatia muundo sahihi",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.1",
+"text": "Kuonesha stadi za kusikiliza na kuelewa",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kusikiliza hadithi",
+"periods": 30
+},
+{
+"text": "(b) Kubaini hisia za msimuliaji kutokana na kupanda na kushuka kwa mawimbi ya sauti",
+"periods": null
+},
+{
+"text": "(c) Kubaini ujumbe mkuu kutokana na hadithi aliyoisikiliza",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.2",
+"text": "Kusoma matini kwa ufasaha na ufahamu",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusoma matini fupi sahili kwa ufasaha",
+"periods": 22
+},
+{
+"text": "(b) Kujibu maswali kutokana na matini fupi aliyoisoma",
+"periods": null
+},
+{
+"text": "(c) Kutumia msamiati na semi mpya zilizomo kwenye matini fupi aliyoisoma",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.1",
+"text": "Kuwasilisha hoja kwa njia ya mazungumzo katika miktadha mbalimbali",
+"periods": 20,
+"items": [
+{
+"text": "(a) Kubaini msamiati au vifungu vya maneno vinavyotumika kujenga au kupinga hoja (mf. hoja yako ni nzuri lakini ..., ingawa unasema hivi, kuna ...)",
+"periods": 20
+},
+{
+"text": "(b) Kutoa maoni au mawazo kwa kutumia msamiati na vifungu vya maneno vinavyotumika kujenga au kupinga hoja",
+"periods": null
+},
+{
+"text": "(c) Kujenga hoja kwa mfuatano na ushikamani wa kimantiki",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.2",
+"text": "Kuchanganua mawazo yaliyowasilishwa katika matini mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusoma matini fupi sahili",
+"periods": 22
+},
+{
+"text": "(b) Kueleza maana ya semi mpya zilizojitokeza katika matini fupi sahili",
+"periods": null
+},
+{
+"text": "(c) Kuwasilisha mawazo makuu yaliyomo katika matini fupi sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.3",
+"text": "Kuonesha stadi za awali za ubunifu wa kazi mbalimbali za Kiswahili",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kutunga hadithi fupi sahili",
+"periods": 15
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.1",
+"text": "Kuendeleza mazungumzo katika miktadha mbalimbali",
+"periods": 21,
+"items": [
+{
+"text": "(a) Kutumia msamiati katika kusimulia matukio, habari na vitu mbalimbali kwa kujiamini",
+"periods": 21
+},
+{
+"text": "(b) Kubainisha nafsi (umoja na wingi) katika mazungumzo",
+"periods": null
+},
+{
+"text": "(c) Kutumia nahau na methali katika mazungumzo",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.2",
+"text": "Kutumia maandishi katika mawasiliano kulingana na miktadha mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kuandika kifungu cha habari kwa kuzingatia alama za uakifishaji: nuktapacha (:), nuktamkato (;), ritifaa (‘) na nuktakatishi (…)",
+"periods": 22
+},
+{
+"text": "(b) Kutumia msamiati sahihi katika uandishi wa insha kwa kuzingatia mada",
+"periods": null
+},
+{
+"text": "(c) Kuandika barua ya kiofisi kwa kuzingatia muundo sahihi",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.1",
+"text": "Kuonesha stadi za kusikiliza na kuelewa",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusimulia hadithi aliyoisikiliza kwa usahihi",
+"periods": 22
+},
+{
+"text": "(b) Kutafsiri ujumbe mkuu uliomo kwenye hadithi na mazingira halisi",
+"periods": null
+},
+{
+"text": "(c) Kuhusianisha mienendo ya wahusika waliomo katika hadithi na mazingira halisi",
+"periods": null
+},
+{
+"text": "(d) Kufafanua maana ya nahau na methali zilizomo katika hadithi kwa usahihi",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.2",
+"text": "Kusoma matini kwa ufasaha na ufahamu",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kusoma matini ndefu sahili",
+"periods": 22
+},
+{
+"text": "(b) Kuwasilisha mawazo makuu aliyoyasoma katika matini ndefu",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.1",
+"text": "Kuwasilisha hoja kwa njia ya mazungumzo katika miktadha mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kutoa hoja kwa kutumia msamiati unaoendana na muktadha mahususi wa mazungumzo",
+"periods": 22
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.2",
+"text": "Kuandika matini mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kuandika insha fupi kwa kuzingatia vipengele vya insha",
+"periods": 22
+},
+{
+"text": "(b) Kujibu barua ya kirafiki",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.3",
+"text": "Kuchanganua mawazo yaliyowasilishwa katika matini mbalimbali",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kuchambua mawazo mbalimbali yaliyojitokeza katika matini fupi sahili aliyoisoma",
+"periods": 22
+},
+{
+"text": "(b) Kueleza mawazo yaliyojitokeza katika matini fupi sahili kwa kuzungumza",
+"periods": null
+},
+{
+"text": "(c) Kufupisha habari alizozisoma katika matini fupi sahili kwa kuandika",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.4",
+"text": "Kuonesha stadi za awali za ubunifu wa kazi mbalimbali za Kiswahili",
+"periods": 22,
+"items": [
+{
+"text": "(a) Kutunga maigizo rahisi na mafupi kwa kuzingatia kanuni",
+"periods": 22
+},
+{
+"text": "(b) Kuigiza michezo sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.1",
+"text": "Kuendeleza mazungumzo katika miktadha mbalimbali",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kutumia msamiati katika mijadala mbalimbali kwa kujiamini",
+"periods": 30
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kuwasiliana katika miktadha mbalimbali",
+"no": "1.2",
+"text": "Kutumia maandishi katika mawasiliano kulingana na miktadha mbalimbali",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kubaini makosa ya kiuandishi katika matini",
+"periods": 30
+},
+{
+"text": "(b) Kusahihisha makosa ya kiuandishi katika matini",
+"periods": null
+},
+{
+"text": "(c) Kuandika risala na hotuba kwa kuzingatia muundo na muktadha",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa jambo alilolisikiliza au kulisoma",
+"no": "2.1",
+"text": "Kuonesha stadi za kusikiliza na kuelewa",
+"periods": 25,
+"items": [
+{
+"text": "(a) Kusikiliza habari mbalimbali na kunukuu mawazo makuu",
+"periods": 25
+},
+{
+"text": "(b) Kufupisha habari alizozisikiliza kwa kuzingatia mawazo makuu",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.1",
+"text": "Kuwasilisha hoja kwa njia ya mazungumzo katika miktadha mbalimbali",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kutumia msamiati mwafaka katika kupinga au kutetea hoja kwa kutoa mifano thabiti kulingana na muktadha",
+"periods": 30
+},
+{
+"text": "(b) Kutumia lugha ya mvuto katika kuwasilisha hoja",
+"periods": null
+},
+{
+"text": "(c) Kuhutubia kwa lugha fasaha katika miktadha ya shuleni",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.2",
+"text": "Kuchanganua mawazo yaliyowasilishwa katika matini mbalimbali",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kusoma mashairi na ngonjera mbalimbali",
+"periods": 30
+},
+{
+"text": "(b) Kuchambua mawazo yanayo jitokeza katika ngonjera na mashairi aliyoyasoma",
+"periods": null
+},
+{
+"text": "(c) Kusimulia mawazo yaliyomo katika ngonjera na mashairi aliyoyasoma",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kuwasilisha hoja kwa mazungumzo na kwa maandishi kulingana na muktadha",
+"no": "3.3",
+"text": "Kuonesha stadi za awali za ubunifu wa kazi mbalimbali za Kiswahili",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kutunga shairi na ngonjera",
+"periods": 30
+},
+{
+"text": "(b) Kutamba ngonjera na kughani mashairi",
+"periods": null
+}
+]
+}
+]
+},
+{
+"ref": "GEO",
+"title": "Geography and Environment Standard III-VI (2023)",
+"source": "Std III-VI - Geography and Environment (English).pdf",
+"language": "en",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of an elementary knowledge of maps and the solar system",
+"no": "1.1",
+"text": "Use maps in daily life",
+"periods": 30,
+"items": [
+{
+"text": "Explain the concept of geography and the environment (meaning, their relationship and significance)",
+"periods": 30
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of an elementary knowledge of the earth’s relief and the available resources",
+"no": "2.1",
+"text": "Demonstrate an elementary understanding of the earth’s relief",
+"periods": 42,
+"items": [
+{
+"text": "Explain the concept of the earth’s relief (meaning, main features-mountain, hills, plateaus, plains, basins and their distribution)",
+"periods": 42
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of an elementary knowledge of environmental conservation",
+"no": "3.1",
+"text": "Demonstrate an elementary understanding of environmental conservation",
+"periods": 70,
+"items": [
+{
+"text": "(a) Explain the relationship between human activities and environmental conservation (Agriculture, fishing, lumbering livestock keeping and mining)",
+"periods": 36
+},
+{
+"text": "(b) Describe methods of protecting environment (planting flowers and trees/lawn grass and various ways to tackle waste in the environment)",
+"periods": 34
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of an elementary knowledge of maps and the solar system",
+"no": "1.1",
+"text": "Use maps in daily life",
+"periods": 154,
+"items": [
+{
+"text": "(a) Show the direction of different objects using the four and eight main cardinal points of the earth (recognise four cardinal points, draw four cardinal points, use four cardinal points to show directions, recognise eight cardinal points, use eight cardinal points to show direction)",
+"periods": 30
+},
+{
+"text": "(b) Explain the concept of map (meaning, characteristics and significance)",
+"periods": 13
+},
+{
+"text": "(c) Draw a simple map to show the classroom environment",
+"periods": 21
+},
+{
+"text": "(d) Draw simple maps of the school, ward, district, region and Tanzania",
+"periods": 34
+},
+{
+"text": "(e) Use a simple map in determining a location, direction, distance and giving and following instructions",
+"periods": 23
+},
+{
+"text": "(f) Use map of Tanzania to show administrative boundaries (regions) and earth’s relief (mountains valleys, great rivers, lakes and oceans)",
+"periods": 33
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of an elementary knowledge of the earth’s relief and the available resources",
+"no": "1.1",
+"text": "Demonstrate an elementary understanding of the major natural resources of Tanzania",
+"periods": 22,
+"items": [
+{
+"text": "Describe the distribution of the major natural resources of Tanzania",
+"periods": 22
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of an elementary knowledge of the earth’s relief and the available resources",
+"no": "1.2",
+"text": "Demonstrate an elementary understanding of the relationship between natural resources and development",
+"periods": 20,
+"items": [
+{
+"text": "(a) Describe the relationship between the distribution of natural resources and development (forestry: tourism, beekeeping, logging; rivers/lakes/ sea: fishing, transport, agriculture; land: agriculture, pastoralism and mining)",
+"periods": 20
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of an elementary knowledge of human geography",
+"no": "2.1",
+"text": "Demonstrate an elementary understanding of the relationship between population distribution and resource utilisation",
+"periods": 44,
+"items": [
+{
+"text": "(a) Describe the geographical factors that influence population distribution",
+"periods": 22
+},
+{
+"text": "(b) Describe the relationship between population distribution, resource utilisation and environmental conservation",
+"periods": 22
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of an elementary knowledge of environmental conservation",
+"no": "3.1",
+"text": "Demonstrate an elementary understanding of the concept of climate and its relationship with economic activities",
+"periods": 66,
+"items": [
+{
+"text": "(a) Explain the concept of weather (meaning, elements of weather, and instruments used to measure and record weather elements)",
+"periods": 22
+},
+{
+"text": "(b) Measure and record temperature, humidity, rain, wind and pressure",
+"periods": 22
+},
+{
+"text": "(c) Describe the relationship between weather and economic activities",
+"periods": 22
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Demonstrate mastery of an elementary knowledge of maps and the solar system",
+"no": "1.1",
+"text": "Demonstrate an elementary understanding of the solar system",
+"periods": 36,
+"items": [
+{
+"text": "Describe the concept solar system (meaning, importance, the planets and their arrangement and other heavenly bodies)",
+"periods": 36
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Demonstrate mastery of an elementary knowledge of the earth’s relief and available resources",
+"no": "2.1",
+"text": "Identify features of the earth’s relief",
+"periods": 24,
+"items": [
+{
+"text": "Explain the relationship between the earth’s relief and natural vegetation",
+"periods": 24
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of an elementary knowledge of human geography",
+"no": "3.1",
+"text": "Demonstrate an elementary understanding of the sources of population and settlements data",
+"periods": 36,
+"items": [
+{
+"text": "(a) Describe the importance of population and settlements data",
+"periods": 20
+},
+{
+"text": "(b) Describe the sources of population and settlements data (census: meaning, types, characteristics and importance; registration of births and deaths; and immigration records)",
+"periods": 16
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "4.0",
+"main": "Demonstrate mastery of an elementary knowledge of environmental conservation",
+"no": "4.1",
+"text": "Demonstrate an elementary understanding of the concept of climate and its relationship with economic activities",
+"periods": 40,
+"items": [
+{
+"text": "(a) Explain the concept of climate and factors that affect it",
+"periods": 20
+},
+{
+"text": "(b) Describe the relationship between climate, population distribution and economic activities",
+"periods": 20
+}
+]
+}
+]
+},
+{
+"ref": "HIST",
+"title": "Historia ya Tanzania na Maadili Darasa la III-VI (2023)",
+"source": "Std III-VI - Historia ya Tanzania na Maadili.pdf",
+"language": "sw",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kulinda Historia ya Tanzania, urithi na maadili ya Taifa",
+"no": "1.1",
+"text": "Kumudu dhana ya Historia ya Tanzania, urithi na maadili",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kueleza dhana ya Historia ya Tanzania, urithi na maadili (maana, umuhimu)",
+"periods": 10
+},
+{
+"text": "(b) Kubaini vitendo vya kimaadili na umuhimu wake",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kulinda Historia ya Tanzania, urithi na maadili ya Taifa",
+"no": "1.2",
+"text": "Kumudu maarifa ya jamii inayomzunguka",
+"periods": 50,
+"items": [
+{
+"text": "(a) Kubaini wajibu na haki zake katika familia na shuleni",
+"periods": 50
+},
+{
+"text": "(b) Kuonesha matendo ya kuheshimu wengine, kutii sheria, kujithamini, kujali na kushirikiana na watu wengine nyumbani na shuleni",
+"periods": null
+},
+{
+"text": "(c) Kueleza maarifa na ujuzi wa asili wa jamii inayomzunguka (katika kilimo, utunzaji wa mazingira, dawa na dini)",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kulinda Historia ya Tanzania, urithi na maadili ya Taifa",
+"no": "1.3",
+"text": "Kutumia maarifa na ujuzi wa asili wa jamii inayomzunguka kusimulia asili, urithi, na maadili ya jamii husika",
+"periods": 55,
+"items": [
+{
+"text": "(a) Kubaini asili za jamii zinazomzunguka (tamaduni, mavazi, chakula, ngoma, michezo na nyimbo)",
+"periods": 55
+},
+{
+"text": "(b) Kufafanua umuhimu wa maarifa, ujuzi wa asili na urithi wa kihistoria kwa maendeleo ya kiuchumi na kijamii",
+"periods": null
+},
+{
+"text": "(c) Kubaini mbinu za kutumia maarifa na ujuzi wa asili (katika kilimo, utunzaji wa mazingira, dawa, dini) katika kuboresha ustawi wa jamii",
+"periods": null
+},
+{
+"text": "(d) Kusimulia maarifa na ujuzi wa asili, asili za jamii na urithi wa kihistoria katika mazingira yake (mf. nyumbani, shuleni)",
+"periods": null
+},
+{
+"text": "(e) Kueleza thamani ya asili na urithi wa kihistoria katika jamii inayomzunguka",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kulinda Historia ya Tanzania, urithi na maadili ya Taifa",
+"no": "1.4",
+"text": "Kutathmini ushirikiano baina ya jamii za Kitanzania katika kujenga uhusiano wa kijamii na kiuchumi",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kueleza uhusiano wake na jamii inayomzunguka (nyumbani na shuleni)",
+"periods": 30
+},
+{
+"text": "(b) Kubaini umuhimu wa uhusiano na ushirikiano wa familia na rafiki zake",
+"periods": null
+},
+{
+"text": "(c) Kueleza matendo ya kijamii na kiuchumi yanayojenga uhusiano na ushirikiano katika jamii",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Kumudu Historia ya Tanzania na Maadili kabla ya ukoloni",
+"no": "2.1",
+"text": "Kuelezea mifumo mbalimbali ya utunzaji na ukuzaji wa maadili ya jamii za Kitanzania kabla ya ukoloni",
+"periods": 30,
+"items": [
+{
+"text": "(a) Kueleza mifumo ya uongozi katika ngazi ya familia, ukoo na shule",
+"periods": 30
+},
+{
+"text": "(b) Kueleza misingi ya ukuzaji na utunzaji wa maadili katika jamii inayomzunguka",
+"periods": null
+},
+{
+"text": "(c) Kueleza mchango wa uongozi wa ukoo katika utunzaji na ukuzaji wa maadili ya jamii kabla ya ukoloni",
+"periods": null
+},
+{
+"text": "(d) Kubaini wajibu wa jamii katika ujenzi wa maadili ya familia",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kulinda Historia ya Tanzania, urithi na maadili ya Taifa",
+"no": "1.1",
+"text": "Kumudu maarifa ya jamii inayomzunguka",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kutambua wajibu na haki zake katika jamii na Taifa",
+"periods": 10
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kumudu historia ya Tanzania na maadili kabla ya ukoloni",
+"no": "2.1",
+"text": "Kuelezea mifumo mbalimbali ya utunzaji na ukuzaji wa maadili ya jamii za Kitanzania kabla ya ukoloni",
+"periods": 56,
+"items": [
+{
+"text": "(a) Kueleza mamlaka mbalimbali za kijadi kabla ya ukoloni (uchifu, usultani, utemi nk)",
+"periods": 56
+},
+{
+"text": "(b) Kueleza michango ya mamlaka mbalimbali za kijadi katika utunzaji na ukuzaji wa maadili na maendeleo ya jamii kabla ya ukoloni",
+"periods": null
+},
+{
+"text": "(c) Kufafanua wajibu wake katika utunzaji na ukuzaji wa maadili ya jamii",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kumudu historia ya Tanzania na maadili kabla ya ukoloni",
+"no": "2.2",
+"text": "Kueleza maendeleo ya jamii za Kitanzania na maadili yake kabla ya ukoloni",
+"periods": 99,
+"items": [
+{
+"text": "(a) Kueleza dhana ya maendeleo ya jamii (maana, viashiria na umuhimu)",
+"periods": 99
+},
+{
+"text": "(b) Kueleza shughuli za maendeleo ya jamii na uchumi (mfano kilimo, ufugaji, uhunzi, ususi, ufinyanzi, uvuvi na makazi) na maadili yake kabla ya ukoloni",
+"periods": null
+},
+{
+"text": "(c) Kubaini michango ya shughuli za uchumi kabla ya ukoloni katika maendeleo ya jamii kabla ya ukoloni (mfano kilimo, ufugaji, uhunzi, ususi, ufinyanzi na uvuvi)",
+"periods": null
+},
+{
+"text": "(d) Kubaini ushirikiano na uhusiano wa kiuchumi na kijamii baina ya jamii kabla ya ukoloni",
+"periods": null
+},
+{
+"text": "(e) Kubaini mchango wa maendeleo ya sayansi na teknolojia ya asili katika kuendeleza shughuli za uchumi na maadili kabla ya ukoloni (mfano kilimo, ufugaji, uhunzi, ususi, ufinyanzi na uvuvi)",
+"periods": null
+},
+{
+"text": "(f) Kubaini wajibu wa jamii katika kuendeleza shughuli za uchumi na maadili yake kwa sasa (mfano kilimo, ufugaji, uhunzi, ususi, ufinyanzi na uvuvi)",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Kumudu historia ya ujenzi wa Taifa na maadili katika kipindi cha 1961-1966",
+"no": "3.1",
+"text": "Kutumia Alama za Taifa kama utambulisho wa Tanzania",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kueleza matumizi ya Alama za Taifa",
+"periods": 10
+},
+{
+"text": "(b) Kuthamini Alama za Taifa katika kutambulisha Tanzania Kitaifa na Kimataifa",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu Historia ya Tanzania na Maadili wakati wa ukoloni 1890-1960",
+"no": "1.1",
+"text": "Kuelezea historia ya Tanzania na urithi wakati wa ukoloni",
+"periods": 73,
+"items": [
+{
+"text": "(a) Kueleza dhana ya ukoloni",
+"periods": 73
+},
+{
+"text": "(b) Kufafanua mifumo ya kiutawala na kijamii wakati wa ukoloni (mfano mahakama, ulinzi, uongozi, afya na elimu)",
+"periods": null
+},
+{
+"text": "(c) Kufafanua athari za mifumo ya kikoloni katika maadili na urithi wa Kitanzania",
+"periods": null
+},
+{
+"text": "(d) Kutathmini athari za ukoloni katika mifumo ya mamlaka za kijadi katika jamii",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu Historia ya Tanzania na Maadili wakati wa ukoloni 1890-1960",
+"no": "1.2",
+"text": "Kulinganisha mabadiliko na mwendelezo wa maadili kabla na wakati wa ukoloni",
+"periods": 32,
+"items": [
+{
+"text": "(a) Kufafanua mabadiliko na mwendelezo wa maadili ya Kitanzania kabla na wakati wa ukoloni",
+"periods": 32
+},
+{
+"text": "(b) Kutathmini nafasi ya ukoloni katika kuleta mabadiliko na mwendelezo wa maadili",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu Historia ya Tanzania na Maadili wakati wa ukoloni 1890-1960",
+"no": "1.3",
+"text": "Kuelezea jitahada za kulinda maadili ya Kitanzania dhidi ya maadili ya kigeni yaliyoletwa wakati wa ukoloni",
+"periods": 20,
+"items": [
+{
+"text": "(a) Kubaini jitihada zilizotumika kulinda maadili ya Kitanzania dhidi ya maadili ya kigeni",
+"periods": 20
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kumudu historia ya ujenzi wa Taifa na maadili katika kipindi cha 1961-1966",
+"no": "2.1",
+"text": "Kuelezea mchango wa Tunu na Alama za Taifa katika kujenga umoja wa kitaifa na uzalendo",
+"periods": 50,
+"items": [
+{
+"text": "(a) Kufafanua historia ya Tunu za Taifa (utu, uzalendo, uadilifu, umoja, uwazi, uwajibikaji na lugha ya Taifa) nchini",
+"periods": 50
+},
+{
+"text": "(b) Kueleza umuhimu wa kuenzi Tunu za Taifa",
+"periods": null
+},
+{
+"text": "(c) Kueleza matendo ya kushiriki kutetea, kulinda na kudumisha Tunu, Alama za Taifa, umoja wa Kitaifa na uzalendo",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu Historia ya Ujenzi wa Taifa na Maadili katika Kipindi cha 1961-1966",
+"no": "1.1",
+"text": "Kumudu historia ya ujenzi wa Taifa na maadili baada ya uhuru katika kipindi cha 1961-1966",
+"periods": 34,
+"items": [
+{
+"text": "(a) Kueleza historia ya ujenzi wa Taifa na maadili baada ya uhuru katika kipindi cha 1961-1966 (kiuchumi, kisiasa na kijamii)",
+"periods": 34
+},
+{
+"text": "(b) Kubaini mafanikio yaliyofikiwa katika historia ya ujenzi wa Taifa na maadili",
+"periods": null
+},
+{
+"text": "(c) Kuelezea changamoto zilizojitokeza wakati wa ujenzi wa Taifa na maadili baada ya uhuru",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kutathmini ujenzi wa Taifa na Maadili wakati wa Azimio la Arusha 1967-1985",
+"no": "2.1",
+"text": "Kuelezea Misingi na Maadili ya Azimio la Arusha na Siasa ya Ujamaa na Kujitegemea",
+"periods": 42,
+"items": [
+{
+"text": "(a) Kueleza dhana ya Azimio la Arusha na Siasa ya Ujamaa na Kujitegemea (lengo na umuhimu)",
+"periods": 42
+},
+{
+"text": "(b) Kufafanua misingi ya Azimio la Arusha (Ujamaa na Kujitegemea) katika harakati za ujenzi wa Taifa huru na maadili nchini (ushirikiano, haki na usawa, heshima, utu, uwajibikaji, miiko ya uongozi, umoja wa Kitaifa na uzalendo n.k)",
+"periods": null
+},
+{
+"text": "(a) Kueleza mchango wa Azimio la Arusha katika harakati za mapambano dhidi ya rushwa",
+"periods": null
+},
+{
+"text": "(b) Kutathmini harakati za ujenzi wa Taifa na maadili wakati wa kipindi cha 1967-1985",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kutathmini ujenzi wa Taifa na Maadili wakati wa Azimio la Arusha 1967-1985",
+"no": "2.2",
+"text": "Kuelezea mchango wa Tanzania katika mapambano dhidi ya ukoloni na ukandamizaji",
+"periods": 23,
+"items": [
+{
+"text": "(a) Kueleza mchango wa Tanzania katika ukombozi wa Afrika dhidi ya ukoloni na ukandamizaji (lengo na umuhimu wake kwa Tanzania)",
+"periods": 23
+},
+{
+"text": "(b) Kubaini mchango wa Tanzania katika mapambano dhidi ya ukoloni na ukandamizaji",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kutathmini Historia ya Tanzania na Maadili wakati wa Uliberali 1986 hadi sasa",
+"no": "3.1",
+"text": "Kufafanua dhana ya uliberali kwa kuhusianisha na maadili ya Kitanzania",
+"periods": 38,
+"items": [
+{
+"text": "(a) Kuelezea dhana ya uliberali (maana na sifa)",
+"periods": 38
+},
+{
+"text": "(b) Kubaini athari za uliberali katika maadili na ujenzi wa Taifa",
+"periods": null
+},
+{
+"text": "(c) Kutathmini mikakati ya kukabiliana na changamoto za kimaadili katika ujenzi wa Taifa katika nyakati za uliberali na wakati uliopo",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kutathmini Historia ya Tanzania na Maadili wakati wa Uliberali 1986 hadi sasa",
+"no": "3.2",
+"text": "Kutumia maarifa na ujuzi wa historia ya Tanzania na maadili kufanya uamuzi sahihi katika nyakati za uliberali",
+"periods": 38,
+"items": [
+{
+"text": "(a) Kubaini uwepo wa mkinzano wa maadili nyakati za uliberali",
+"periods": 38
+},
+{
+"text": "(b) Kueleza athari za uliberali kwa Taifa katika kufanya uamuzi sahihi",
+"periods": null
+},
+{
+"text": "(c) Kubaini mbinu zinazotumika kukabili mkinzano wa maadili katika ujenzi wa Taifa",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "4.0",
+"main": "Kumudu Katiba ya Jamhuri ya Muungano wa Tanzania",
+"no": "4.1",
+"text": "Kufafanua dhana ya Katiba ya Jamhuri ya Muungano wa Tanzania",
+"periods": 38,
+"items": [
+{
+"text": "(a) Kueleza dhana ya Katiba (maana, aina, umuhimu na upatikanaji wake)",
+"periods": 38
+},
+{
+"text": "(b) Kuelezea historia ya Katiba ya Jamhuri ya Muungano wa Tanzania",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "4.0",
+"main": "Kumudu Katiba ya Jamhuri ya Muungano wa Tanzania",
+"no": "4.2",
+"text": "Kuelezea utekelezaji wa Katiba ya Jamhuri ya Muungano wa Tanzania katika jamii",
+"periods": null,
+"items": [
+{
+"text": "(a) Kufafanua kazi za Katiba ya Jamhuri ya Muungano wa Tanzania",
+"periods": null
+},
+{
+"text": "(b) Kubaini mihimili ya dola (Serikali, Bunge na Mahakama) inavyotekeleza Katiba ya JMT",
+"periods": null
+},
+{
+"text": "(c) Kubainisha rasilimali mbalimbali za Taifa (ardhi, madini,maji, nishati, rasilimali za majini, wanyamapori, misitu nk) zinazolindwa na Katiba ya JMT",
+"periods": null
+}
+]
+}
+]
+},
+{
+"ref": "CAS",
+"title": "Arts and Sports Standard III-VI (2023)",
+"source": "Std III-VI - Arts and Sports (English).pdf",
+"language": "en",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.1",
+"text": "Demonstrate mastery of the basics of singing and acting",
+"periods": 20,
+"items": [
+{
+"text": "(a) Imitate various sounds of living and non-living things",
+"periods": 20
+},
+{
+"text": "(b) Sing in unison considering proper posture and breathing",
+"periods": null
+},
+{
+"text": "(c) Use musical instruments found in their environment to accompany short songs",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.2",
+"text": "Create images",
+"periods": 20,
+"items": [
+{
+"text": "Draw images of various objects using a pencil",
+"periods": 20
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.3",
+"text": "Create various shapes",
+"periods": 20,
+"items": [
+{
+"text": "Create simple shapes",
+"periods": 20
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.1",
+"text": "Demonstrate mastery of physical exercises",
+"periods": 20,
+"items": [
+{
+"text": "Perform agility and balance exercises",
+"periods": 20
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.2",
+"text": "Play traditional games",
+"periods": 30,
+"items": [
+{
+"text": "Play rede, running with a bottle on the head and running with a spoon",
+"periods": 30
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of exhibition skills in arts and sports",
+"no": "3.1",
+"text": "Participate in sports and arts exhibitions",
+"periods": 30,
+"items": [
+{
+"text": "(a) Participate in various art exhibitions at the class level Participate in various sports competitions at the class level",
+"periods": 30
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.1",
+"text": "Demonstrate mastery of the basics of singing and acting",
+"periods": 20,
+"items": [
+{
+"text": "(a) Perform various body movements by imitating living and non-living things",
+"periods": 20
+},
+{
+"text": "(b) Sing in unison and in two-part harmony based on diction and tone",
+"periods": null
+},
+{
+"text": "(c) Use musical instruments found in their environment to accompany the school song",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.2",
+"text": "Create images",
+"periods": 20,
+"items": [
+{
+"text": "Create images of various objects using a pencil",
+"periods": 20
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.3",
+"text": "Create various shapes",
+"periods": 20,
+"items": [
+{
+"text": "Create shapes based on real objects",
+"periods": 20
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Improve health, skills and competitiveness",
+"no": "2.1",
+"text": "Demonstrate mastery of physical exercises",
+"periods": 20,
+"items": [
+{
+"text": "Perform coordination and flexibility exercises",
+"periods": 20
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Improve health, skills and competitiveness",
+"no": "2.2",
+"text": "Play traditional games",
+"periods": 20,
+"items": [
+{
+"text": "Play sack-race and chicken chase games",
+"periods": 20
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Improve health, skills and competitiveness",
+"no": "2.3",
+"text": "Play modern sports",
+"periods": 20,
+"items": [
+{
+"text": "Play acrobatics",
+"periods": 20
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Demonstrate mastery of exhibition skills in arts and sports",
+"no": "3.1",
+"text": "Participate in sports and arts exhibitions",
+"periods": 20,
+"items": [
+{
+"text": "(a) Participate in various art exhibitions at the school level",
+"periods": 20
+},
+{
+"text": "(b) Participate in various sports competitions at the school level",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.1",
+"text": "Demonstrate mastery of the basics of singing and acting",
+"periods": 30,
+"items": [
+{
+"text": "(a) Act with or without vocalization",
+"periods": 30
+},
+{
+"text": "(b) Sing songs based on musical dynamics and voice balancing",
+"periods": null
+},
+{
+"text": "(c) Use musical instruments to accompany solfege singing (d r m f s l t d’)",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.2",
+"text": "Create images",
+"periods": 20,
+"items": [
+{
+"text": "Draw images that express feelings and situations using a pencil",
+"periods": 20
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.3",
+"text": "Create various shapes",
+"periods": 25,
+"items": [
+{
+"text": "Create and decorate various shapes",
+"periods": 25
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.4",
+"text": "Create objects by using various unconventional materials",
+"periods": 25,
+"items": [
+{
+"text": "Use unconventional materials to create objects with simple shapes",
+"periods": 25
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.1",
+"text": "Demonstrate mastery of physical exercises",
+"periods": 25,
+"items": [
+{
+"text": "Perform exercises for building strength and speed",
+"periods": 25
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.2",
+"text": "Play traditional games",
+"periods": 25,
+"items": [
+{
+"text": "Play tug of war",
+"periods": 25
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.3",
+"text": "Play modern sports",
+"periods": 25,
+"items": [
+{
+"text": "Play football and netball",
+"periods": 25
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.1",
+"text": "Demonstrate mastery of the basics of singing and acting",
+"periods": 45,
+"items": [
+{
+"text": "(a) Apply various acting techniques",
+"periods": 25
+},
+{
+"text": "(b) Perform traditional ngoma",
+"periods": 20
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Create works of art",
+"no": "1.2",
+"text": "Create images",
+"periods": 25,
+"items": [
+{
+"text": "Create images from observing different objects",
+"periods": 25
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.1",
+"text": "Demonstrate mastery of physical exercises",
+"periods": 25,
+"items": [
+{
+"text": "Perform endurance exercises",
+"periods": 25
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.2",
+"text": "Play traditional games",
+"periods": 25,
+"items": [
+{
+"text": "Play high and long jump",
+"periods": 25
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Improve health, skills, and competitiveness",
+"no": "2.3",
+"text": "Play modern sports",
+"periods": 25,
+"items": [
+{
+"text": "Play athletic games",
+"periods": 25
+}
+]
+}
+]
+},
+{
+"ref": "FRE",
+"title": "French Standard III-VI (2023)",
+"source": "Std III-VI - French.pdf",
+"language": "fr",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.1",
+"text": "Développer la conscience phonémique et la prononciation des lettres françaises",
+"periods": 22,
+"items": [
+{
+"text": "(a) Écouter et identifier les sons du français",
+"periods": 22
+},
+{
+"text": "(b) Prononcer les sons des lettres françaises",
+"periods": null
+},
+{
+"text": "(c) Combiner les sons des lettres françaises pour former des mots",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.2",
+"text": "Relier des mots aux objets dans l’environnement",
+"periods": 16,
+"items": [
+{
+"text": "(a) Reconnaître les noms des objets de la classe présentés à l’oral et à l’écrit",
+"periods": 16
+},
+{
+"text": "(b) Reconnaître les noms des animaux et des objets de l’environnement proche présentés à l’oral et à l’écrit",
+"periods": null
+},
+{
+"text": "(c) Reconnaître les noms des membres de la famille présentés à l’oral et à l’écrit",
+"periods": null
+},
+{
+"text": "(d) Utiliser les nombres jusqu’à 20 oralement et à l’écrit",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.3",
+"text": "Maîtriser la grammaire et le vocabulaire simples",
+"periods": 12,
+"items": [
+{
+"text": "(a) Utiliser à l’oral et à l’écrit la grammaire et le vocabulaire simples pour localiser des objets de l’environnement proche (à l’école, à la maison)",
+"periods": 12
+},
+{
+"text": "(b) Utiliser à l’oral et à l’écrit la grammaire et le vocabulaire simples pour se présenter et présenter quelqu’un",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.1",
+"text": "Lire et comprendre des textes simples",
+"periods": 10,
+"items": [
+{
+"text": "(a) Lire et comprendre des messages courts (annonces, instructions/ consignes, texto)",
+"periods": 10
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.2",
+"text": "Réagir de manière appropriée à un contexte familier de communication",
+"periods": 10,
+"items": [
+{
+"text": "(a) Suivre des consignes simples données oralement et à l’écrit dans le contexte familier (à l’école et à la maison)",
+"periods": 10
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans des divers contextes",
+"no": "3.1",
+"text": "Démontrer une connaissance des caractéristiques de base de la langue parlée et écrite",
+"periods": 16,
+"items": [
+{
+"text": "(a) Utiliser les intonations appropriées dans la communication simple",
+"periods": 16
+},
+{
+"text": "(b) Utiliser les signes de ponctuation (majuscule, minuscule, point et point d’interrogation) dans des textes simples",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.1",
+"text": "Relier des mots aux objets dans l’environne-ment",
+"periods": 12,
+"items": [
+{
+"text": "(a) Reconnaître les noms des parties du corps humain présentés à l’oral et à l’écrit",
+"periods": 12
+},
+{
+"text": "(b) Utiliser les nombres jusqu’à 60 oralement et à l’écrit",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.2",
+"text": "Maîtriser la grammaire et le vocabulaire simples",
+"periods": 20,
+"items": [
+{
+"text": "(a) Utiliser la grammaire et le vocabulaire simples pour décrire des personnes à l’oral et à l’écrit",
+"periods": 20
+},
+{
+"text": "(b) Utiliser la grammaire et le vocabulaire simples pour décrire des objets oralement et à l’écrit",
+"periods": null
+},
+{
+"text": "(c) Utiliser la grammaire et le vocabulaire simples pour décrire des lieux/endroits oralement et à l’écrit",
+"periods": null
+},
+{
+"text": "(d) Utiliser oralement et à l’écrit la grammaire et le vocabulaire simples pour exprimer les jours de la semaine et les mois de l’année",
+"periods": null
+},
+{
+"text": "(e) Utiliser la grammaire et le vocabulaire simples pour demander et dire l’heure",
+"periods": null
+},
+{
+"text": "(f) Demander et dire la date",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.1",
+"text": "Écouter et comprendre des informations simples",
+"periods": 10,
+"items": [
+{
+"text": "(a) Écouter et comprendre des informations sur les goûts et les préférences",
+"periods": 10
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.2",
+"text": "Lire et comprendre des textes simples",
+"periods": 12,
+"items": [
+{
+"text": "(a) Lire et comprendre des descriptions simples des personnes, des objets, des animaux",
+"periods": 12
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.3",
+"text": "Réagir de manière appropriée à un contexte familier de communication",
+"periods": 6,
+"items": [
+{
+"text": "(a) Suivre le code de la route et des consignes",
+"periods": 6
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans des divers contextes",
+"no": "3.1",
+"text": "Démontrer une connaissance des caractéristiques de base de la langue parlée et écrite",
+"periods": 8,
+"items": [
+{
+"text": "(a) Utiliser les signes de ponctuation (Les points d’exclamation et la virgule) dans des textes simples",
+"periods": 8
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans des divers contextes",
+"no": "3.2",
+"text": "Converser dans des contextes variés en utilisant la grammaire et le vocabulaire appropriés",
+"periods": 8,
+"items": [
+{
+"text": "(a) Utiliser la grammaire et le vocabulaire appropriés pour exprimer les sentiments",
+"periods": 8
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.1",
+"text": "Relier des mots aux objets dans l’environne-ment",
+"periods": 10,
+"items": [
+{
+"text": "(a) Utiliser les nombres jusqu’à 500 à l’oral et à l’écrit",
+"periods": 10
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.2",
+"text": "Maîtriser la grammaire et le vocabulaire simples",
+"periods": 18,
+"items": [
+{
+"text": "(a) Utiliser à l’oral et à l’écrit la grammaire et le vocabulaire simples pour demander et donner des directions",
+"periods": 18
+},
+{
+"text": "(b) Utiliser à l’oral et à l’écrit la grammaire et le vocabulaire simples pour faire et répondre à une demande polie",
+"periods": null
+},
+{
+"text": "(c) Utiliser à l’oral et à l’écrit la grammaire et le vocabulaire simples pour parler de ses routines quotidiennes",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.1",
+"text": "Écouter et comprendre des informations simples",
+"periods": 16,
+"items": [
+{
+"text": "(a) Écouter et comprendre des informations sur les moyens de transports",
+"periods": 16
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.2",
+"text": "Lire et comprendre des textes simples",
+"periods": 7,
+"items": [
+{
+"text": "(a) Lire et comprendre des récits courts",
+"periods": 7
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.3",
+"text": "Lire correctement des textes simples",
+"periods": 7,
+"items": [
+{
+"text": "(a) Lire des textes simples avec aisance",
+"periods": 7
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans des divers contextes",
+"no": "3.1",
+"text": "Démontrer une connaissance des caractéristiques de base de la langue parlée et écrite",
+"periods": 6,
+"items": [
+{
+"text": "(a) Téléphoner à quelqu’un",
+"periods": 6
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans des divers contextes",
+"no": "3.2",
+"text": "Converser dans des contextes variés en utilisant la grammaire et le vocabulaire appropriés",
+"periods": 10,
+"items": [
+{
+"text": "(a) Utiliser la grammaire et le vocabulaire simples pour demander et donner le prix",
+"periods": 10
+},
+{
+"text": "(b) Utiliser la grammaire et le vocabulaire simples pour converser de manière simple sur des aliments",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans des divers contextes",
+"no": "3.3",
+"text": "Communiquer à l’écrit dans des contextes variés en utilisant la grammaire et le vocabulaire appropriés",
+"periods": 8,
+"items": [
+{
+"text": "(a) Utiliser la grammaire et le vocabulaire appropriés pour faire des correspondances (rédiger des cartes postales et des cartes d’invitation)",
+"periods": 8
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.1",
+"text": "Relier des mots aux objets dans l’environnement",
+"periods": 12,
+"items": [
+{
+"text": "(a) Utiliser les nombres jusqu’à 1 000 à l’orale et à l’écrit",
+"periods": 12
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Maîtriser les compétences langagières de base du français",
+"no": "1.2",
+"text": "Maîtriser la grammaire et le vocabulaire simples",
+"periods": 26,
+"items": [
+{
+"text": "(a) Utiliser la grammaire et le vocabulaire simples pour raconter un événement passé (les vacances, les voyages)",
+"periods": 26
+},
+{
+"text": "(b) Utiliser la grammaire et le vocabulaire simples pour exprimer des événements futurs",
+"periods": null
+},
+{
+"text": "(c) Utiliser la grammaire et le vocabulaire simples pour parler d’activités quotidiennes",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.1",
+"text": "Écouter et comprendre des informations simples",
+"periods": 14,
+"items": [
+{
+"text": "(a) Écouter et comprendre des informations sur la météo",
+"periods": 14
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Démontrer la compréhension des informations orales et écrites",
+"no": "2.2",
+"text": "Lire et comprendre des textes simples",
+"periods": 14,
+"items": [
+{
+"text": "(a) Lire et comprendre des poèmes simples",
+"periods": 14
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Communiquer efficacement dans divers contextes",
+"no": "3.3",
+"text": "Communiquer à l’écrit dans des contextes variés en utilisant la grammaire et le vocabulaire appropriés",
+"periods": 8,
+"items": [
+{
+"text": "(a) Utiliser la grammaire et le vocabulaire appropriés pour écrire une lettre amicale courte",
+"periods": 8
+}
+]
+}
+]
+},
+{
+"ref": "CHI",
+"title": "Chinese (Kichina) Darasa la III-VI (2023)",
+"source": "Std III-VI - Chinese (Kichina).pdf",
+"language": "sw",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya awali, mwisho, toni na hanzi",
+"periods": 24,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka konsonanti za kichina",
+"periods": 24
+},
+{
+"text": "(b) Kusoma na kuandika konsonanti za kichina",
+"periods": null
+},
+{
+"text": "(c) Kusikiliza na kutamka irabu za msingi za kichina",
+"periods": null
+},
+{
+"text": "(d) Kusoma na kuandika irabu za msingi za kichina",
+"periods": null
+},
+{
+"text": "(e) Kubaini toni za kichina katika matamshi na maandishi",
+"periods": null
+},
+{
+"text": "(f) Kuandika hanzi za kichina zenye kijenzi kimoja hadi viwili",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 16,
+"items": [
+{
+"text": "(a) Kubaini majina ya vitu mbalimbali vinavyopatikana darasani na katika mazingira ya shule",
+"periods": 16
+},
+{
+"text": "(b) Kubaini vitendo mbalimbali vinavyofanyika darasani na katika mazingira ya shule",
+"periods": null
+},
+{
+"text": "(c) Kusoma majina na vitendo vilivyobainishwa katika mazingira ya darasa",
+"periods": null
+},
+{
+"text": "(d) Kuandika majina na vitendo vilivyobainishwa katika mazingira ya darasa",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kujitambulisha kwa kutumia sentensi sahili",
+"periods": 12
+},
+{
+"text": "(b) Kusoma na kuandika maneno yanayotumika katika kujitambulisha",
+"periods": null
+},
+{
+"text": "(c) Kubaini nyakati mbalimbali (Mfano: asubuhi, mchana, jioni, n.k)",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kuonesha mwitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 8,
+"items": [
+{
+"text": "(a) / Kusikiliza na kufuata maagizo/ maelekezo sahili yanayotolewa katika mazingira ya shule",
+"periods": 8
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuonesha uelewa wa sifa za msingi za lugha ya mazungumzo na maandishi",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kutumia toni kwa usahihi katika mawasiliano sahili",
+"periods": 10
+},
+{
+"text": "(b) Kutumia alama za uakifishaji katika kuandika maandishi sahili (Herufi kubwa, herufi ndogo, Kituo, mkato, alama ya kuuliza)",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya awali, mwisho, toni na hanzi",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka sauti zinazoundwa na irabu tu",
+"periods": 15
+},
+{
+"text": "(b) Kusikiliza na kuandika sauti zinazoundwa na irabu tu",
+"periods": null
+},
+{
+"text": "(c) Kubaini maneno yenye sauti zinazoundwa na irabu tu",
+"periods": null
+},
+{
+"text": "(d) Kuandika hanzi za kichina zenye vijenzi vitatu hadi vinne",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kubaini majina ya vitu vinavyopatikana katika mazingira ya nyumbani kwa kutumia maneno mapya yaliyoainishwa",
+"periods": 15
+},
+{
+"text": "(b) Kubaini vitendo mbalimbali vinavyofanyika katika mazingira ya nyumbani",
+"periods": null
+},
+{
+"text": "(c) Kusoma majina na vitendo mbalimbali vinavyopatikana katika mazingira ya nyumbani",
+"periods": null
+},
+{
+"text": "(d) Kuandika majina na vitendo mbalimbali vinavyopatikana katika mazingira ya nyumbani",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kutambulisha wanafamilia na marafiki kwa kutumia sentensi sahili",
+"periods": 12
+},
+{
+"text": "(b) Kusoma na kuandika maneno yanayotumika kutambulisha wanafamilia na marafiki",
+"periods": null
+},
+{
+"text": "(c) Kubaini nyakati mbalimbali (Mfano: siku za wiki)",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa",
+"periods": 8,
+"items": [
+{
+"text": "(a) Kusikiliza na kuelewa ujumbe uliyowasilishwa kwa kutumia neno moja",
+"periods": 8
+},
+{
+"text": "(b) Kutumia msamiati sahili kuitikia maelekezo sahili yaliyotolewa kwa kutumia neno moja",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kusoma na kuelewa matini sahili",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusoma maneno na kuelewa maana iliyokusudiwa",
+"periods": 12
+},
+{
+"text": "(b) Kusoma na kuelewa maagizo yaliyowasilishwa kwa kutumia neno moja",
+"periods": null
+},
+{
+"text": "(c) Kusoma maelekezo yaliyotolewa kwa neno moja na kuitikia kwa kutumia msamiati sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.3",
+"text": "Kuonesha mwitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kusikiliza na kufuata maagizo/ maelekezo sahili yanayotolewa katika mazingira ya nyumbani",
+"periods": 4
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuzungumza katika miktadha mbalimbali kwa kutumia sarufi na msamiati mwafaka",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kufanya mazungumzo sahili kwa kutumia lugha fasaha katika muktadha wa shuleni na nyumbani",
+"periods": 4
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya awali, mwisho, toni na hanzi",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka sauti zinazoundwa kwa konsonanti na irabu",
+"periods": 15
+},
+{
+"text": "(b) Kusikiliza na kuandika konsonanti na irabu",
+"periods": null
+},
+{
+"text": "(c) Kubaini maneno yenye sauti zinazoundwa kwa konsonanti na irabu",
+"periods": null
+},
+{
+"text": "(d) Kuandika hanzi za kichina zenye vijenzi vitano hadi sita",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kubaini majina ya vitu mbalimbali vinavyopatikana katika mazingira ya sokoni kwa kutumia maneno mapya",
+"periods": 15
+},
+{
+"text": "(b) Kubaini vitendo mbalimbali vinavyofanyika katika mazingira ya sokoni",
+"periods": null
+},
+{
+"text": "(c) Kusoma majina na vitendo mbalimbali vinavyopatikana katika mazingira ya sokoni",
+"periods": null
+},
+{
+"text": "(d) Kuandika majina na vitendo mbalimbali vinavyopatikana katika mazingira ya sokoni",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 10,
+"items": [
+{
+"text": "(a) / Kuelezea sehemu aliyotokea kwa kutumia sentensi sahili",
+"periods": 10
+},
+{
+"text": "(b) Kuainisha mipaka ya sehemu alikotokea kwa kutumia pande kuu nne za dunia",
+"periods": null
+},
+{
+"text": "(c) Kubaini nyakati mbalimbali (Mfano: miezi katika mwaka)",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kusikiliza na kuelewa ujumbe/maagizo yaliyowasilishwa kwa kutumia sentensi sahili",
+"periods": 4
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kusoma na kuelewa matini sahili",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusoma sentensi sahili",
+"periods": 10
+},
+{
+"text": "(b) Kusoma sentensi sahili na kuelewa maagizo yaliyomo",
+"periods": null
+},
+{
+"text": "(c) kusoma sentensi sahili na kuitikia maelekezo yaliyomo kwa kutumia misamiati sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.3",
+"text": "Kuonesha mwitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 4,
+"items": [
+{
+"text": "(a) / Kusikiliza na kufuata maagizo/ maelekezo sahili yanayotolewa katika mazingira ya sokoni",
+"periods": 4
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.4",
+"text": "Kusoma matini sahili",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kusoma kwa sauti maneno mbalimbali kwa kuzingatia toni",
+"periods": 4
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuzungumza katika miktadha mbalimbali kwa kutumia",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kufanya mazungumzo rahisi kwa kutumia lugha fasaha katika muktadha wa sokoni",
+"periods": 4
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.2",
+"text": "Kuwasiliana kwa maandishi kwa kutumia sarufi na msamiati mwafaka",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kuandika matini fupi zinazohusiana na mazingira ya shuleni na nyumbani",
+"periods": 4
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya awali, mwisho, toni na hanzi",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka sauti zinazoundwa kwa konsonanti na irabu kwa kuzingatia toni",
+"periods": 12
+},
+{
+"text": "(b) Kusoma na kuandika konsonanti, na irabu kwa kuzingatia toni",
+"periods": null
+},
+{
+"text": "(c) Kuandika hanzi za kichina zenye vijenzi saba hadi nane",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 15,
+"items": [
+{
+"text": "(a) Kubaini majina ya vitu mbalimbali vinavyopatikana katika mazingira ya hospitalini kwa kutumia maneno mapya",
+"periods": 15
+},
+{
+"text": "(b) Kubaini vitendo mbalimbali vinavyofanyika katika mazingira ya hospitali",
+"periods": null
+},
+{
+"text": "(c) Kusoma majina na vitendo mbalimbali vinavyopatikana katika mazingira ya hospitali",
+"periods": null
+},
+{
+"text": "(d) Kuandika majina na vitendo mbalimbali vinavyopatikana katika mazingira ya hospitalini",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kichina",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kubaini nyakati mbalimbali (Mfano: majira ya mwaka)",
+"periods": 12
+},
+{
+"text": "(b) Kueleza tarehe mbalimbali katika mwezi",
+"periods": null
+},
+{
+"text": "(c) Kueleza mambo yanayofanyika katika nyakati mbalimbali kwa kutumia sarufi na msamiati sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa",
+"periods": 5,
+"items": [
+{
+"text": "(a) Kutumia msamiati sahili katika kutoa na kuitikia maelekezo sahili",
+"periods": 5
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kusoma na kuelewa matini sahili",
+"periods": 5,
+"items": [
+{
+"text": "(a) Kusoma sentensi sahili na kuelewa ujumbe uliomo",
+"periods": 5
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.3",
+"text": "Kuonesha mwitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 5,
+"items": [
+{
+"text": "(a) / Kusikiliza na kufuata maagizo/ maelekezo sahili yanayotolewa katika mazingira ya hospitali",
+"periods": 5
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.4",
+"text": "Kusoma matini sahili",
+"periods": 5,
+"items": [
+{
+"text": "(a) Kusoma kwa sauti vifungu vya maneno kwa kuzingatia toni",
+"periods": 5
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuzungumza katika miktadha mbalimbali kwa kutumia sarufi na msamiati mwafaka",
+"periods": 5,
+"items": [
+{
+"text": "(a) Kufanya mazungumzo sahili kwa kutumia lugha fasaha katika muktadha wa hospitali",
+"periods": 5
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.2",
+"text": "Kuwasiliana kwa maandishi katika miktadha mbalimbali kwa kutumia sarufi na msamiati mwafaka",
+"periods": 5,
+"items": [
+{
+"text": "(a) Kuandika matini fupi zinazohusiana na mazingira ya sokoni na hospitali",
+"periods": 5
+}
+]
+}
+]
+},
+{
+"ref": "ARA",
+"title": "Arabic (Kiarabu) Darasa la III-VI (2023)",
+"source": "Std III-VI - Arabic (Kiarabu).pdf",
+"language": "sw",
+"topics": [
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya herufi za Kiarabu na uandishi wake",
+"periods": 14,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka sauti za Kiarabu",
+"periods": 14
+},
+{
+"text": "(b) Kusoma na kuandika konsonanti za Kiarabu",
+"periods": null
+},
+{
+"text": "(c) Kusikiliza na kutamka irabu za Kiarabu",
+"periods": null
+},
+{
+"text": "(d) Kusoma na Kuandika irabu za Kiarabu",
+"periods": null
+},
+{
+"text": "(e) Kusoma na kuandika silabi mbalimbali za Kiarabu",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kuhusianisha maneno na vitu mbalimbali vinavyopatikana darasani na mazingira ya shule",
+"periods": 12
+},
+{
+"text": "(b) Kuhusianisha maneno na vitendo mbalimbali vinavyofanyika darasani na katika mazingira ya shule",
+"periods": null
+},
+{
+"text": "(c) Kusoma maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya darasani na shuleni",
+"periods": null
+},
+{
+"text": "(d) Kuandika maneno yanayo husianisha vitu na vitendo vinavyofanyika katika mazingira ya darasani na shuleni",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kujitambulisha kwa kutumia sentensi sahili b) Kusoma na kuandika maneno yanayotumika katika kujitambulisha",
+"periods": 12
+},
+{
+"text": "(c) Kubaini nyakati mbalimbali",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusikiliza na kujibu salamu, mwaliko, kuagana na shukurani",
+"periods": 12
+},
+{
+"text": "(b) Kusikiliza na kujibu maelekezo sahili yanayotolewa shuleni",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kuonesha mwitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 6,
+"items": [
+{
+"text": "(a) Kusikiliza na kufuata maagizo au maelekezo sahili yanayotolewa katika mazingira ya shule",
+"periods": 6
+},
+{
+"text": "(b) Kusikiliza na kuonesha hisia sahihi kutokana na taarifa fupi sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P3",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuonesha uelewa wa sifa za msingi za lugha ya mazungumzo na maandishi",
+"periods": 14,
+"items": [
+{
+"text": "(a) Kutumia kiimbo sahihi wakati wa kuwasiliana",
+"periods": 14
+},
+{
+"text": "(b) Kutumia alama za uakifishaji kwa usahihi )alama za kuuliza swali na kituo(",
+"periods": null
+},
+{
+"text": "(c) Kutumia alama za uakifishaji kwa usahihi )alama za mshangao na mkato(",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya herufi za kiarabu na uandishi wake",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka maneno yenye irabu fupi",
+"periods": 10
+},
+{
+"text": "(b) Kusikiliza na kutamka maneno yenye irabu ndefu",
+"periods": null
+},
+{
+"text": "(c) Kusoma na kuandika maneno yenye irabu fupi",
+"periods": null
+},
+{
+"text": "(d) Kusoma na kuandika maneno yenye irabu ndefu",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kuhusianisha maneno na vitu mbalimbali vinavyopatikana katika mazingira ya nyumbani",
+"periods": 12
+},
+{
+"text": "(b) Kuhusianisha maneno na vitendo mbalimbali vinavyofanyika katika mazingira ya nyumbani",
+"periods": null
+},
+{
+"text": "(c) Kusoma maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya nyumbani",
+"periods": null
+},
+{
+"text": "(d) Kuandika maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya nyumbani",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kutambulisha wanafamilia na marafiki kwa kutumia sentensi sahili",
+"periods": 10
+},
+{
+"text": "(b) Kusoma na kuandika maneno yanayotumika kutambulisha wanafamilia na marafiki",
+"periods": null
+},
+{
+"text": "(c) Kueleza mambo yanayofanyika katika nyakati mbalimbali kwa kutumia sarufi na msamiati sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa zilizotolewa kwa mdomo",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusikiliza na kuelewa taarifa/ujumbe",
+"periods": 12
+},
+{
+"text": "(b) Kusikiliza na kuelewa maagizo",
+"periods": null
+},
+{
+"text": "(c) Kusikiliza maelekezo na kuyajibu kwa kutumia msamiati sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kusoma na kuelewa matini sahili",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusoma taarifa sahili na kujibu matangazo sahili",
+"periods": 10
+},
+{
+"text": "(b) Kusoma na kujibu maswali kutokana na matini sahili )kuhusu watu, vitu, sehemu na wanyama(",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.3",
+"text": "Kuonesha mwitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusikiliza na kufuata maagizo au maelekezo sahili yanayo tolewa katika mazingira ya nyumbani",
+"periods": 10
+},
+{
+"text": "(b) Kufanya mazungumzo na kubadilishana mawazo katika muktadha wa nyumbani",
+"periods": null
+},
+{
+"text": "(c) Kutumia lugha sahihi kulingana na muktadha na muda",
+"periods": null
+}
+]
+},
+{
+"level": "P4",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuonesha uelewa wa sifa za msingi za lugha ya mazungumzo na maandishi",
+"periods": 6,
+"items": [
+{
+"text": "(a) Kuelezea hisia sahili",
+"periods": 6
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya Kiarabu na uandishi wake",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka maneno yenye mkazo (shadda)",
+"periods": 12
+},
+{
+"text": "(b) Kusoma na kuandika maneno yenye mkazo )shadda(",
+"periods": null
+},
+{
+"text": "(c) Kubaini maumbo mbalimbali ya herufi za Kiarabu katika maneno",
+"periods": null
+},
+{
+"text": "(d) Kuandika maumbo mbalimbali ya herufi za Kiarabu katika maneno",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kuhusianisha maneno na vitu mbalimbali vinavyopatikana katika mazingira ya sokoni",
+"periods": 10
+},
+{
+"text": "(b) Kuhusianisha maneno na vitendo mbalimbali vinavyofanyika katika mazingira ya sokoni",
+"periods": null
+},
+{
+"text": "(c) Kusoma maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya sokoni d) Kuandika maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya sokoni",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.3",
+"text": "Kumudu sarufi na msamiati sahili",
+"periods": 14,
+"items": [
+{
+"text": "(a) Kueleza sehemu anayotoka kwa kutumia sentensi sahili",
+"periods": 14
+},
+{
+"text": "(b) Kuelezea mipaka ya sehemu kwa kutumia pande kuu nne za dunia",
+"periods": null
+},
+{
+"text": "(c) Kueleza nyakati mbalimbali kwa kutumia sarufi na msamiati sahili",
+"periods": null
+},
+{
+"text": "(d) Kuelezea matendo ya kila siku kwa kutumia msamiati na sarufi sahili",
+"periods": null
+},
+{
+"text": "(e) Kuelezea matukio yajayo kwa kutumia msamiati na sarufi sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusikiliza matini fupi na kuifupisha kwa maneno b) Kusikiliza matini fupi sahili na kubaini maana ya maneno mapya yaliyotumika c) Kusikiliza maagizo sahili na kuyatekeleza",
+"periods": 12
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kusoma na kuelewa matini sahili",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusoma matini fupi sahili na kubaini maana ya maneno mapya yaliyotumika",
+"periods": 10
+},
+{
+"text": "(b) Kusoma na kubaini ujumbe uliokusudiwa katika matini sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "2.0",
+"main": "Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.3",
+"text": "Kuonesha muitiko sahihi katika muktadha wa kimawasiliano unaofahamika",
+"periods": 8,
+"items": [
+{
+"text": "(a) Kusikiliza na kufuata maagizo au maelekezo yanayotolewa katika mazingira ya sokoni",
+"periods": 8
+},
+{
+"text": "(b) Kusikiliza taarifa fupi na kuelezea mawazo makuu yaliyomo",
+"periods": null
+},
+{
+"text": "(c) Kusoma matini sahili na kuonesha hisia sahihi kutokana na ujumbe uliomo",
+"periods": null
+}
+]
+},
+{
+"level": "P5",
+"mainNo": "3.0",
+"main": "Kuwasiliana kwa ufanisi katika miktadha mbalimbali",
+"no": "3.1",
+"text": "Kuonesha uelewa wa sifa za msingi za lugha ya mazungumzo na maandishi",
+"periods": 4,
+"items": [
+{
+"text": "(a) Kushiriki katika mazungumzo sahili kuhusu mavazi na vyakula",
+"periods": 4
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.1",
+"text": "Kumudu ufahamu wa fonimu na matamshi ya herufi za Kiarabu na uandishi wake",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusikiliza na kutamka sentensi sahili",
+"periods": 10
+},
+{
+"text": "(b) Kusoma na kuandika sentensi sahili",
+"periods": null
+},
+{
+"text": "(c) Kutunga sentensi sahili",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.2",
+"text": "Kuhusianisha maneno na vitu katika mazingira",
+"periods": 16,
+"items": [
+{
+"text": "(a) Kuhusianisha maneno na vitu mbalimbali vinavyopatikana katika mazingira ya hospitalini",
+"periods": 16
+},
+{
+"text": "(b) Kuhusianisha maneno na vitendo mbalimbali vinavyofanyika katika mazingira ya hospitalini",
+"periods": null
+},
+{
+"text": "(c) Kusoma maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya hospitalini",
+"periods": null
+},
+{
+"text": "(d) Kuandika maneno yanayohusianisha vitu na vitendo vinavyofanyika katika mazingira ya hospitalini",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "1.0",
+"main": "Kumudu stadi za msingi za lugha ya Kiarabu",
+"no": "1.3",
+"text": "1.3Kumudu sarufi na msamiati sahili",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusoma na kuandika majina ya vivutio mbalimbali vya kiasili vinavyopatikana Tanzania )milima, mito, maziwa na mbuga za wanyama(",
+"periods": 12
+},
+{
+"text": "(b) Kuelezea mipaka ya Tanzania",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "2.0Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.1",
+"text": "Kusikiliza na kuelewa taarifa",
+"periods": 12,
+"items": [
+{
+"text": "(a) Kusikiliza matini fupi na kutunga sentensi sahili kwa kutumia maneno mapya yaliyomo",
+"periods": 12
+},
+{
+"text": "(b) Kusikiliza matini fupi sahili na kubaini mawazo makuu yaliyomo",
+"periods": null
+},
+{
+"text": "(c) Kusikiliza matini fupi sahili na kuifupisha kwa maandishi",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "2.0Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.2",
+"text": "Kusoma na kuelewa matini sahili",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusoma matini na kubaini maana ya maneno mapya yaliyomo",
+"periods": 10
+},
+{
+"text": "(b) Kusoma na kufupisha matini sahili",
+"periods": null
+},
+{
+"text": "(c) Kusoma matini fupi na kuandika mawazo makuu yaliyomo",
+"periods": null
+}
+]
+},
+{
+"level": "P6",
+"mainNo": "2.0",
+"main": "2.0Kuonesha uelewa wa taarifa katika mazungumzo na maandishi",
+"no": "2.3",
+"text": "Kvunaofahamika",
+"periods": 10,
+"items": [
+{
+"text": "(a) Kusikiliza maagizo au maelekezo sahihi yanayotolewa katika mazingira ya hospitalini",
+"periods": 10
+},
+{
+"text": "(b) Kusikiliza taarifa na kuelezea kwa ufupi hoja au mawazo makuu yaliyomo",
+"periods": null
+},
+{
+"text": "(c) Kutumia msamiati sahili kutoa au kupokea maelekezo kwa mdomo au kwa maandishi katika muktadha wa hospitali",
+"periods": null
+}
+]
+}
+]
+}
+]

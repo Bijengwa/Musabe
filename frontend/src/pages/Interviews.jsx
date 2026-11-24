@@ -8,7 +8,7 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, phoneProblem, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, phoneProblem, useToast, Loading } from '../components/ui';
 import { useStudentSchool } from './student/shared';
 
 const TONE = { passed: 'ok', failed: 'bad', reserve: 'info', absent: '', waiting: 'warn' };
@@ -117,7 +117,13 @@ export default function Interviews() {
         {RESULTS.map(([k, t]) => <button key={k} className={result === k ? 'on' : ''} onClick={() => setParam('result', k)}>{t}</button>)}
       </div>
       <Panel flush>
-        {!list ? <Empty>Loading…</Empty> : !list.length ? <Empty>{q || result || registered ? 'No child matches.' : edit ? 'No interviews yet. Press "Add applicant", or "Upload Excel" for a whole list.' : 'No interviews entered yet.'}</Empty> : (
+        {!list ? <Loading /> : !list.length ? (q || result || registered
+          ? <Empty icon="search" title="No child matches">Try a different name, or clear the search, year and result filters.</Empty>
+          : edit
+            ? <Empty icon="pen" title="No interviews yet"
+              steps={['Choose the school at the top of the page.', 'Press "Add applicant" to type one child: name, marks, result and parent phone.', 'Or press "Upload Excel" to bring in a whole list at once.', 'When a child passes, press Register to make them a student.']}
+              action={<><button className="btn p" disabled={!school} onClick={() => setForm({})}><Icon name="plus" /> Add applicant</button><button className="btn" disabled={!school} onClick={() => setUpload(true)}><Icon name="upload" /> Upload Excel</button></>} />
+            : <Empty icon="pen" title="No interviews entered yet">When the admission office records the children who did the interview, they appear here with their marks and results.</Empty>) : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="sn">S/N</th><th className="stick">Name</th><th>Sex</th>{!school && <th>School</th>}<th>Class</th><th>Exam centre</th><th>Previous school</th><th className="n">Marks</th><th>Result</th><th>Phone</th><th>Date</th><th>Student</th></tr></thead>
             <tbody>{list.map((iv, i) => (

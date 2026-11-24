@@ -236,3 +236,90 @@ Agreed 2026-11-20: class names are built into the system; the Academic Master (n
 - [x] Tests: `test/office.test.js` (5) + requisitions / orders / moneyback / store tests updated — 103 of 107 pass (same 4 as before need the owner account or docs/test-data)
 - After pulling: `npm run migrate`, then run `db/provision-roles.sql` again. The Assistant Accountant now signs every requisition before the Manager.
 - Not yet: number series per school and per place (with stock per place); LPO paper not yet compared with a photo of the real LPO book.
+
+## Academic: class → subjects → built-in syllabus (2026-11-23)
+- [x] Migration `20261123_043_class_subjects_syllabus` (+ `db/provision-roles.sql`: `syllabi`, `syllabus_topics`, `syllabus_items` read-only)
+- [x] Subjects of each class level built in (`backend/src/lib/subjects.js`), from the school's subject sheets: names change by class (Numeracy → Arithmetic → Mathematics). P7 Social Studies = Geography + History (parts). Same list for every stream; each stream has its own subject teachers
+- [x] Built-in syllabus from the TIE PDFs (`backend/src/data/syllabus-2027-primary.json`, made by `backend/scripts/syllabus/`): pre-primary, Std I–II and 10 Std III–VI subjects; main competence → specific competence → learning activities, with periods (Maths P3 = 234 = 6 a week)
+- [x] Curriculum labels by year: "2027 curriculum" / "2026 and before curriculum" (keys new/old unchanged)
+- [x] Students → Classes: click a class → class page (`pages/student/ClassPage.jsx`, `routes/class-subjects.js`): subjects, teacher per stream (Academic Master), syllabus window with search, add / rename / switch off a subject
+- [x] Tests: `test/class-subjects.test.js` (5 pass)
+- After pulling: `npm run migrate`, then run `db/provision-roles.sql` again.
+- To confirm: French/Chinese in P4 and P6 (marked out on the sheet, left off); Std VII (2026 and before) syllabi not loaded yet.
+- Found: on a new empty database, migration 035 fails because 030 already made `suppliers` (035 needs `hasTable`). Existing databases are fine.
+
+## Academics test fixes (2026-11-23, from the test report)
+- [x] Teaching plans, Teaching & quizzes, Exam marks, Primary reports no longer go white (`useEffect` returned a Promise)
+- [x] Exam timetable and Teaching timetable: classes listed per stream (P 3 PINK and P 3 BLUE), subjects of the chosen class only, teachers from `GET /api/class-subjects/teachers` (the Academic Master cannot read Staff)
+- [x] "Subjects & syllabus" tab became "Subjects & teachers" and the Syllabus tab now opens the class pages: one place only for subjects, teachers and syllabus
+- [x] Syllabus text cleaned ("D evelop" -> "Develop", "pre- writing" -> "pre-writing", pre-primary cells that ran into the next column). Migration `044` reads the syllabi again; periods unchanged
+- [x] Class page: "1 topic" (not "1 topics"), "2 parts under SST", no scrollbar inside the page, room for the Help button on phones
+- [x] Migration 030 does nothing on a new empty database (035 makes suppliers): a fresh install now migrates (45 migrations)
+- Tests: `test/class-subjects.test.js` 6 pass. Still failing (older, known): Head Master release of report cards (needs marks: f).
+
+## Teacher on Duty and roll call (2026-11-23)
+- [x] Migration `045`: new school role **Second Master** (Deputy Head Master); `duty_rosters`, `roll_calls`, `roll_call_marks`, `duty_reports` (never deleted). `db/provision-roles.sql` grants added
+- [x] Teacher on Duty page (`pages/Duty.jsx`, `routes/duty.js`): the Second Master appoints 1–6 teachers per week (Monday–Sunday), this week or later; remove keeps the history. The teacher is told (bell)
+- [x] Roll call page (`pages/RollCall.jsx`): every class stream, morning / evening / night; P present, A absent, L late, S sick, R permission with a reason. Only this week's Teacher on Duty (today and yesterday) or the Second Master (last 30 days) saves; others look. Totals, "not present today", "absent 3 days in a row", Excel
+- [x] Daily duty report: the Teacher on Duty writes it; the Second Master / Head Master mark it read (then it is locked)
+- [x] Home To do: classes without today's roll call (Teacher on Duty), weeks without a Teacher on Duty and reports to read (Second Master)
+- [x] Sign-in limit counts only failed sign-ins (a whole school signs in from one network in the morning)
+- Tests: `test/duty.test.js` (5)
+- After pulling: `npm run migrate`, run `db/provision-roles.sql` again, then the School Admin creates the Second Master account.
+- Next: parents told when a child is absent; discipline office; the school's paper duty report layout (photo needed).
+
+## 2026-11-24: school places, fees, internal audit
+- Candidate classes next year: F2, F4 (secondary); P2, P4, P6, P7 (primary). Not yet in the system.
+- School places: library and school store are kept apart by item category (`lib/places.js`). `schools.places_strict` turns the separation on. Issue Notes (`/api/notes`, `BS/ST/ISN.0001`) and GRN (`/api/grns`, `BS/LIB/GRN.0001`): the Bursar checks, the Head Master approves. Migration 046.
+- Finance office: fee structure (Finance Manager writes, Manager/Director approves), fee payments (Bursar records, Accountant confirms), balances. `/api/fees`. Migration 047. Set day or boarding per student first.
+- Internal audit: `/api/intaudit`. 11 automatic checks, findings with notes, closed with a written reason (Accountant only). Migration 048. Test: `test/intaudit.test.js`.
+- Found: the 21 Nov docs described features that were not in the code. They were rebuilt.
+- Not done: discipline office (elections, prefects), holidays and holiday packages, candidate-class support, promotion, Bursar daily money including fee payments.
+- Known failing test: `stock.test.js` control-number (403 vs 409), older than this work.
+
+## 2026-11-24 (later): calendar, lipa numbers, staff Excel
+- School calendar (`/api/calendar`, migration 049): Head Master writes terms (2027 national calendar: 2 terms, 194 days), declares a holiday, picks the classes that stay (P4-P7 for the June program), makes the program, publishes. Test: `test/calendar.test.js`.
+- Lipa numbers (`/api/lipa`): the school's mobile-money numbers. Parents app shows them next to the control number; the parent sends the transaction number ("I paid", `POST /api/parent/children/:id/bills/:bill/claim`). The Accountant checks the money and marks the control number paid (the transaction number is filled in).
+- Uniform receipt now prints 3 copies: Original (parent), 1st copy (pupil to the store-keeper file), 2nd copy (stays in the book).
+- Staff accounts: Super Admin "Register from Excel" (`POST /api/users/bulk`, template at `/api/users/bulk-template.xlsx`). Usernames are made by the system (first.last). Check first, then register; passwords shown once.
+- Not done: holiday packages (work for home), candidate-class support, discipline office.
+
+## 2026-11-24 — Teachers' work and Academic progress (migration 050)
+- Titles without gender: Head / Second / Academic Master / Mistress. New roles: Discipline Master / Mistress (`disc`, a teacher with a post who still teaches) and HR (`hr`, office, read only).
+- Subject Teacher has no Students and no Classes page. "My teaching" (`/teaching`, route `/api/teaching`): own classes, own students, who teaches the other subjects of those classes, today's timetable, lessons not yet written, own syllabus progress. Academic / Discipline / Second Master see it only if they have a subject; the Head Master never (does not teach).
+- After every lesson: lesson record (taught, quiz, discussion, test, revision, practical, homework, absent + reason), optional syllabus topic, "topic done" (topic_coverage). Records never change; a correction is a new record.
+- Academic Master decides a test for a class level (all streams): `school_tests`; teachers see it and tag the lesson.
+- Academic progress (`/academic-progress`): Academic, Head, Director, Assistant Director, Manager, Assistant Manager, Finance Manager, Super, HR. Per teacher: lessons written vs timetable, absences, syllabus covered, duty weeks, follow-up flags; per class/subject; week by week.
+- Teacher on Duty / Roll call pages: a Subject Teacher sees them only in his/her duty week (server-checked); Discipline, Academic, Second, Head always.
+- Two terms only (calendar, fees, academic, new tables).
+- Run: `npm run migrate` (050), re-run `db/provision-roles.sql`. Tests: `test/teaching.test.js` (6 pass).
+
+## 2026-11-24 (evening) — Timetable grid (migration 051)
+- Teaching timetable is now a grid per class stream: days down, periods across, clock time and kind (lesson/break/lunch/other) above each period. Empty until the Academic Master / Mistress writes it. Boxes: subject (teacher comes from the class's subject teacher) or activity (ASSEMBLY, REVISION ...).
+- "Write it for me": lessons a week per subject (or shared by weight, core subjects double), for one class or all classes; teachers never placed in two classes at the same time (clock time compared); result is shown first, saved only on Save.
+- Excel: download (one sheet per class + Subjects + Read me), fill, import; preview with warnings, then save. Teacher clashes stop a save unless "Save anyway".
+- API: `/api/timetable` (grid GET/PUT, generate, template.xlsx, excel). Run `npm run migrate` (051) and re-run `db/provision-roles.sql` (DELETE on timetable tables).
+- Tests: `test/timetable.test.js` (4 pass). Note: first `require('exceljs')` is slow on the mounted folder; load it at the top of a test file.
+
+## Timetable like the paper one (2026-11-24)
+- One timetable per class level (Nursery PP1 & PP2, P1/P2/P3/P5/P6, P4, P7, others) with all streams; rows day × class × stream, columns periods with times.
+- Times and fixed parts (Morning Circle, Break, Lunch, Resting, PE, Religion, Assembly, Revision) start from the school's usual layout (`lib/timetable-defaults.js`) and are changed in the screen "Times and fixed parts" (table `timetable_layouts`, migration 052).
+- The Academic Master only picks the subject in each empty box (drop-down of that class's subjects). Fixed boxes cannot be filled. "Write it for me" fills empty boxes and respects fixed parts.
+- Excel: same layout, drop-down in every box, lesson-count tables with TOTAL (formulas). Import reads times and boxes; unknown words become notes with a warning.
+- API: GET/PUT /api/timetable/level, POST /generate {layout:true}, GET /template.xlsx, POST /excel. Run `npm run migrate` and re-run db/provision-roles.sql.
+
+## Streams inside a class (2026-11-25)
+- Students → Classes: "Add stream" is now "Add class". "Remove all streams" puts all students back in their class and deletes the streams (a stream with records is kept switched off).
+- Inside a class: "Create streams" (2 or more names). The system shuffles the students by chance into equal groups, or the Academic Master uses Excel (Stream column; or only one stream and the rest go to the other).
+- On a stream: "Upload this stream (Excel)"; "Remove streams". The split class stays as a switched-off parent ("Split into streams"); stream classes copy the subject teachers.
+- Class Excel (`GET /api/class-streams/:id/class.xlsx`): students with a Stream column, subjects with the teacher of each stream, how to fill.
+- Files: `routes/class-streams.js`, `pages/student/Classes.jsx`, `pages/student/ClassPage.jsx`, `test/class-streams.test.js`. Re-run `db/provision-roles.sql` (DELETE on classes and class_subjects).
+
+## Exam timetable (25 Nov)
+- Academics > Exam timetable is now one table: rows = sessions (date + time), columns = classes, each box = drop-down of that class's subjects.
+- Classes: whole school or chosen classes ("Whole school" button).
+- Excel: download the table, fill it, Import Excel (shows it for checking), then Save.
+- Rules checked on save: no two papers at the same time for a class, same subject not twice a day, subject must belong to the class.
+- Teachers still see the old read list. Files: backend/src/routes/exam-timetable.js, frontend/src/pages/ExamGrid.jsx.
+- NOT tested by automatic tests yet (test database was not running).
+- (25 Nov) Every paper now has an invigilator (usually not the subject teacher): dropdown under each subject in the grid, an INVIGILATOR column next to each class in Excel, and the teacher's "My exams" shows papers he teaches or invigilates. Orange box = same teacher has another paper at the same time. Class picker rebuilt (grouped by level, search, select all). Not auto-tested.

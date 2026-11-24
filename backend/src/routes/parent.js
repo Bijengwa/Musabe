@@ -8,7 +8,7 @@
 //   The parent stays signed in on that phone (180 days, or 60 days without opening the app).
 //
 // What a parent sees: every student whose record has their phone (any of the three schools), plus students the
-// School Admin linked to them after a request (student_guardians). Nothing else: every child route checks this.
+// School Admin added as a guardian after a request (student_guardians). Nothing else: every child route checks this.
 //
 // Staff accounts never sign in here. A staff member who is also a parent signs in with the phone on the child's record.
 // Messages come back in the language of the app (header X-Lang: sw | en). Kiswahili is the default.
@@ -76,8 +76,8 @@ router.use(appLimit);
 const parentOut = (p) => ({ id: p.id, phone: p.phone, fullName: p.full_name || '', locale: p.locale });
 
 // ---------- Sign in ----------
-// Is this phone a parent's? On a student's record (any school, any status), or already an account.
-const onRecord = async (phone) => !!(await db('students').where({ parent_phone: phone }).first('id'));
+// Is this phone a parent's? A guardian of a student (any school, any status), or already an account.
+const onRecord = async (phone) => !!(await db('student_guardians').where({ phone }).first('id'));
 
 router.post('/auth/start', startAddrLimit, startLimit, async (req, res) => {
   const phone = phoneOf(req, req.body?.phone);
@@ -115,9 +115,9 @@ router.post('/auth/verify', verifyLimit, async (req, res) => {
   let p = await db('parents').where({ phone }).first();
   if (p && !p.active) throw fail(req, 403, 'off');
   if (!p) {
-    // First time: the account takes the parent's name from the newest student record with this phone.
-    const s = await db('students').where({ parent_phone: phone }).whereNotNull('parent_name').orderBy('updated_at', 'desc').first('parent_name');
-    await db('parents').insert({ phone, full_name: s?.parent_name || null, locale: lang(req) }).onConflict('phone').ignore();
+    // First time: the account takes the guardian's name from the newest guardian record with this phone.
+    const g = await db('student_guardians').where({ phone }).orderBy('updated_at', 'desc').first('full_name');
+    await db('parents').insert({ phone, full_name: g?.full_name || null, locale: lang(req) }).onConflict('phone').ignore();
     p = await db('parents').where({ phone }).first();
     await audit(req, 'parent.register', `Parent ${p.full_name ? `${p.full_name} (${phone})` : phone} opened an account in the parents' app`);
   }
@@ -154,13 +154,10 @@ router.post('/auth/logout', requireParent, async (req, res) => {
 router.use(requireParent);
 
 // ---------- Children ----------
-// Ids of this parent's children: phone on the record, or linked by the School Admin.
+// Ids of this parent's children: every student who has a guardian with this phone
+// (written by the school, or added by the School Admin after a request).
 async function childIds(p) {
-  const [own, linked] = await Promise.all([
-    db('students').where({ parent_phone: p.phone }).pluck('id'),
-    db('student_guardians').where({ parent_id: p.id, active: true }).pluck('student_id'),
-  ]);
-  return [...new Set([...own, ...linked])];
+  return [...new Set(await db('student_guardians').where({ phone: p.phone }).pluck('student_id'))];
 }
 
 const SQ = () => db('students as s').join('schools as sc', 'sc.id', 's.school_id').leftJoin('classes as c', 'c.id', 's.class_id')
@@ -254,16 +251,35 @@ router.get('/children/:id/receipts', async (req, res) => {
 });
 
 // Control numbers waiting to be paid (bank / mobile money), and the last ones paid or cancelled.
+// The parent paid to a lipa number and sends the transaction number. The Accountant checks the money and marks the control number paid.
+router.post('/children/:id/bills/:bill/claim', async (req, res) => {
+  const s = await myChild(req);
+  const network = String(req.body?.network || '');
+  const ref = String(req.body?.ref || '').trim().toUpperCase().replace(/\s+/g, '').slice(0, 60);
+  if (!['mpesa', 'tigo', 'airtel', 'halo', 'azam', 'other'].includes(network)) throw new HttpError(400, 'Choose the network you paid with.');
+  if (ref.length < 6) throw new HttpError(400, 'Type the transaction number from the message you got.');
+  const b = await db('bills').where({ id: Number(req.params.bill) || 0, student_id: s.id }).first();
+  if (!b) throw new HttpError(404, 'Control number not found.');
+  if (b.status !== 'pending') throw new HttpError(409, 'This control number is not waiting for payment.');
+  if (new Date(b.expires_at) < new Date()) throw new HttpError(409, 'This control number has expired. Ask the school bursar to renew it.');
+  if (b.claim_ref) throw new HttpError(409, 'You already sent a transaction number for this control number. The school is checking it.');
+  await db('bills').where({ id: b.id }).update({ claim_network: network, claim_ref: ref, claim_at: db.fn.now() });
+  await audit(req, 'bill.claim', `Parent says control number ${b.control_no} (${b.student_name}) was paid by mobile money: ${ref}`, { schoolId: b.school_id, detail: { billId: b.id } });
+  res.json({ ok: true });
+});
+
 router.get('/children/:id/bills', async (req, res) => {
   const s = await myChild(req);
   const bs = await db('bills').where({ student_id: s.id })
     .andWhere((w) => w.where('status', 'pending').orWhereRaw("coalesce(paid_at, cancelled_at, created_at) > now() - interval '60 days'"))
     .orderBy('created_at', 'desc').limit(30)
-    .select('id', 'control_no', 'total', 'status', 'expires_at', 'created_at', 'paid_at');
+    .select('id', 'control_no', 'total', 'status', 'expires_at', 'created_at', 'paid_at', 'claim_ref', 'claim_network', 'claim_at', 'school_id');
+  const lipa = bs.length ? await db('lipa_numbers').where({ school_id: bs[0].school_id, active: true }).orderBy('network').select('network', 'number', 'account_name') : [];
   const lines = bs.length ? await db('bill_lines').whereIn('bill_id', bs.map((b) => b.id)).orderBy('id').select('bill_id', 'item_name', 'qty', 'amount') : [];
   const now = Date.now();
   res.json({ bills: bs.map((b) => ({
-    id: b.id, controlNo: b.control_no, total: b.total, createdAt: b.created_at, expiresAt: b.expires_at, paidAt: b.paid_at,
+    id: b.id, controlNo: b.control_no, total: b.total, createdAt: b.created_at, expiresAt: b.expires_at, paidAt: b.paid_at, claimRef: b.claim_ref, claimNetwork: b.claim_network, claimAt: b.claim_at,
+    lipa: lipa.map((l) => ({ network: l.network, number: l.number, name: l.account_name })),
     status: b.status === 'pending' && new Date(b.expires_at).getTime() < now ? 'expired' : b.status,
     lines: lines.filter((l) => l.bill_id === b.id).map((l) => ({ item: l.item_name, qty: l.qty, amount: l.amount })),
   })) });

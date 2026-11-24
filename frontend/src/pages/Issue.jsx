@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, fmtWhen, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, fmtWhen, useToast, Loading } from '../components/ui';
 import { useSchoolQs } from '../components/common';
 import { ScanBox } from '../components/scan';
 
@@ -246,7 +246,7 @@ function List({ open }) {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !rows.length ? <Empty>{open ? 'Everything is back.' : 'Nothing given out yet.'}</Empty> : (
+        {!data ? <Loading /> : !rows.length ? <Empty>{open ? 'Everything is back.' : 'Nothing given out yet.'}</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>No.</th><th>Date</th><th className="stick">Given to</th><th>Thing</th><th>Barcode</th><th className="n">Qty</th><th>Store</th><th>State</th><th>By</th></tr></thead>
             <tbody>{rows.map(({ i, l }) => (

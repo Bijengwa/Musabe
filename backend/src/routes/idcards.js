@@ -23,7 +23,8 @@ const classLabel = (s) => [s.class_short || s.class_name, s.class_stream].filter
 // ---------- Who the card belongs to ----------
 const SQ = () => db('students as s').leftJoin('classes as c', 'c.id', 's.class_id').join('schools as sc', 'sc.id', 's.school_id')
   .leftJoin('photos as ph', 'ph.student_id', 's.id')
-  .select('s.id', 's.full_name', 's.first_name', 's.middle_name', 's.last_name', 's.admission_no', 's.sex', 's.status', 's.school_id', 's.parent_phone',
+  .select('s.id', 's.full_name', 's.first_name', 's.middle_name', 's.last_name', 's.admission_no', 's.sex', 's.status', 's.school_id',
+    db.raw('(SELECT g.phone FROM student_guardians g WHERE g.student_id = s.id ORDER BY g.position, g.id LIMIT 1) as guardian_phone'),
     'c.name as class_name', 'c.short_name as class_short', 'c.stream as class_stream', 'sc.name as school_name', 'sc.short_name as school_short', 'sc.code as school_code',
     'ph.updated_at as photo_at');
 const UQ = () => db('users as u').leftJoin('schools as sc', 'sc.id', 'u.school_id').leftJoin('photos as ph', 'ph.user_id', 'u.id')
@@ -40,7 +41,7 @@ const photoV = (h) => (h.photo_at ? new Date(h.photo_at).getTime() : null);
 const holderOut = (kind, h) => (kind === 'student'
   ? { kind, id: h.id, code: codeFor('student', h.id), name: h.full_name, firstName: h.first_name, middleName: h.middle_name || '', lastName: h.last_name,
     schoolId: h.school_id, schoolName: h.school_name, school: h.school_short, schoolCode: h.school_code, photo: photoV(h),
-    admissionNo: h.admission_no, className: classLabel(h) || null, sex: SEX[h.sex] || null, parentPhone: h.parent_phone, active: h.status === 'active' }
+    admissionNo: h.admission_no, className: classLabel(h) || null, sex: SEX[h.sex] || null, parentPhone: h.guardian_phone, active: h.status === 'active' }
   : (() => {
     const n = split(h.full_name);
     return { kind, id: h.id, code: codeFor('staff', h.id), name: h.full_name, firstName: n.first, middleName: n.middle, lastName: n.last,

@@ -39,8 +39,13 @@ test.before(async () => {
   schools = await db('schools').orderBy('id').limit(2);
   // Children left by earlier runs would crowd the name search of this test: rename them.
   await db('students').where({ first_name: 'CHAUSIKU', last_name: 'TEST' }).update({ last_name: 'OLDRUN' });
-  const add = async (school, adm, first, ph) => (await db('students').insert({ school_id: school.id, admission_no: `${adm}-${tag}`, first_name: first, last_name: 'TEST',
-    full_name: `${first} TEST`, sex: 'F', parent_name: 'MAMA TEST', parent_phone: ph }).returning('id'))[0].id;
+  const someone = (await db('users').orderBy('id').first('id')).id;
+  const add = async (school, adm, first, ph) => {
+    const id = (await db('students').insert({ school_id: school.id, admission_no: `${adm}-${tag}`, first_name: first, last_name: 'TEST',
+      full_name: `${first} TEST`, sex: 'F' }).returning('id'))[0].id;
+    await db('student_guardians').insert({ student_id: id, school_id: school.id, full_name: 'ASHA TEST', phone: ph, relationship: 'mother', created_by: someone });
+    return id;
+  };
   kids = [await add(schools[0], 'P1', 'AMANI', phone), await add(schools[1], 'P2', 'BARAKA', phone)];
   stranger = await add(schools[1], 'P3', 'CHAUSIKU', other);
   const hash = await bcrypt.hash(`Pw-${tag}-long-9x`, 4);
@@ -62,7 +67,7 @@ test('the code works once; a wrong code is refused', { skip }, async () => {
   assert.equal(bad.status, 400);
   const ok = await app_('POST', '/api/parent/auth/verify', { body: { phone, code: lastCode } });
   assert.equal(ok.status, 200);
-  assert.equal(ok.json.parent.fullName, 'MAMA TEST');
+  assert.equal(ok.json.parent.fullName, 'ASHA TEST');
   token = ok.json.token;
   const again = await app_('POST', '/api/parent/auth/verify', { body: { phone, code: lastCode } });
   assert.equal(again.status, 400);
@@ -87,11 +92,13 @@ test('a missing child: request → School Admin links → parent sees the child'
   assert.ok(mine.matches.some((m) => m.id === stranger));
   const l = await request({ port, method: 'POST', path: `/api/parent-requests/${mine.id}/link`, cookie: adminCookie, body: { studentId: stranger } });
   assert.equal(l.status, 200);
-  assert.match(l.json.how, /second parent/);
+  assert.match(l.json.how, /added as guardian 2/);
   const me = await app_('GET', '/api/parent/me', { token: t });
   assert.ok(me.json.children.some((c) => c.id === stranger));
-  // The first parent's phone on the record is not replaced.
-  assert.equal((await db('students').where({ id: stranger }).first()).parent_phone, other);
+  // The guardian already on the record is not replaced: the parent is added after.
+  const gs = await db('student_guardians').where({ student_id: stranger }).orderBy('position');
+  assert.deepEqual(gs.map((g) => g.phone), [other, phone]);
+  assert.equal(gs[1].relationship, 'mother');
 });
 
 test('signing out ends the token', { skip }, async () => {

@@ -1,5 +1,5 @@
 /* Sign-in page: no card, the form sits straight on the page. One screen, no scrolling on a phone. */
-.lg { position: relative; height: 100%; min-height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; isolation: isolate;
+.lg-page { position: relative; height: 100%; min-height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; isolation: isolate;
   padding: max(12px, env(safe-area-inset-top)) 22px max(12px, env(safe-area-inset-bottom)); background: var(--bg) }
 .lg-orb { position: absolute; z-index: -1; border-radius: 50%; filter: blur(80px); opacity: .55; animation: lg-drift 16s ease-in-out infinite alternate }
 .lg-orb.a { width: 340px; height: 340px; top: -140px; right: -100px; background: #8fe0b4 }

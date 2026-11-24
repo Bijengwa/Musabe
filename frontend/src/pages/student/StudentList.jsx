@@ -4,8 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { useLive } from '../../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SkeletonTable, fmtPhone } from '../../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, Skeleton, SkeletonKpis, SkeletonTable } from '../../components/ui';
 import { useClasses, useStudentSchool } from './shared';
+import { GuardianLines } from './guardians';
 
 export default function StudentList() {
   const { can } = useAuth();
@@ -17,6 +18,7 @@ export default function StudentList() {
   const [cls, setCls] = useState(() => { try { return sessionStorage.getItem('musabe-class') || ''; } catch { return ''; } });
   const [status, setStatus] = useState('active');
   const [sex, setSex] = useState('');
+  const [noGuardian, setNoGuardian] = useState(false);
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(null);
   const [error, setError] = useState('');
@@ -27,9 +29,10 @@ export default function StudentList() {
     const p = new URLSearchParams({ school, status });
     if (validCls) p.set('class', validCls);
     if (sex) p.set('sex', sex);
+    if (noGuardian) p.set('guardians', 'none');
     if (q.trim()) p.set('q', q.trim());
     return p.toString();
-  }, [school, status, validCls, sex, q]);
+  }, [school, status, validCls, sex, q, noGuardian]);
   const load = useCallback(() => { if (school) api.get(`/students?${qs}`).then((d) => { setRows({ qs, list: d.students }); setError(''); }).catch((e) => setError(e.message)); }, [qs, school]);
   useEffect(() => { const t = setTimeout(load, q ? 250 : 0); return () => clearTimeout(t); }, [load, q]);
   useLive(['student', 'studentimport'], load);
@@ -43,6 +46,7 @@ export default function StudentList() {
     <>
       <PageHead title="Students" sub={edit ? 'Pick a class, or search any name. Click a student to open their page.' : 'Students and their classes.'}>
         <ExcelButton href={`/api/students/export.xlsx?${qs}`} />
+        {edit && <Link className="btn" to={`/students/bulk${validCls ? `?class=${validCls}` : ''}`}><Icon name="edit" /> Edit many</Link>}
         {edit && <Link className="btn" to="/students/upload"><Icon name="upload" /> Upload class list</Link>}
         {edit && <Link className="btn p" to={`/students/new${validCls ? `?class=${validCls}` : ''}`}><Icon name="plus" /> Add student</Link>}
       </PageHead>
@@ -52,6 +56,8 @@ export default function StudentList() {
           {can('classlist', 'f') && <Link className="btn p" style={{ alignSelf: 'flex-start' }} to="/students/classes"><Icon name="plus" /> Add classes</Link>}</div></Panel>
       ) : (
         <>
+          {!all && <SkeletonKpis count={2} />}
+          {!all && <div className="skel-chips">{[70, 62, 66, 60, 64, 58, 62].map((w, i) => <Skeleton key={i} width={w} height={32} style={{ borderRadius: 999 }} />)}</div>}
           {all && (
             <div className="kpis">
               <Kpi tone="hi" label={current ? current.label : 'Students'} value={current ? current.students : total}
@@ -64,15 +70,20 @@ export default function StudentList() {
             {classes.map((c) => <button key={c.id} title={c.fullName} className={String(c.id) === validCls ? 'on' : ''} onClick={() => pickClass(String(c.id))}>{c.label} <em>{c.students}</em></button>)}
           </div>
           <div className="filters">
-            <div className="searchbox"><Icon name="search" /><input placeholder="Name or admission no." value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <div className="searchbox"><Icon name="search" /><input placeholder="Name, admission no. or guardian phone" value={q} onChange={(e) => setQ(e.target.value)} /></div>
             <select aria-label="Sex" value={sex} onChange={(e) => setSex(e.target.value)}><option value="">Boys and girls</option><option value="M">Boys</option><option value="F">Girls</option></select>
             <div className="seg">{[['active', 'At school'], ['left', 'Left']].map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div>
+            <label className="chk"><input type="checkbox" checked={noGuardian} onChange={(e) => setNoGuardian(e.target.checked)} /> No guardian</label>
             {list && <span className="muted small">{list.length} student{list.length === 1 ? '' : 's'}</span>}
           </div>
           <Panel flush>
-            {!list ? <SkeletonTable rows={9} columns={validCls ? 6 : 7} /> : !list.length ? <Empty>{q ? 'No student matches.' : current ? `No students in ${current.label} yet.` : 'No students yet.'}</Empty> : (
+            {!list ? <SkeletonTable rows={9} columns={validCls ? 5 : 6} /> : !list.length ? (q || noGuardian || sex
+              ? <Empty icon="search" title="No student matches">Try a different name, admission number or phone, or clear the filters above.</Empty>
+              : <Empty icon="users" title={current ? `No students in ${current.label} yet` : 'No students yet'}
+                steps={['Press "Add student" to type one child with their guardians.', 'Or upload a class list from Excel: it is checked first, and nothing is saved until you approve it.']}
+                action={<><Link className="btn p" to="/students/new"><Icon name="plus" /> Add student</Link><Link className="btn" to="/students/upload"><Icon name="upload" /> Upload class list</Link></>} />) : (
               <div className="tw"><table className="stafftable">
-                <thead><tr><th className="sn">S/N</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th>{!validCls && <th>Class</th>}<th>Parent</th><th>Phone</th></tr></thead>
+                <thead><tr><th className="sn">S/N</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th>{!validCls && <th>Class</th>}<th>Guardians</th></tr></thead>
                 <tbody>
                   {list.map((s, i) => (
                     <tr key={s.id} className="clickrow" tabIndex={0} onClick={() => navigate(`/students/${s.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/students/${s.id}`); }}>
@@ -81,8 +92,7 @@ export default function StudentList() {
                       <td data-l="Adm. No." className="mono">{s.admissionNo}</td>
                       <td data-l="Sex">{s.sexLabel}</td>
                       {!validCls && <td data-l="Class">{s.className || <span className="muted">No class</span>}</td>}
-                      <td data-l="Parent">{s.parentName || <span className="muted">—</span>}</td>
-                      <td data-l="Phone">{s.parentPhone ? fmtPhone(s.parentPhone) : <span className="muted">—</span>}</td>
+                      <td data-l="Guardians"><GuardianLines list={s.guardians} /></td>
                     </tr>
                   ))}
                 </tbody>

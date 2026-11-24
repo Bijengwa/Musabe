@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 const P = {
   home: 'M3 11l9-8 9 8M5 10v10h14V10', building: 'M4 21V6l8-3 8 3v15M9 21v-5h6v5M8 9h1M15 9h1M8 13h1M15 13h1',
@@ -30,15 +30,37 @@ export const Icon = ({ name, size }) => (
   <svg className="ic" viewBox="0 0 24 24" aria-hidden="true" style={size ? { width: size, height: size } : undefined}><path d={P[name] || ''} /></svg>
 );
 
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 export function Modal({ title, onClose, children, footer, wide }) {
+  const box = useRef(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; });
   useEffect(() => {
-    const k = (e) => { if (e.key === 'Escape') onClose(); };
+    const prev = document.activeElement;
+    const el = box.current;
+    // Move focus into the dialog (unless a field already grabbed it with autoFocus).
+    if (el && !el.contains(document.activeElement)) (el.querySelector('input,select,textarea') || el.querySelector(FOCUSABLE) || el).focus();
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const k = (e) => {
+      if (e.key === 'Escape') { e.stopPropagation(); closeRef.current(); return; }
+      if (e.key !== 'Tab' || !el) return;
+      const f = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.offsetParent !== null);
+      if (!f.length) { e.preventDefault(); return; }
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !el.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', k);
+      document.body.style.overflow = overflow;
+      if (prev && prev.focus && document.contains(prev)) prev.focus();
+    };
+  }, []);
   return (
     <div className="mwrap" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={`modal${wide ? ' wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={box} tabIndex={-1} className={`modal${wide ? ' wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="mh"><h2>{title}</h2><button className="iconbtn" onClick={onClose} aria-label="Close"><Icon name="x" /></button></div>
         <div className="mb">{children}</div>
         {footer && <div className="mf">{footer}</div>}
@@ -47,12 +69,55 @@ export function Modal({ title, onClose, children, footer, wide }) {
   );
 }
 
-const ToastCtx = createContext(() => {});
+// Button that shows a spinner and blocks double-clicks while `busy`.
+export function Btn({ busy, children, className = '', disabled, ...rest }) {
+  return <button {...rest} className={`btn ${className}${busy ? ' busy' : ''}`} disabled={disabled || busy} aria-busy={busy || undefined}>{busy && <span className="btn-spin" aria-hidden="true" />}{children}</button>;
+}
+
+// Replaces window.confirm: `const confirm = useConfirm(); if (await confirm({ title, body, danger })) ...`
+const ConfirmCtx = createContext(() => Promise.resolve(true));
+export function ConfirmProvider({ children }) {
+  const [q, setQ] = useState(null);
+  const ask = useCallback((o) => new Promise((resolve) => setQ({ ...(typeof o === 'string' ? { body: o } : o), resolve })), []);
+  const done = (v) => { q.resolve(v); setQ(null); };
+  return <ConfirmCtx.Provider value={ask}>{children}{q && (
+    <Modal title={q.title || 'Are you sure?'} onClose={() => done(false)} footer={<>
+      <button className="btn" onClick={() => done(false)}>{q.cancel || 'Cancel'}</button>
+      <button className={`btn ${q.danger ? 'danger-bg' : 'p'}`} autoFocus onClick={() => done(true)}>{q.ok || 'Confirm'}</button></>}>
+      <p>{q.body}</p>
+    </Modal>)}</ConfirmCtx.Provider>;
+}
+export const useConfirm = () => useContext(ConfirmCtx);
+
+// toast('Saved') · toast.error('...') · toast.success('...') · toast('Removed', { action: { label: 'Undo', onClick } })
+let toastId = 0;
+const ToastCtx = createContext(Object.assign(() => {}, { error() {}, success() {} }));
 export function ToastProvider({ children }) {
-  const [msg, setMsg] = useState(null);
-  const t = useRef();
-  const show = useCallback((m) => { setMsg(m); clearTimeout(t.current); t.current = setTimeout(() => setMsg(null), 2800); }, []);
-  return <ToastCtx.Provider value={show}>{children}{msg && <div className="toast" role="status">{msg}</div>}</ToastCtx.Provider>;
+  const [list, setList] = useState([]);
+  const dismiss = useCallback((i) => setList((l) => l.filter((x) => x.id !== i)), []);
+  const show = useMemo(() => {
+    const f = (message, o = {}) => {
+      const n = ++toastId;
+      const type = o.type || 'info';
+      const ms = o.action ? 7000 : type === 'error' ? 6000 : 3200;
+      setList((l) => [...l.slice(-3), { id: n, message, type, action: o.action }]);
+      setTimeout(() => dismiss(n), ms);
+    };
+    return Object.assign(f, { error: (m, o) => f(m, { ...o, type: 'error' }), success: (m, o) => f(m, { ...o, type: 'success' }) });
+  }, [dismiss]);
+  return (
+    <ToastCtx.Provider value={show}>{children}
+      <div className="toasts" aria-live="polite" aria-atomic="false">
+        {list.map((t) => (
+          <div key={t.id} className={`toast t-${t.type}`} role={t.type === 'error' ? 'alert' : 'status'}>
+            <span className="tmsg">{t.message}</span>
+            {t.action && <button className="tact" onClick={() => { t.action.onClick(); dismiss(t.id); }}>{t.action.label}</button>}
+            <button className="tx" onClick={() => dismiss(t.id)} aria-label="Dismiss"><Icon name="x" size={14} /></button>
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
+  );
 }
 export const useToast = () => useContext(ToastCtx);
 
@@ -118,7 +183,36 @@ export const ExcelButton = ({ href, label = 'Excel' }) => (
 // Money in Tanzanian shillings: 36000 -> "36,000"
 export const tsh = (n) => Number(n).toLocaleString('en-GB');
 
-export const Empty = ({ children }) => <div className="empty">{children}</div>;
+// Friendly empty state that also teaches the screen.
+//   <Empty icon="users" title="No suppliers yet" steps={['Press New supplier', 'Add price lists', 'Record what we owe']} action={<button className="btn p">New supplier</button>}>
+//     Short sentence on what this list is for.</Empty>
+// Plain text still works: a bare string gets an icon and a title made from its first sentence, and "no match" texts
+// get a search icon. Very short texts (e.g. "None waiting.") stay small for tight panels.
+// A bare "Loading…" renders a skeleton table instead of a word.
+function autoEmpty(text) {
+  const t = text.trim();
+  if (/(match|found|no .* match)/i.test(t) || /^nothing found/i.test(t)) return { icon: 'search', title: t.replace(/\.$/, ''), body: 'Try a different word, or clear the search and filters.' };
+  if (/^choose /i.test(t)) return { icon: 'list', title: t.split(/(?<=\.)\s/)[0].replace(/\.$/, ''), body: t.split(/(?<=\.)\s/).slice(1).join(' ') };
+  const parts = t.split(/(?<=[.!?])\s+/);
+  return { icon: 'inbox', title: parts[0].replace(/\.$/, ''), body: parts.slice(1).join(' ') };
+}
+export function Empty({ children, icon, title, steps, action }) {
+  if (children === 'Loading…') return <SkeletonTable rows={5} columns={4} />;
+  let ic = icon, ti = title, body = children;
+  if (!icon && !title && !steps && !action) {
+    if (typeof children !== 'string' || children.length < 30) return <div className="empty">{children}</div>;
+    ({ icon: ic, title: ti, body } = autoEmpty(children));
+  }
+  return (
+    <div className="empty rich">
+      {ic && <span className="empty-ic" aria-hidden="true"><Icon name={ic} size={26} /></span>}
+      {ti && <strong className="empty-t">{ti}</strong>}
+      {body && <div className="empty-b">{body}</div>}
+      {steps && <ol className="empty-steps">{steps.map((x, i) => <li key={i}><span>{i + 1}</span>{x}</li>)}</ol>}
+      {action && <div className="empty-a">{action}</div>}
+    </div>
+  );
+}
 
 export function Spinner({ size = 'md', label = 'Loading' }) {
   return <span className={`spinner spinner-${size}`} role="status" aria-label={label}><span /></span>;
@@ -149,6 +243,43 @@ export function PageSkeleton({ table = true, kpis = false }) {
   </div>;
 }
 
+// Loading inside a panel or a list: grey shimmering rows in place of the data (no spinners, no "Loading…").
+export function Loading({ rows = 5, columns = 4 }) {
+  return <SkeletonTable rows={rows} columns={columns} />;
+}
+
+// Loading a whole detail page (one student, one requisition ...): a back link stays, the rest is skeleton.
+export function DetailSkeleton() {
+  return <div className="page-skeleton" role="status" aria-live="polite" aria-label="Loading">
+    <div className="ph1"><div className="t"><Skeleton width="280px" height={28} /><div className="skeleton-sub row"><Skeleton width="90px" height={22} /><Skeleton width="70px" height={22} /><Skeleton width="110px" height={22} /></div></div></div>
+    <div className="grid2">
+      <Panel title=""><div className="stack">{Array.from({ length: 6 }, (_, i) => <div key={i} className="row" style={{ justifyContent: 'space-between' }}><Skeleton width="30%" height={12} /><Skeleton width={`${40 + (i % 3) * 12}%`} height={12} /></div>)}</div></Panel>
+      <Panel title=""><SkeletonTable rows={5} columns={2} /></Panel>
+    </div>
+  </div>;
+}
+
+// The whole app while the session is checked (first load / reload): menu, top bar and a page, all in skeleton.
+export function AppSkeleton() {
+  return (
+    <div className="app app-skeleton" role="status" aria-live="polite" aria-label="Loading Musabe Schools System">
+      <aside className="side" aria-hidden="true">
+        <div className="skel-brand"><img className="skel-logo" src="/musabe-logo.png" alt="" /><div className="stack" style={{ gap: 6, flex: 1 }}><Skeleton width="70%" height={13} className="on-side" /><Skeleton width="45%" height={10} className="on-side" /></div></div>
+        <div className="skel-user"><Skeleton width={34} height={34} circle className="on-side" /><div className="stack" style={{ gap: 6, flex: 1 }}><Skeleton width="60%" height={12} className="on-side" /><Skeleton width="40%" height={10} className="on-side" /></div></div>
+        <div className="sidenav">
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+            <div key={i} className="skel-nav">{i === 2 || i === 6 ? <Skeleton width="34%" height={9} className="on-side" /> : <><Skeleton width={18} height={18} className="on-side" /><Skeleton width={`${45 + (i % 4) * 10}%`} height={12} className="on-side" /></>}</div>
+          ))}
+        </div>
+      </aside>
+      <div className="main">
+        <header className="top" aria-hidden="true"><Skeleton width={36} height={36} /><Skeleton width={130} height={16} /><div className="right"><Skeleton width={110} height={24} /><Skeleton width={34} height={34} circle /><Skeleton width={34} height={34} circle /></div></header>
+        <main className="content"><PageSkeleton kpis /></main>
+      </div>
+    </div>
+  );
+}
+
 export const ErrorNote = ({ error }) => (error ? <p className="err" role="alert">{error}</p> : null);
 
 export function CopyBox({ label, value }) {
@@ -171,4 +302,40 @@ export function fmtWhen(iso) {
   if (d.toDateString() === today.toDateString()) return `Today ${time}`;
   if (d.toDateString() === y.toDateString()) return `Yesterday ${time}`;
   return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} ${time}`;
+}
+
+// Accessible tabs for record details: <Tabs tabs={[['info','Personal'],['fees','Fees']]} value={tab} onChange={setTab} />
+// Arrow keys / Home / End move between tabs. Put the matching content in <div role="tabpanel">.
+export function Tabs({ tabs, value, onChange, label = 'Sections' }) {
+  const move = (e, i) => {
+    const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (n === undefined) return;
+    e.preventDefault();
+    const k = tabs[(n + tabs.length) % tabs.length][0];
+    onChange(k);
+    e.currentTarget.parentElement.querySelector(`[data-tab="${k}"]`)?.focus();
+  };
+  return (
+    <div className="tabs" role="tablist" aria-label={label}>
+      {tabs.map(([k, t, count], i) => (
+        <button key={k} type="button" role="tab" data-tab={k} id={`tab-${k}`} aria-selected={value === k} tabIndex={value === k ? 0 : -1}
+          className={value === k ? 'on' : ''} onClick={() => onChange(k)} onKeyDown={(e) => move(e, i)}>
+          {t}{count != null && <em>{count}</em>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Progress header for multi-step forms: <Stepper steps={['Child','Guardians','Class','Review']} current={1} />
+export function Stepper({ steps, current }) {
+  return (
+    <ol className="stepper" aria-label="Progress">
+      {steps.map((t, i) => (
+        <li key={t} className={i < current ? 'done' : i === current ? 'now' : ''} aria-current={i === current ? 'step' : undefined}>
+          <span className="dot">{i < current ? <Icon name="check" size={13} /> : i + 1}</span><span className="lbl">{t}</span>
+        </li>
+      ))}
+    </ol>
+  );
 }

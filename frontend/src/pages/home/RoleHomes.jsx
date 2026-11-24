@@ -92,7 +92,7 @@ function StudentsByClass({ st }) {
     <Panel title="Students per class" sub={`${st.total} · ${st.boys} boys · ${st.girls} girls`} flush right={<Link className="btn sm" to="/students">Students</Link>}>
       {!st.classes.length ? <Empty>No classes yet.</Empty> : (
         <div className="tw"><table>
-          <thead><tr><th>Class</th><th className="n">Students</th><th className="n">Boys</th><th className="n">Girls</th><th className="n">No phone</th></tr></thead>
+          <thead><tr><th>Class</th><th className="n">Students</th><th className="n">Boys</th><th className="n">Girls</th><th className="n">No guardian</th></tr></thead>
           <tbody>{st.classes.map((c) => (
             <tr key={c.id}><td><b>{c.label}</b> <span className="muted small">{c.name}</span></td><td className="n"><b>{c.n}</b></td><td className="n">{c.boys}</td><td className="n">{c.girls}</td>
               <td className="n">{c.noPhone ? <span className="pill warn">{c.noPhone}</span> : '—'}</td></tr>
@@ -225,7 +225,7 @@ export function SchoolAdminHome({ d }) {
       <div className="kpis">
         <Kpi tone="hi" label="Students" value={st.total} sub={`${st.boys} boys · ${st.girls} girls`} />
         <Kpi label="Classes" value={st.classes.length} sub={`${st.classes.filter((c) => !c.n).length} with no students`} />
-        <Kpi tone={st.noPhone ? 'warn' : ''} label="No parent phone" value={st.noPhone} sub="Add phones on the student's page" />
+        <Kpi tone={st.noPhone ? 'warn' : ''} label="No guardian" value={st.noPhone} sub="Students with no guardian saved. Use Edit many on Students." />
         <Kpi tone={d.pendingLists ? 'warn' : ''} label="Class lists waiting" value={d.pendingLists} sub={d.pendingLists ? <Link to="/students/upload">Review</Link> : 'None'} />
       </div>
       <div className="row"><Link className="btn p" to="/students/new"><Icon name="plus" /> Add student</Link><Link className="btn" to="/students/upload"><Icon name="upload" /> Upload class list</Link></div>

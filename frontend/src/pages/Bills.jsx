@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtPhone, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtPhone, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { ControlSlip, PrintSlipButton, useSchoolQs } from '../components/common';
 import { PrintButton, ReceiptBook } from '../components/receipt';
 
@@ -48,6 +48,7 @@ export default function Bills() {
         <div className="searchbox"><Icon name="search" /><input placeholder="Control number or name" value={q} onChange={(e) => setQ(e.target.value)} inputMode="search" /></div>
       </div>
       <ErrorNote error={error} />
+      <LipaPanel school={school} />
       <Panel flush>
         {!data ? <SkeletonTable rows={8} columns={7} /> : !data.bills.length ? <Empty>No control numbers here.</Empty> : (
           <div className="tw"><table className="stafftable">
@@ -59,7 +60,7 @@ export default function Bills() {
                 {all && <td><SchoolPill code={b.code} name={b.school} /></td>}
                 <td><b>{b.studentName}</b> <span className="muted small">{b.studentClass}</span>{b.payerPhone && <div className="small muted">{b.payerName} · {fmtPhone(b.payerPhone)}</div>}</td>
                 <td className="n money"><b>{tsh(b.total)}</b></td>
-                <td><span className={`pill ${TONE[b.status]}`}>{b.statusLabel}</span>{b.status === 'pending' && <div className="small muted">until {new Date(b.expiresAt).toLocaleDateString('en-GB')}</div>}</td>
+                <td><span className={`pill ${TONE[b.status]}`}>{b.statusLabel}</span>{b.status === 'pending' && b.claimRef && <div className="small"><span className="pill warn sm">Parent says paid</span></div>}{b.status === 'pending' && <div className="small muted">until {new Date(b.expiresAt).toLocaleDateString('en-GB')}</div>}</td>
                 <td className="small">{b.receiptNumber ? <b className="rnum sm">{b.receiptNumber}</b> : '—'}</td>
               </tr>
             ))}</tbody>
@@ -83,6 +84,7 @@ export function BillModal({ id, onClose }) {
   const [receipt, setReceipt] = useState(null);
   const load = useCallback(() => api.get(`/bills/${id}`).then((d) => setB(d.bill)).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (b?.claimRef) setRef((r) => r || b.claimRef); }, [b?.claimRef]);
   useLive(['bill'], load);
   const act = async (path, body, msg) => {
     setBusy(true); setError('');
@@ -111,13 +113,14 @@ export function BillModal({ id, onClose }) {
         {b.canPay && <button className="btn p" onClick={() => setMode('pay')}><Icon name="check" /> Mark as paid</button>}
       </>}>
       <ErrorNote error={error} />
-      {!b ? <Empty>Loading…</Empty> : (
+      {!b ? <Loading /> : (
         <div className="stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <span className={`pill ${TONE[b.status]}`}>{b.statusLabel}</span>
             {b.paidAt && <span className="small">Paid {fmtWhen(b.paidAt)} · {b.paidRef} · confirmed by {b.paidBy} · receipt <b>{b.receiptNumber}</b></span>}
             {b.cancelledAt && <span className="small">Cancelled {fmtWhen(b.cancelledAt)} by {b.cancelledBy}: {b.cancelReason}</span>}
           </div>
+          {b.status === 'pending' && b.claimRef && <div className="warnnote info"><Icon name="phone" /><span><b>The parent says they paid by {b.claimNetwork}</b> with transaction number <b className="mono">{b.claimRef}</b> ({fmtWhen(b.claimAt)}). Check it on the school mobile money statement before you mark it paid.</span></div>}
           {mode === 'pay' && (
             <div className="paybox stack">
               <b>Mark as paid only after you see the money on the school account.</b>
@@ -145,5 +148,35 @@ export function BillModal({ id, onClose }) {
         </div>
       )}
     </Modal>
+  );
+}
+
+// The school's mobile-money lipa numbers. Parents see them in the app with their control number.
+function LipaPanel({ school }) {
+  const toast = useToast();
+  const [d, setD] = useState(null);
+  const [add, setAdd] = useState(false);
+  const [f, setF] = useState({ network: 'mpesa', number: '', accountName: '' });
+  const [error, setError] = useState('');
+  const load = useCallback(() => api.get(`/lipa${school ? `?school=${school}` : ''}`).then(setD).catch(() => setD(null)), [school]);
+  useEffect(() => { load(); }, [load]);
+  if (!d) return null;
+  const save = () => api.post('/lipa', { ...f, schoolId: school || undefined }).then(() => { setAdd(false); setF({ network: 'mpesa', number: '', accountName: '' }); setError(''); load(); toast('Lipa number added'); }).catch((e) => setError(e.message));
+  return (
+    <Panel title="Mobile money lipa numbers" sub="Parents see these in the app next to the control number." right={d.canWrite && <button className="btn sm" onClick={() => setAdd(!add)}>{add ? 'Close' : 'Add a lipa number'}</button>}>
+      {add && <div className="stack" style={{ marginBottom: 8 }}>
+        <div className="fg">
+          <label>Network<select value={f.network} onChange={(e) => setF({ ...f, network: e.target.value })}>{Object.entries(d.networks).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+          <label>Lipa number<input value={f.number} inputMode="numeric" onChange={(e) => setF({ ...f, number: e.target.value.replace(/\D/g, '') })} /></label>
+          <label>Name it shows<input value={f.accountName} onChange={(e) => setF({ ...f, accountName: e.target.value })} placeholder="e.g. MUSABE PRIMARY SCHOOL" /></label>
+        </div>
+        <ErrorNote error={error} />
+        <div><button className="btn p" onClick={save}>Save</button></div>
+      </div>}
+      {!d.numbers.length ? <p className="small muted" style={{ margin: 0 }}>No lipa number yet. Parents can still pay at the bank.</p> : (
+        <div className="row small" style={{ gap: 16, flexWrap: 'wrap' }}>{d.numbers.map((n) => (
+          <span key={n.id} style={{ opacity: n.active ? 1 : 0.5 }}><b>{n.networkLabel}</b> <span className="mono">{n.number}</span> · {n.accountName}
+            {d.canWrite && <button className="btn sm" style={{ marginLeft: 6 }} onClick={() => api.post(`/lipa/${n.id}/active`, { active: !n.active }).then(load)}>{n.active ? 'Switch off' : 'Switch on'}</button>}</span>))}</div>)}
+    </Panel>
   );
 }

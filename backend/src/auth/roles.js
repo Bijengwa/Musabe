@@ -14,10 +14,13 @@ const ROLES = {
   storekeeper: { label: 'Store-keeper',            scope: 'all' },
   cashier:   { label: 'Cashier',                   scope: 'all' },
   mapokezi:  { label: 'Mapokezi (reception)',      scope: 'all' },
+  hr:        { label: 'HR (Human Resources)',      scope: 'all' },   // 2026-11-24: watches teachers' work and conduct (read only)
   secretary: { label: 'Academic Secretary',        scope: 'all' },   // Assistant Director's office: enters admission interview marks (2026-11-20)
   sadmin:    { label: 'School Admin',              scope: 'school' },
-  head:      { label: 'Head Master',               scope: 'school' },
-  acad:      { label: 'Academic Master',           scope: 'school' },
+  head:      { label: 'Head Master / Mistress',      scope: 'school' },
+  second:    { label: 'Second Master / Mistress',    scope: 'school' },   // Deputy Head Master: appoints the Teachers on Duty each week (2026-11-23)
+  acad:      { label: 'Academic Master / Mistress',  scope: 'school' },
+  disc:      { label: 'Discipline Master / Mistress', scope: 'school' }, // 2026-11-24: a teacher who got the discipline post; still teaches
   teacher:   { label: 'Subject Teacher',           scope: 'own' },
   bursar:    { label: 'Bursar',                    scope: 'school' },
   librarian: { label: 'Librarian',                 scope: 'school' },
@@ -26,13 +29,13 @@ const ROLES = {
 };
 
 // Administration roles have no school. School roles must have one.
-const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary'];
-const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'];
+const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary', 'hr'];
+const SCHOOL_ROLES = ['sadmin', 'head', 'second', 'acad', 'disc', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'];
 
 // Who can create (and manage) which accounts.
 const CREATES = {
   super: [...ADMIN_ROLES, ...SCHOOL_ROLES],
-  sadmin: ['head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'],
+  sadmin: ['head', 'second', 'acad', 'disc', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'],
 };
 
 // Page access: 'f' = full, 'v' = view only, missing = hidden.
@@ -69,7 +72,7 @@ const ACCESS = {
   sadmin:    parse('home staff students labels idcards classes:v reports audit:v interviews:v'),
   head:      parse('home orders staff:v students:v idcards:v issue:v counts:v items:v receipts:v bills:v damage:v academics year watch classes marks:v bank:v support reports audit:v interviews:v'),
   acad:      parse('home orders students:v academics year watch classes marks bank support reports classlist interviews:v'),
-  teacher:   parse('home students:v academics year watch classes marks bank support'),
+  teacher:   parse('home academics year watch marks bank support'),
   bursar:    parse('home students:v items:v sell receipts bills money:v reports'),
   librarian: parse('home orders useitems:v items:v issue labels counts give incoming requests damage receipts:v reports'),
 };
@@ -125,8 +128,51 @@ for (const [page, { f, v }] of Object.entries(OFFICE)) {
 // Academic Secretary (2026-11-20, Assistant Director's office): enters the admission interviews (marks from the teacher who
 // marked, on paper or Excel). The School Admin of the school registers those who passed as students.
 ACCESS.secretary = parse('home interviews students:v reports');
+// Teacher on Duty and roll call (2026-11-23):
+// - duty = the weekly Teacher on Duty list (and the daily duty reports). The Second Master appoints and reads the reports.
+// - rollcall = taking the roll call. Teachers have 'f' but the server lets only this week's Teacher on Duty (or the
+//   Second Master) save a roll call; everyone else listed here only looks.
+ACCESS.second = parse('home students:v duty rollcall reports audit:v');
+// 2026-11-24 teachers and academic leaders.
+// - teaching = "My teaching": my classes, my students, my lessons, lesson log, my syllabus progress. Everyone who teaches
+//   (Subject Teacher, Academic, Discipline, Second Master). The server shows only what is assigned to the person.
+//   The Head Master does not teach in class: no page.
+// - acadprogress = Academic progress from start to end, with each teacher's work. Academic Master writes (school-wide tests),
+//   the Head Master and the administration offices look.
+// - Subject Teacher: no Students and no Classes pages (only own students, inside "My teaching").
+ACCESS.disc = parse('home students:v academics year watch marks bank support teaching reports audit:v');
+for (const r of ['teacher', 'acad', 'second']) ACCESS[r].teaching = 'f';
+ACCESS.disc.teaching = 'f';
+ACCESS.acad.acadprogress = 'f'; ACCESS.head.acadprogress = 'v';
+for (const r of ['director', 'adirector', 'manager', 'amanager', 'fm', 'super']) ACCESS[r].acadprogress = 'v';
+ACCESS.hr = parse('home staff:v reports acadprogress:v');
+for (const r of ['teacher', 'acad', 'disc']) Object.assign(ACCESS[r], { duty: 'v', rollcall: 'f' });
+for (const r of ['head', 'super', 'director', 'adirector', 'sadmin']) Object.assign(ACCESS[r], { duty: 'v', rollcall: 'v' });
 // classlist (2026-11-20): the Academic Master (own school) adds the classes and streams, from the levels built into the
 // system (src/lib/levels.js). Everyone with the Students page still SEES the classes.
+
+// School places, Issue Notes and GRN (2026-11-24).
+// - notes = Issue Notes: the Second Master writes them; the Librarian (library things) or the School Store-keeper (school store things) gives.
+// - grn = Goods Received Note at the school: made when a delivery is confirmed; the Bursar checks it, the Head Master approves it.
+// - incoming (for the School Store-keeper): confirms the school-store lines of a delivery.
+Object.assign(ACCESS.second, { notes: 'f', grn: 'v' });
+Object.assign(ACCESS.head, { notes: 'v', grn: 'f' });
+Object.assign(ACCESS.bursar, { notes: 'v', grn: 'f' });
+Object.assign(ACCESS.librarian, { notes: 'f', grn: 'f' });
+Object.assign(ACCESS.sstore, { notes: 'f', grn: 'f', incoming: 'f' });
+for (const r of ['super', 'director', 'adirector', 'manager', 'fm', 'afm', 'acc', 'aacc', 'sadmin']) Object.assign(ACCESS[r], { notes: 'v', grn: 'v' });
+
+// Fees (2026-11-24), the Finance Office: the Finance Manager writes the fee structure, the Manager / Director approves it,
+// the Bursar records what parents pay, the Accountant office confirms each payment. The routes check who may do which step.
+for (const r of ['fm', 'manager', 'director', 'bursar', 'acc', 'aacc', 'sadmin']) ACCESS[r].fees = 'f';
+for (const r of ['afm', 'head', 'super']) ACCESS[r].fees = 'v';
+// Internal audit (2026-11-24): the Accountant works the findings; others only look.
+ACCESS.acc.intaudit = 'f';
+for (const r of ['aacc', 'director', 'adirector', 'manager', 'super']) ACCESS[r].intaudit = 'v';
+// School calendar (2026-11-24): the Head Master writes terms and the holiday program; others in the school look.
+ACCESS.head.calendar = 'f';
+for (const r of ['sadmin']) ACCESS[r].calendar = 'f';
+for (const r of ['second', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron', 'super', 'director', 'adirector', 'manager']) if (ACCESS[r]) ACCESS[r].calendar = 'v';
 
 const ISSUERS = ['librarian'];                           // gives out and takes back by scanning, counts the library (no main store)
 const PURCHASE_CONFIRMERS = ['aacc'];             // confirm purchases and weekly checks

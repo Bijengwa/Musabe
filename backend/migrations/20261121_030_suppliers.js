@@ -1,22 +1,14 @@
 // Reconciles supplier support with databases that already have the advanced schema.
+// On a new, empty database it does nothing: migration 035 (office buying) makes the full suppliers table and
+// purchases.supplier_id itself. (Before 2026-11-23 it made a small suppliers table here, and 035 then failed.)
 exports.up = async function up(knex) {
-  if (!(await knex.schema.hasTable('suppliers'))) {
-    await knex.schema.createTable('suppliers', (t) => {
-      t.increments('id');
-      t.string('name', 120).notNullable();
-      t.boolean('active').notNullable().defaultTo(true);
-      t.integer('created_by').notNullable().references('id').inTable('users').onDelete('RESTRICT');
-      t.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
-    });
-  }
+  if (!(await knex.schema.hasTable('suppliers'))) return;
   if (!(await knex.schema.hasColumn('purchases', 'supplier_id'))) {
     await knex.schema.alterTable('purchases', (t) => {
       t.integer('supplier_id').references('id').inTable('suppliers').onDelete('RESTRICT');
     });
   }
 };
-exports.down = async function down(knex) {
-  if (await knex.schema.hasColumn('purchases', 'supplier_id')) {
-    await knex.schema.alterTable('purchases', (t) => t.dropColumn('supplier_id'));
-  }
+exports.down = async function down() {
+  // purchases.supplier_id belongs to 035 (or was there before); nothing to undo here.
 };

@@ -3,7 +3,7 @@
 // Any ordinary barcode scanner reads them, and so does a phone camera.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Icon } from './ui';
+import { Icon, useToast } from './ui';
 import { QR } from './qr';
 import { api } from '../api';
 
@@ -66,6 +66,7 @@ export const LabelSheet = ({ labels }) => (
 
 // QR labels of one delivery: the store-keeper prints them and sticks them on before the goods go to the school.
 export function DeliveryLabelsButton({ id, className = 'btn sm', label = 'Print QR labels' }) {
+  const toast = useToast();
   const [labels, setLabels] = useState(null);
   const [busy, setBusy] = useState(false);
   const open = async () => {
@@ -75,7 +76,7 @@ export function DeliveryLabelsButton({ id, className = 'btn sm', label = 'Print 
       setLabels(d.lines.flatMap((l) => (l.returnable
         ? l.labels.filter((x) => x.status !== 'lost').map((x) => ({ code: x.code, title: l.item, sub: `${d.number} · ${d.school}` }))
         : Array.from({ length: Math.min(l.labels[0].count, 500) }, () => ({ code: l.labels[0].code, title: l.item, sub: d.school })))));
-    } catch (e) { window.alert(e.message); }
+    } catch (e) { toast.error(e.message); }
     setBusy(false);
   };
   return (

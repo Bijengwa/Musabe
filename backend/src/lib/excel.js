@@ -145,7 +145,18 @@ async function readRows(buffer) {
 function cellText(v) {
   if (v == null) return '';
   if (v instanceof Date) return v.toISOString().slice(0, 10);
-  if (typeof v === 'object') return String(v.result ?? v.text ?? (v.richText ? v.richText.map((t) => t.text).join('') : '')).trim();
+  if (typeof v === 'object') {
+    const formula = v.result;
+    if (typeof formula === 'number') return String(formula).trim();
+    return String(v.text ?? (v.richText ? v.richText.map((t) => t.text).join('') : formula ?? '')).trim();
+  }
+  // Keep Excel numeric phone cells as text and recover leading zero where formatting stored 10 digits numerically.
+  if (typeof v === 'number') {
+    const raw = String(v).replace(/\.0+$/, '');
+    if (/^0[67]\d{8}$/.test(raw)) return raw;
+    if (/^[67]\d{8}$/.test(raw)) return `0${raw}`;
+    return raw;
+  }
   return String(v).trim();
 }
 

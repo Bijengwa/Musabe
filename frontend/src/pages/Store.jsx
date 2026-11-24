@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, tsh, useToast, Loading } from '../components/ui';
 import { useSchoolQs } from '../components/common';
 
 export default function Store() {
@@ -53,7 +53,9 @@ export default function Store() {
         {!showQty && <span className="small muted">Choose a school at the top to see what its library holds.</span>}</div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !rows.length ? <Empty>No items yet. Add one, or download the Excel template, fill it and upload it.</Empty> : (
+        {!data ? <Loading /> : !rows.length ? <Empty icon="box" title="No items to issue yet"
+          steps={['Press New item for one thing, e.g. a ream of paper.', 'Or download the Excel template, fill it, and upload it for many at once.', 'Items that come back after use (like lab tools) get one QR code per piece.']}
+          action={data.canAdd && <button className="btn p" onClick={() => setAdding(true)}><Icon name="plus" /> New item</button>} /> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Item</th><th>Category</th><th>QR code</th><th>Unit</th><th>Comes back?</th>{showQty && <th className="n">In the library</th>}{showQty && <th className="n">Pieces given out</th>}</tr></thead>
             <tbody>{rows.map((r) => (

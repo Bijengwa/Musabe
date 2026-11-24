@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useScope } from '../layout/scope';
-import { Icon, tsh } from './ui';
+import { Icon, Skeleton, tsh } from './ui';
 
 // "?school=2" for administration when a school is chosen at the top; school staff always get their own school.
 export function useSchoolQs() {
@@ -69,7 +69,7 @@ export function LinesEditor({ items, lines, setLines, extra }) {
       <div className="stack" style={{ gap: 8 }}>
         <div className="searchbox wide"><Icon name="search" /><input placeholder="Find an item" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <div className="itemchips">
-          {!items ? <span className="muted small">Loading…</span> : !shown.length ? <span className="muted small">No items.</span> : shown.map((i) => {
+          {!items ? <><Skeleton width="46%" height={14} /><Skeleton width="62%" height={14} /><Skeleton width="38%" height={14} /></> : !shown.length ? <span className="muted small">No items.</span> : shown.map((i) => {
             const on = lines.some((l) => l.itemId === i.id);
             return <button type="button" key={i.id} className={on ? 'on' : ''} onClick={() => (on ? drop(i.id) : add(i))}>{on && <Icon name="check" />}{i.name}</button>;
           })}

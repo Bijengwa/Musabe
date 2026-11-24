@@ -87,7 +87,7 @@ export default function Login() {
 
   if (ch) {
     return (
-      <div className="lg">
+      <div className="lg-page">
         <i className="lg-orb a" /><i className="lg-orb b" />
         <form className="lg-form" ref={form} onSubmit={checkCode} noValidate>
           <header className="lg-top">
@@ -113,7 +113,7 @@ export default function Login() {
   }
 
   return (
-    <div className="lg">
+    <div className="lg-page">
       <i className="lg-orb a" /><i className="lg-orb b" />
 
       <form className="lg-form" ref={form} onSubmit={submit} noValidate>

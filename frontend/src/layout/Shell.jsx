@@ -1,13 +1,14 @@
 import HelpChat from '../components/HelpChat';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { NAV, ALL_PAGES, MY_PAGES, navAccess } from '../nav';
-import { Avatar, Icon, SchoolPill } from '../components/ui';
+import { Avatar, Icon, PageSkeleton, SchoolPill } from '../components/ui';
 import { useSchools, useScope } from './scope';
 import { useLiveStatus } from '../live';
 import Bell from './Bell';
+import Shortcuts from '../components/shortcuts';
 
 const PHONE = 900;
 const isPhone = () => window.innerWidth <= PHONE;
@@ -104,8 +105,12 @@ export default function Shell() {
             <UserMenu />
           </div>
         </header>
-        <main className="content" ref={contentRef}><Outlet /></main>
+        <main className="content" ref={contentRef}>
+          {/* A page that is still downloading shows its skeleton here; the menu and top bar stay. */}
+          <Suspense key={pathname.split('/')[1] || 'home'} fallback={<PageSkeleton kpis />}><Outlet /></Suspense>
+        </main>
         <HelpChat />
+        <Shortcuts />
       </div>
     </div>
   );

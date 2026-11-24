@@ -6,7 +6,7 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, PhoneInput, fmtPhone, phoneProblem, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, PhoneInput, fmtPhone, phoneProblem, tsh, useToast, Loading } from '../components/ui';
 import { PrintButton, ReceiptBook, ReceiptModal, StatusPill, inWords } from '../components/receipt';
 import StudentPicker from '../components/StudentPicker';
 import { ControlSlip, PrintSlipButton } from '../components/common';
@@ -78,7 +78,8 @@ export default function Sell() {
   const reset = () => { setForm((f) => ({ ...EMPTY, method: f.method === 'control' ? 'control' : 'cash' })); setCart([]); setKey(newKey()); setQ(''); setStudent(null); setManual(false); };
   const pickStudent = (st) => {
     setStudent(st);
-    setForm((f) => ({ ...f, payerName: f.payerName || st.parentName || '', payerPhone: f.payerPhone || st.parentPhone || '' }));
+    const g = st.guardians?.[0];
+    setForm((f) => ({ ...f, payerName: f.payerName || g?.fullName || '', payerPhone: f.payerPhone || g?.phone || '' }));
   };
 
   return (
@@ -91,7 +92,14 @@ export default function Sell() {
             {student ? (
               <div className="pickedcard">
                 <div className="grow"><b>{student.fullName}</b>
-                  <span>{student.className || 'No class'} · {student.sexLabel} · Adm. {student.admissionNo}{student.parentName ? ` · Parent: ${student.parentName}` : ''}</span></div>
+                  <span>{student.className || 'No class'} · {student.sexLabel} · Adm. {student.admissionNo}</span>
+                  {student.guardians?.length > 1 && (
+                    <span className="row" style={{ gap: 4, marginTop: 4 }}><span className="small muted">Who pays?</span>
+                      {student.guardians.map((g) => (
+                        <button type="button" key={g.id} className={`btn sm${form.payerPhone === g.phone ? ' p' : ''}`}
+                          onClick={() => setForm((f) => ({ ...f, payerName: g.fullName, payerPhone: g.phone }))}>{g.fullName} ({g.relationshipLabel})</button>
+                      ))}</span>
+                  )}</div>
                 <button type="button" className="btn sm" onClick={() => setStudent(null)}>Change</button>
               </div>
             ) : !manual ? (
@@ -134,7 +142,7 @@ export default function Sell() {
                 {cats.map(([k, t]) => <button key={k} className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{t}</button>)}
               </div>
             </div>
-            {!items ? <Empty>Loading…</Empty> : !shown.length ? <Empty>No items match.</Empty> : (
+            {!items ? <Loading /> : !shown.length ? <Empty>No items match.</Empty> : (
               <div className="itemgrid">
                 {shown.map((i) => {
                   const inCart = cart.find((c) => c.itemId === i.id);
@@ -261,7 +269,7 @@ function Today() {
   const load = useCallback(() => api.get(`/receipts?mine=1&from=${today}&to=${today}`).then(setData).catch(() => {}), [today]);
   useEffect(() => { load(); }, [load]);
   useLive(['receipt', 'give'], load);
-  if (!data) return null;
+  if (!data) return <Panel title="My receipts today" flush><Loading rows={3} columns={3} /></Panel>;
   return (
     <Panel title="My receipts today" sub={`${data.totals.count} · TSh ${tsh(data.totals.money)}`} flush>
       {!data.receipts.length ? <Empty>None yet today.</Empty> : (

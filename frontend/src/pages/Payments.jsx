@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Kpi, PageHead, Panel, tsh } from '../components/ui';
+import { Empty, ErrorNote, Icon, Kpi, PageHead, Panel, tsh, Loading } from '../components/ui';
 import Voucher from './Voucher';
 
 const TONE = { review: 'warn', pending: 'warn', paid: 'ok', rejected: 'bad' };
@@ -43,7 +43,7 @@ function PList() {
         <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.payments.length ? <Empty>Nothing here.</Empty> : (
+        {!data ? <Loading /> : !data.payments.length ? <Empty>Nothing here.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>No.</th><th className="stick">Payee / for</th><th className="n">Amount (TSh)</th><th>Prepared by</th><th>Status</th><th /></tr></thead>
             <tbody>{data.payments.map((p) => (

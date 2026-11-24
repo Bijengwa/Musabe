@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { LinesEditor, useSchoolItems, useSchoolQs } from '../components/common';
 
 const TONE = { pending: 'warn', sent: 'ok', declined: 'bad', withdrawn: '' };
@@ -36,7 +36,7 @@ export default function Requests() {
         <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.requests.length ? <Empty>{status === 'pending' ? 'No requests waiting.' : 'No requests.'}</Empty> : (
+        {!data ? <Loading /> : !data.requests.length ? <Empty>{status === 'pending' ? 'No requests waiting.' : 'No requests.'}</Empty> : (
           <div className="list">{data.requests.map((r) => (
             <div key={r.id} className="li reqli">
               <div className="grow">

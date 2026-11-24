@@ -4,15 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
 import { AuthProvider } from './auth/AuthContext';
-import { ToastProvider } from './components/ui';
+import { ConfirmProvider, ToastProvider } from './components/ui';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <ToastProvider>
-        <AuthProvider>
+        <ConfirmProvider><AuthProvider>
           <App />
-        </AuthProvider>
+        </AuthProvider></ConfirmProvider>
       </ToastProvider>
     </BrowserRouter>
   </StrictMode>,

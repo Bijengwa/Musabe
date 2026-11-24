@@ -11,7 +11,7 @@ import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SchoolPill, fmtWhen, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, SchoolPill, fmtWhen, useToast, DetailSkeleton, Loading } from '../components/ui';
 import { todayStr, useSchoolQs } from '../components/common';
 import { fmtDate } from '../components/paper';
 import './requisition.css';
@@ -57,7 +57,7 @@ function OList() {
       <div className="filters"><div className="seg">{tabs.map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !rows.length ? <Empty>Nothing here.</Empty> : (
+        {!data ? <Loading /> : !rows.length ? <Empty>Nothing here.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>No.</th><th>School</th><th className="stick">Particulars</th><th>Ordered by</th><th>Status</th><th /></tr></thead>
             <tbody>{rows.map((o) => (
@@ -188,7 +188,7 @@ function OPage() {
   const load = useCallback(() => api.get(`/orders/${id}`).then((d) => { setO(d.order); setError(''); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['order', 'requisition'], load);
-  if (!o) return <div className="rq-wrap"><Link to="/orders" className="btn sm">← Order Book</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (!o) return <div className="rq-wrap"><Link to="/orders" className="btn sm">← Order Book</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
   const t = o.turn;
   const canCut = ['acad', 'head', 'manager'].includes(t);
   const lines = () => Object.entries(give).filter(([, v]) => v !== '').map(([lineId, v]) => ({ lineId: Number(lineId), qty: Number(v) }));

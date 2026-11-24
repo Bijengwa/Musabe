@@ -7,7 +7,7 @@ import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, tsh, useToast, DetailSkeleton, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 import { PrintButton } from '../components/barcode';
 import { fmtDate } from '../components/paper';
@@ -44,7 +44,11 @@ function ContractList() {
       </div>}
       <div className="filters"><div className="seg">{[['', 'All'], ['active', 'Work going on'], ['finished', 'Finished'], ['stopped', 'Stopped']].map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <Panel flush>
-        {!d ? <Empty>Loading…</Empty> : !d.contracts.length ? <Empty>No agreements yet.</Empty> : (
+        {!d ? <Loading /> : !d.contracts.length ? (status
+          ? <Empty icon="search" title="No agreements in this group">Choose "All" above to see every agreement.</Empty>
+          : <Empty icon="file" title="No work agreements yet"
+            steps={['Press New agreement and write the work, the contractor and the total amount.', 'Print it: the Director and the contractor sign on paper.', 'Record each instalment you pay. The balance is worked out for you.']}
+            action={d.canWrite && <button className="btn p" onClick={() => setAdding(true)}><Icon name="plus" /> New agreement</button>} />) : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>No.</th><th className="stick">Mpewa kazi</th><th>Aina ya kazi</th><th>Eneo</th><th>Kuanzia – hadi</th><th className="n">Kiasi</th><th className="n">Kilicholipwa</th><th className="n">Salio</th><th>Hali</th></tr></thead>
             <tbody>{d.contracts.map((c) => (
@@ -152,7 +156,7 @@ function ContractPage() {
   const load = useCallback(() => api.get(`/contracts/${id}`).then((x) => { setC(x.contract); setError(''); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['contract'], load);
-  if (!c) return <div className="rq-wrap"><Link to="/contracts" className="btn sm">← All agreements</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (!c) return <div className="rq-wrap"><Link to="/contracts" className="btn sm">← All agreements</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
   const run = async (fn, msg) => { try { await fn(); toast(msg); await load(); } catch (e) { setError(e.message); } };
   return (
     <div className="rq-wrap">

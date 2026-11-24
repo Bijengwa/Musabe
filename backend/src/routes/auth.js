@@ -10,7 +10,9 @@ const sms = require('../lib/sms');
 const { ACCESS, CREATES } = require('../auth/roles');
 
 const router = express.Router();
-const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false,
+// Only failed sign-ins count (2026-11-23): a whole school signs in from one network address in the morning
+// (Teacher on Duty, roll call), so 30 good sign-ins in 15 minutes must not lock everyone out.
+const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, skipSuccessfulRequests: true, standardHeaders: true, legacyHeaders: false,
   message: { error: 'Too many attempts. Wait 15 minutes and try again.' } });
 
 // Wrong passwords:
@@ -147,10 +149,17 @@ router.post('/logout', async (req, res) => {
   res.json({ ok: true });
 });
 
-router.get('/me', requireAuth, (req, res) => {
+router.get('/me', requireAuth, async (req, res) => {
+  const pages = { ...(ACCESS[req.user.role] || {}) };
+  // 2026-11-24: "Teacher on Duty" and "Roll call" only for the teacher whose duty week it is. The Discipline, Academic,
+  // Second and Head Master always see them. "My teaching" only for those who teach (the Head Master does not).
+  if (req.user.school_id) {
+    if (req.user.role === 'teacher' && !(await require('../lib/duty').onDuty(db, req.user.id, req.user.school_id, require('../lib/duty').today()))) { delete pages.duty; delete pages.rollcall; }
+    if (pages.teaching && req.user.role !== 'teacher' && !(await db('class_subjects').where({ teacher_id: req.user.id, active: true }).first('id'))) delete pages.teaching;
+  }
   res.json({
     user: publicUser(req.user),
-    pages: ACCESS[req.user.role] || {},
+    pages,
     canCreate: CREATES[req.user.role] || [],
   });
 });
