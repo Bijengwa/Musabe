@@ -970,3 +970,12 @@ tr.on td { background: var(--primary-soft) }
   .rc-marks { grid-column: 1 / -1; justify-content: space-between }
   .rc-m { flex: 1 }
 }
+
+/* File pickers (2026-11-24): a clear "Choose file" button and a dashed drop box, in light and dark. */
+input[type="file"] { width: 100%; padding: 10px 12px; border: 1.5px dashed var(--primary); border-radius: var(--r); background: var(--primary-soft); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; transition: background .15s, box-shadow .15s }
+input[type="file"]:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--primary-soft); background: var(--soft) }
+input[type="file"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px }
+input[type="file"]:disabled { opacity: .55; cursor: not-allowed }
+input[type="file"]::file-selector-button { margin-right: 12px; padding: 8px 16px; border: 0; border-radius: 8px; background: var(--primary); color: var(--primary-ink); font: inherit; font-weight: 600; cursor: pointer; transition: filter .15s, transform .05s }
+input[type="file"]::file-selector-button:hover { filter: brightness(1.1) }
+input[type="file"]::file-selector-button:active { transform: translateY(1px) }

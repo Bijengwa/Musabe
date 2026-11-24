@@ -43,6 +43,13 @@ const Vehicles = lazy(() => import('./pages/Vehicles'));
 const Academic = lazy(() => import('./pages/Academic'));
 const RollCall = lazy(() => import('./pages/RollCall'));
 const Duty = lazy(() => import('./pages/Duty'));
+const MyTeaching = lazy(() => import('./pages/MyTeaching'));
+const AcademicProgress = lazy(() => import('./pages/AcademicProgress'));
+const IssueNotes = lazy(() => import('./pages/IssueNotes'));
+const Grn = lazy(() => import('./pages/Grn'));
+const Fees = lazy(() => import('./pages/Fees'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const IntAudit = lazy(() => import('./pages/IntAudit'));
 import ComingSoon from './pages/ComingSoon';
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -50,7 +57,7 @@ import Splash from './splash/Splash';
 
 const SCREENS = { home: Home, staff: Staff, schools: Schools, audit: Audit, items: Items, sell: Sell, receipts: Receipts, give: Give, students: Students,
   stock: Stock, stockin: SendStock, incoming: Incoming, requests: Requests, damage: Damage, payments: Payments, bills: Bills, money: Money, salesdash: SalesDashboard, reports: Reports,
-  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles, academics: Academic, rollcall: RollCall, duty: Duty };
+  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles, academics: Academic, rollcall: RollCall, duty: Duty, notes: IssueNotes, grn: Grn, fees: Fees, intaudit: IntAudit, calendar: Calendar, teaching: MyTeaching, acadprogress: AcademicProgress };
 
 export default function App() {
   return <><Splash /><Routed /></>;

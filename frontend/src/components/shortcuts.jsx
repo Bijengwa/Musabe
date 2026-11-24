@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 import { Modal } from './ui';
 
 const typing = (e) => {
@@ -12,6 +13,9 @@ const SHORTCUTS = [
   ['G then H', 'Go to Home'],
   ['G then P', 'Go to My profile'],
   ['G then S', 'Go to Settings'],
+  ['G then L', 'Sign out (it asks you to confirm first)'],
+  [']', 'Next page of a long list'],
+  ['[', 'Previous page of a long list'],
   ['Esc', 'Close a window or menu'],
   ['?', 'Show this list'],
 ];
@@ -19,6 +23,7 @@ const SHORTCUTS = [
 // Global keyboard shortcuts. Ignored while typing in a field, or with Ctrl/Alt/Cmd held.
 export default function Shortcuts() {
   const nav = useNavigate();
+  const { askLogout } = useAuth();
   const [help, setHelp] = useState(false);
   useEffect(() => {
     let g = 0;
@@ -33,11 +38,12 @@ export default function Shortcuts() {
         const to = { h: '/', p: '/profile', s: '/settings' }[e.key.toLowerCase()];
         g = 0;
         if (to) nav(to);
+        else if (e.key.toLowerCase() === 'l') askLogout();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [nav]);
+  }, [nav, askLogout]);
   if (!help) return null;
   return (
     <Modal title="Keyboard shortcuts" onClose={() => setHelp(false)} footer={<button className="btn p" onClick={() => setHelp(false)}>Close</button>}>

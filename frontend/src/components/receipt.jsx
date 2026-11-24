@@ -43,12 +43,17 @@ const yy = (iso) => String(new Date(iso).getFullYear()).slice(2);
 // The receipt laid out like the school's paper receipt book (A5 landscape): crest and school name,
 // No. in red, SCHOOL UNIFORM RECEIPT, Date, Received from / Class, the items table, the sum in words,
 // Banked on, the TShs box and the signature line. Used for printing and for the preview on screen.
-export function ReceiptBook({ r }) {
+// The three copies of every uniform receipt (2026-11-24): the Original goes home with the parent, the 1st copy goes with the pupil
+// to the store-keeper (filed with the items given), the 2nd copy stays in the book for the accounts.
+export const COPIES = ['ORIGINAL: PARENT', '1ST COPY: PUPIL, FOR THE STORE-KEEPER FILE', '2ND COPY: ACCOUNTS (STAYS IN THE BOOK)'];
+
+export function ReceiptBook({ r, copy }) {
   const rows = Math.max(5, r.lines.length);
   const banked = r.method === 'cash' ? '' : `${r.methodLabel}${r.reference ? ` — ${r.reference}` : ''}`;
   return (
     <div className="bkwrap">
       <div className="bk">
+        {copy && <div className="bk-note" style={{ textAlign: 'right', fontWeight: 700, letterSpacing: 0.5 }}>{copy}</div>}
         <div className="bk-head">
           <img src="/musabe-logo.png" alt="" />
           <div className="bk-title">
@@ -89,7 +94,7 @@ export function ReceiptBook({ r }) {
 
 // The paper receipt. Rendered outside the app, shown only when printing.
 function PrintSheet({ r }) {
-  return createPortal(<div className="print-root"><ReceiptBook r={r} /></div>, document.body);
+  return createPortal(<div className="print-root">{COPIES.map((c, i) => <div key={c} style={i < COPIES.length - 1 ? { breakAfter: 'page', pageBreakAfter: 'always' } : undefined}><ReceiptBook r={r} copy={c} /></div>)}</div>, document.body);
 }
 
 // Print button: puts the receipt on the page, opens the print window, then removes it.
@@ -104,7 +109,7 @@ export function PrintButton({ r, big, autoFocus }) {
   }, [on]);
   return (
     <>
-      <button type="button" className={`btn p${big ? ' big' : ''}`} onClick={() => setOn(true)} autoFocus={autoFocus}><Icon name="file" /> Print receipt</button>
+      <button type="button" className={`btn p${big ? ' big' : ''}`} onClick={() => setOn(true)} autoFocus={autoFocus}><Icon name="file" /> Print receipt (3 copies)</button>
       {on && <PrintSheet r={r} />}
     </>
   );

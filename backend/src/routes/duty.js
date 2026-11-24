@@ -16,6 +16,11 @@ const D = require('../lib/duty');
 
 const router = express.Router();
 router.use(requireAuth);
+// A Subject Teacher reaches duty pages only in the week he/she is on duty (2026-11-24).
+router.use(async (req, res, next) => {
+  if (req.user.role === 'teacher' && !(await D.onDuty(db, req.user.id, req.user.school_id, D.today()))) throw new HttpError(403, 'You see this page only in the week you are the Teacher on Duty.');
+  next();
+});
 
 const allSchools = (u) => ROLES[u.role]?.scope === 'all';
 const clean = (v, n) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, n);

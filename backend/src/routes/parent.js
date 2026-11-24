@@ -251,16 +251,35 @@ router.get('/children/:id/receipts', async (req, res) => {
 });
 
 // Control numbers waiting to be paid (bank / mobile money), and the last ones paid or cancelled.
+// The parent paid to a lipa number and sends the transaction number. The Accountant checks the money and marks the control number paid.
+router.post('/children/:id/bills/:bill/claim', async (req, res) => {
+  const s = await myChild(req);
+  const network = String(req.body?.network || '');
+  const ref = String(req.body?.ref || '').trim().toUpperCase().replace(/\s+/g, '').slice(0, 60);
+  if (!['mpesa', 'tigo', 'airtel', 'halo', 'azam', 'other'].includes(network)) throw new HttpError(400, 'Choose the network you paid with.');
+  if (ref.length < 6) throw new HttpError(400, 'Type the transaction number from the message you got.');
+  const b = await db('bills').where({ id: Number(req.params.bill) || 0, student_id: s.id }).first();
+  if (!b) throw new HttpError(404, 'Control number not found.');
+  if (b.status !== 'pending') throw new HttpError(409, 'This control number is not waiting for payment.');
+  if (new Date(b.expires_at) < new Date()) throw new HttpError(409, 'This control number has expired. Ask the school bursar to renew it.');
+  if (b.claim_ref) throw new HttpError(409, 'You already sent a transaction number for this control number. The school is checking it.');
+  await db('bills').where({ id: b.id }).update({ claim_network: network, claim_ref: ref, claim_at: db.fn.now() });
+  await audit(req, 'bill.claim', `Parent says control number ${b.control_no} (${b.student_name}) was paid by mobile money: ${ref}`, { schoolId: b.school_id, detail: { billId: b.id } });
+  res.json({ ok: true });
+});
+
 router.get('/children/:id/bills', async (req, res) => {
   const s = await myChild(req);
   const bs = await db('bills').where({ student_id: s.id })
     .andWhere((w) => w.where('status', 'pending').orWhereRaw("coalesce(paid_at, cancelled_at, created_at) > now() - interval '60 days'"))
     .orderBy('created_at', 'desc').limit(30)
-    .select('id', 'control_no', 'total', 'status', 'expires_at', 'created_at', 'paid_at');
+    .select('id', 'control_no', 'total', 'status', 'expires_at', 'created_at', 'paid_at', 'claim_ref', 'claim_network', 'claim_at', 'school_id');
+  const lipa = bs.length ? await db('lipa_numbers').where({ school_id: bs[0].school_id, active: true }).orderBy('network').select('network', 'number', 'account_name') : [];
   const lines = bs.length ? await db('bill_lines').whereIn('bill_id', bs.map((b) => b.id)).orderBy('id').select('bill_id', 'item_name', 'qty', 'amount') : [];
   const now = Date.now();
   res.json({ bills: bs.map((b) => ({
-    id: b.id, controlNo: b.control_no, total: b.total, createdAt: b.created_at, expiresAt: b.expires_at, paidAt: b.paid_at,
+    id: b.id, controlNo: b.control_no, total: b.total, createdAt: b.created_at, expiresAt: b.expires_at, paidAt: b.paid_at, claimRef: b.claim_ref, claimNetwork: b.claim_network, claimAt: b.claim_at,
+    lipa: lipa.map((l) => ({ network: l.network, number: l.number, name: l.account_name })),
     status: b.status === 'pending' && new Date(b.expires_at).getTime() < now ? 'expired' : b.status,
     lines: lines.filter((l) => l.bill_id === b.id).map((l) => ({ item: l.item_name, qty: l.qty, amount: l.amount })),
   })) });

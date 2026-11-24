@@ -11,6 +11,18 @@ const LEADERS = ['super', 'director', 'adirector', 'manager'];
 const FINANCE = ['fm', 'afm', 'acc', 'aacc'];
 
 const RULES = [
+  // School places, Issue Notes and GRN (2026-11-24).
+  { actions: ['note.create'], roles: ['librarian', 'sstore'], why: 'Issue Notes to give' },
+  { actions: ['grn.create', 'grn.resend'], roles: ['bursar'], why: 'GRNs to check' },
+  { actions: ['grn.check'], roles: ['head'], why: 'GRNs to approve' },
+  { actions: ['grn.back'], roles: ['librarian', 'sstore'], why: 'GRNs sent back' },
+  // Fees (2026-11-24).
+  { actions: ['fee.line'], roles: ['manager', 'director'], why: 'Fees to approve' },
+  { actions: ['fee.approve'], roles: ['fm', 'bursar', 'head'], why: 'Fees approved' },
+  { actions: ['bill.claim'], roles: ['acc', 'aacc'], why: 'Parents say they paid by mobile money' },
+  { actions: ['holiday.declare', 'holiday.publish'], roles: ['second', 'acad', 'bursar'], why: 'Holiday declared / program published' },
+  { actions: ['finding.open'], roles: ['director', 'manager'], why: 'Audit findings opened' },
+  { actions: ['fee.payment'], roles: ['acc', 'aacc'], why: 'Fee payments to confirm' },
   // Items and prices: what the bursar charges and what the library holds.
   { actions: ['item.create', 'item.update', 'item.price', 'item.archive', 'item.restore', 'item.import'],
     roles: ['bursar', 'librarian', 'head', ...FINANCE, ...LEADERS], why: 'Prices you work with changed' },

@@ -8,7 +8,29 @@ import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
 import { CopyBox, Empty, Icon, Kpi, Modal, PageSkeleton, Panel, SkeletonTable, SchoolPill, fmtWhen } from '../components/ui';
 import { AcademicHome, AccountantHome, BursarHome, CashierHome, DirectorHome, FinanceHome, HeadHome, LibrarianHome, ManagerHome, MapokeziHome, SchoolAdminHome, SuperHome, ToDo, useDashboard, StoreHome } from './home/RoleHomes';
 
-const SCHOOL_ROLES = ['sadmin', 'head', 'second', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'];
+import { TeacherHome } from './MyTeaching';
+import { ProgressView } from './AcademicProgress';
+
+// Dashboards of teachers and academic leaders (2026-11-24). A teacher sees only his/her own classes, never the whole school.
+function TeacherDash() {
+  return <TeacherHome />;
+}
+function AcademicMasterHome() {
+  const { user } = useAuth();
+  return (
+    <>
+      <Panel title="School teaching so far" sub="From the start of the term. Open Academic progress for each teacher and for school tests." right={<Link className="btn sm" to="/academic-progress">Open</Link>}>
+        <ProgressView qs="" tab="none" />
+      </Panel>
+      {user.role === 'acad' && <Panel title="My own lessons" sub="The Academic Master / Mistress who still teaches"><TeacherHome compact /></Panel>}
+    </>
+  );
+}
+function HRHome() {
+  return <ProgressView qs="" tab="none" />;
+}
+
+const SCHOOL_ROLES = ['sadmin', 'head', 'second', 'acad', 'disc', 'teacher', 'bursar', 'librarian', 'sstore'];
 
 function greeting(name) {
   const h = new Date().getHours();
@@ -19,7 +41,7 @@ function greeting(name) {
 // Each role has its own home page (see ./home/RoleHomes.jsx). Super Admin and School Admin also get the accounts part.
 const HOMES = { super: SuperHome, director: DirectorHome, adirector: DirectorHome, manager: ManagerHome, fm: FinanceHome, afm: FinanceHome,
   acc: AccountantHome, aacc: AccountantHome, sadmin: SchoolAdminHome, head: HeadHome, bursar: BursarHome, librarian: LibrarianHome, storekeeper: StoreHome, amanager: StoreHome,
-  mapokezi: MapokeziHome, cashier: CashierHome };
+  mapokezi: MapokeziHome, cashier: CashierHome, teacher: TeacherDash, disc: TeacherDash, acad: AcademicMasterHome, hr: HRHome };
 
 export default function Home() {
   const { user, can } = useAuth();

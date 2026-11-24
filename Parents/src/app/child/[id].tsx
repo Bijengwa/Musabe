@@ -1,7 +1,7 @@
 // One child: details, receipts (paid items and whether they were collected), control numbers to pay, things given out.
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import ChildPhoto from '@/components/child-photo';
 import { Icon } from '@/components/icons';
@@ -65,7 +65,7 @@ export default function ChildScreen() {
         </View>
         {tab === 'overview' && <Overview d={d} />}
         {tab === 'receipts' && (d.receipts.length ? d.receipts.map((r) => <ReceiptCard key={r.id} r={r} />) : <Card><Empty icon="receipt">{t('noReceipts')}</Empty></Card>)}
-        {tab === 'bills' && (d.bills.length ? d.bills.map((b) => <BillCard key={b.id} b={b} />) : <Card><Empty icon="card">{t('noBills')}</Empty></Card>)}
+        {tab === 'bills' && (d.bills.length ? d.bills.map((b) => <BillCard key={b.id} b={b} childId={Number(id)} onSent={load} />) : <Card><Empty icon="card">{t('noBills')}</Empty></Card>)}
         {tab === 'issued' && (d.issued.length ? <Card>{d.issued.map((x) => <IssuedRow key={x.id} x={x} />)}</Card> : <Card><Empty icon="hand">{t('noIssued')}</Empty></Card>)}
       </ScrollView>
     </Screen>
@@ -133,8 +133,19 @@ function ReceiptCard({ r }: { r: Receipt }) {
   );
 }
 
-function BillCard({ b }: { b: Bill }) {
+const NET: Record<string, string> = { mpesa: 'M-Pesa', tigo: 'Mixx by Yas', airtel: 'Airtel Money', halo: 'HaloPesa', azam: 'AzamPesa', other: '' };
+
+function BillCard({ b, childId, onSent }: { b: Bill; childId: number; onSent: () => void }) {
   const { t, lang } = useSession();
+  const [net, setNet] = useState(b.lipa[0]?.network || 'mpesa');
+  const [ref, setRef] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const send = async () => {
+    setBusy(true); setErr('');
+    try { await api('POST', `/children/${childId}/bills/${b.id}/claim`, { network: net, ref }); onSent(); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
   const tone = b.status === 'paid' ? 'ok' : b.status === 'pending' ? 'bad' : 'muted';
   return (
     <Card>
@@ -146,6 +157,26 @@ function BillCard({ b }: { b: Bill }) {
       <View style={st.controlBox}><Text selectable style={st.control}>{b.controlNo.replace(/(\d{4})(?=\d)/g, '$1 ')}</Text></View>
       {b.status === 'pending' && <Text style={st.warnTxt}>{t('payBefore', { date: fmtDate(lang, b.expiresAt, true) })}</Text>}
       {b.status === 'pending' && <Text style={[s.muted, { marginTop: 6, lineHeight: 19 }]}>{t('payHow')}</Text>}
+      {b.status === 'pending' && b.lipa.length > 0 && (
+        <View style={{ marginTop: 10, gap: 6 }}>
+          <Text style={[s.muted, { fontWeight: '700' }]}>{t('lipaTitle')}</Text>
+          <Text style={[s.muted, { lineHeight: 19 }]}>{t('lipaHow', { amount: tsh(b.total) })}</Text>
+          {b.lipa.map((l) => (
+            <Pressable key={l.network + l.number} onPress={() => setNet(l.network)} style={[st.controlBox, net === l.network && { borderColor: C.text, borderWidth: 2 }]}>
+              <Text style={st.warnTxt}>{NET[l.network] || l.network}</Text>
+              <Text selectable style={st.control}>{l.number}</Text>
+              <Text style={s.muted}>{l.name}</Text>
+            </Pressable>
+          ))}
+          {b.claimRef ? <Text style={st.warnTxt}>{t('lipaSent', { ref: b.claimRef, network: NET[b.claimNetwork || ''] || b.claimNetwork || '' })}</Text> : (
+            <>
+              <TextInput style={s.input} value={ref} onChangeText={(v) => setRef(v.toUpperCase())} autoCapitalize="characters" maxLength={40} placeholder={t('lipaRef')} accessibilityLabel={t('lipaRef')} />
+              {err ? <Text style={st.warnTxt}>{err}</Text> : null}
+              <Pressable disabled={busy || ref.trim().length < 6} onPress={send} style={[st.controlBox, { alignItems: 'center', opacity: busy || ref.trim().length < 6 ? 0.5 : 1 }]} accessibilityRole="button"><Text style={st.control}>{t('lipaSend')}</Text></Pressable>
+            </>
+          )}
+        </View>
+      )}
       <View style={{ marginTop: 8 }}>
         {b.lines.map((l, i) => <View key={i} style={st.line}><Text style={[st.item, { flex: 1 }]}>{l.qty} × {l.item}</Text><Text style={st.amount}>{tsh(l.amount)}</Text></View>)}
       </View>

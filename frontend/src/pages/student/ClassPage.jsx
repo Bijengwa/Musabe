@@ -20,6 +20,7 @@ export default function ClassPage() {
   const [open, setOpen] = useState(null);      // subject whose syllabus is open
   const [edit, setEdit] = useState(null);      // subject being edited, or {} for a new one
   const [saving, setSaving] = useState(null);  // subject id whose teacher is being saved
+  const [strm, setStrm] = useState(null);      // 'create' | 'upload' | 'remove'
   const load = useCallback(() => api.get(`/class-subjects/class/${id}`).then((x) => { setD({ id, ...x }); setError(''); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['class', 'academic'], load);
@@ -50,6 +51,10 @@ export default function ClassPage() {
             {d.streams.map((s) => <button key={s.id} type="button" className={String(s.id) === String(id) ? 'on' : ''} onClick={() => navigate(`/students/classes/${s.id}`)}>{s.stream || s.label}</button>)}
           </div>
         )}
+        <a className="btn" href={`/api/class-streams/${c.id}/class.xlsx`}><Icon name="excel" /> Excel</a>
+        {d.canEdit && c.level && !c.stream && !d.streams.some((x) => x.stream && x.active) && <button className="btn p" onClick={() => setStrm('create')}>Create streams</button>}
+        {d.canEdit && c.level && c.stream && <button className="btn" onClick={() => setStrm('upload')}>Upload this stream (Excel)</button>}
+        {d.canEdit && c.level && d.streams.some((x) => x.stream) && <button className="btn danger" onClick={() => setStrm('remove')}>Remove streams</button>}
         <button className="btn" onClick={() => { try { sessionStorage.setItem('musabe-class', String(c.id)); } catch { /* ignore */ } navigate('/students'); }}><Icon name="users" /> Students</button>
       </PageHead>
       <ErrorNote error={error} />
@@ -74,6 +79,9 @@ export default function ClassPage() {
       </p>
       <div className="help-room" aria-hidden="true" />
 
+      {strm === 'create' && <CreateStreams cls={c} onClose={() => setStrm(null)} onDone={(m) => { toast(m); setStrm(null); const first = d.streams.find((x) => x.stream && x.active); load(); }} />}
+      {strm === 'upload' && <UploadStream cls={c} onClose={() => setStrm(null)} onDone={(m) => { toast(m); setStrm(null); load(); }} />}
+      {strm === 'remove' && <RemoveStreams cls={c} onClose={() => setStrm(null)} onDone={(m) => { toast(m); setStrm(null); navigate('/students/classes'); }} />}
       {open && <SyllabusModal subject={open} cls={c} onClose={() => setOpen(null)} />}
       {edit && <SubjectForm subject={edit.id ? edit : null} cls={c} onClose={() => setEdit(null)} onSaved={(m) => { toast(m); setEdit(null); load(); }} />}
     </>
@@ -182,6 +190,122 @@ function SubjectForm({ subject, cls, onClose, onSaved }) {
         <p className="small muted" style={{ margin: 0 }}>This changes the subject for every stream of {cls.name}.{subject?.builtIn ? ' The built-in syllabus stays linked.' : ''}</p>
         <ErrorNote error={error} />
       </form>
+    </Modal>
+  );
+}
+
+// ---------- Streams of this class (2026-11-25) ----------
+async function sendSheet(url, file) {
+  const r = await fetch(url, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/octet-stream' }, body: file });
+  const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Upload failed');
+  return d;
+}
+function Preview({ p }) {
+  return (
+    <div className="stack" style={{ marginTop: 8 }}>
+      {p.counts && <p style={{ margin: 0 }}>{Object.entries(p.counts).map(([k, v]) => <span key={k} className="pill sm ok" style={{ marginRight: 6 }}>{k}: {v}</span>)}</p>}
+      {p.problems?.length > 0 && <ul style={{ margin: 0, color: 'var(--danger, #b91c1c)' }}>{p.problems.map((x, i) => <li key={i}>{x}</li>)}</ul>}
+      {p.warnings?.length > 0 && <ul className="muted small" style={{ margin: 0, maxHeight: 120, overflow: 'auto' }}>{p.warnings.map((x, i) => <li key={i}>{x}</li>)}</ul>}
+    </div>
+  );
+}
+
+function CreateStreams({ cls, onClose, onDone }) {
+  const [names, setNames] = useState(['', '']);
+  const [mode, setMode] = useState('auto');
+  const [file, setFile] = useState(null);
+  const [prev, setPrev] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const list = names.map((x) => x.trim().toUpperCase()).filter(Boolean);
+  const ok = list.length >= 2 && new Set(list).size === list.length;
+  const q = encodeURIComponent(list.join(','));
+  const setName = (i, v) => { setNames(names.map((x, k) => (k === i ? v : x))); setPrev(null); };
+  const check = async (f) => {
+    setFile(f); setPrev(null); setError(''); if (!f) return;
+    setBusy(true);
+    try { setPrev(await sendSheet(`/api/class-streams/${cls.id}/streams/excel?names=${q}&dry=1`, f)); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  const go = async () => {
+    setBusy(true); setError('');
+    try {
+      if (mode === 'auto') {
+        const r = await api.post(`/class-streams/${cls.id}/streams`, { names: list, mode: 'auto' });
+        onDone(`Streams created: ${r.streams.map((s) => `${s.label} ${s.students}`).join(', ')}`);
+      } else { const r = await sendSheet(`/api/class-streams/${cls.id}/streams/excel?names=${q}`, file); onDone(`Streams created: ${Object.entries(r.counts).map(([k, v]) => `${k} ${v}`).join(', ')}`); }
+    } catch (e) { setError(e.message); setBusy(false); }
+  };
+  return (
+    <Modal title={`Create streams in ${cls.label}`} onClose={onClose}
+      footer={<><button className="btn" onClick={onClose}>Cancel</button>
+        <button className="btn p" disabled={busy || !ok || (mode === 'excel' && !(prev && prev.ok))} onClick={go}>{busy ? 'Please wait…' : 'Create streams'}</button></>}>
+      <div className="stack">
+        <p style={{ margin: 0 }}>Write at least 2 stream names, for example YELLOW and BLUE. {cls.students} students will be shared between them.</p>
+        {names.map((n, i) => <input key={i} value={n} placeholder={`Stream ${i + 1}`} maxLength={30} onChange={(e) => setName(i, e.target.value)} />)}
+        <div className="row" style={{ gap: 8 }}>
+          <button type="button" className="btn sm" disabled={names.length >= 12} onClick={() => setNames([...names, ''])}>+ Add stream</button>
+          <button type="button" className="btn sm" disabled={names.length <= 2} onClick={() => { setNames(names.slice(0, -1)); setPrev(null); }}>− Remove last</button>
+        </div>
+        <div className="seg" role="group">
+          <button type="button" className={mode === 'auto' ? 'on' : ''} onClick={() => setMode('auto')}>The system shares them</button>
+          <button type="button" className={mode === 'excel' ? 'on' : ''} onClick={() => setMode('excel')}>I use Excel</button>
+        </div>
+        {mode === 'auto' && ok && <p className="small muted" style={{ margin: 0 }}>The system shuffles the students by chance (not by name, not by marks). Each stream gets about {Math.floor(cls.students / list.length)} students.</p>}
+        {mode === 'excel' && (
+          <>
+            <p className="small muted" style={{ margin: 0 }}>1. Download the sheet. 2. Write the stream of each student (or only one stream: the rest go to the empty stream). 3. Upload it.</p>
+            <a className={`btn${ok ? '' : ' off'}`} href={ok ? `/api/class-streams/${cls.id}/class.xlsx?names=${q}` : undefined} aria-disabled={!ok}><Icon name="excel" /> Download the class sheet</a>
+            <label className="btn filepick"><Icon name="upload" /> {file ? file.name : 'Upload the filled sheet'}<input type="file" accept=".xlsx" style={{ display: 'none' }} disabled={!ok} onChange={(e) => { check(e.target.files?.[0]); e.target.value = ''; }} /></label>
+            {prev && <Preview p={prev} />}
+          </>
+        )}
+        <ErrorNote error={error} />
+      </div>
+    </Modal>
+  );
+}
+
+function UploadStream({ cls, onClose, onDone }) {
+  const [file, setFile] = useState(null);
+  const [prev, setPrev] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const check = async (f) => {
+    setFile(f); setPrev(null); setError(''); if (!f) return;
+    setBusy(true);
+    try { setPrev(await sendSheet(`/api/class-streams/${cls.id}/members/excel?dry=1`, f)); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  const go = async () => {
+    setBusy(true); setError('');
+    try { const r = await sendSheet(`/api/class-streams/${cls.id}/members/excel`, file); onDone(`Saved: ${Object.entries(r.counts).map(([k, v]) => `${k} ${v}`).join(', ')}`); }
+    catch (e) { setError(e.message); setBusy(false); }
+  };
+  return (
+    <Modal title={`Students of ${cls.label}`} onClose={onClose}
+      footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" disabled={busy || !(prev && prev.ok)} onClick={go}>{busy ? 'Please wait…' : 'Save'}</button></>}>
+      <div className="stack">
+        <p style={{ margin: 0 }}>Upload an Excel file with the students of <b>{cls.label}</b> (the Admission No. column). If the class has only one other stream, all the other students go there.</p>
+        <label className="btn filepick"><Icon name="upload" /> {file ? file.name : 'Upload Excel'}<input type="file" accept=".xlsx" style={{ display: 'none' }} onChange={(e) => { check(e.target.files?.[0]); e.target.value = ''; }} /></label>
+        {prev && <Preview p={prev} />}
+        <ErrorNote error={error} />
+      </div>
+    </Modal>
+  );
+}
+
+function RemoveStreams({ cls, onClose, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const go = async () => {
+    setBusy(true); setError('');
+    try { const r = await api.post('/class-streams/remove', { classId: cls.id }); onDone(`${r.removed} streams removed${r.kept ? `, ${r.kept} kept switched off (they have records)` : ''}`); }
+    catch (e) { setError(e.message); setBusy(false); }
+  };
+  return (
+    <Modal title="Remove streams" onClose={onClose}
+      footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn danger" disabled={busy} onClick={go}>{busy ? 'Removing…' : 'Remove streams'}</button></>}>
+      <p style={{ marginTop: 0 }}>The streams of {cls.name} are removed and all its students go back into one class. You can create streams again after.</p>
+      <ErrorNote error={error} />
     </Modal>
   );
 }

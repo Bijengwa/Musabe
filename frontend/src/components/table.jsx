@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from './ui';
 
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
@@ -49,6 +49,18 @@ export function SortTh({ t, k, children }) {
 }
 
 export function Pager({ t }) {
+  // Keys: ] next page, [ previous page (not while typing in a field).
+  const { page, pages, setPage } = t;
+  useEffect(() => {
+    const onKey = (e) => {
+      const el = e.target;
+      if (e.ctrlKey || e.metaKey || e.altKey || (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) || document.querySelector('.mwrap')) return;
+      if (e.key === ']' && page < pages - 1) { e.preventDefault(); setPage(page + 1); }
+      else if (e.key === '[' && page > 0) { e.preventDefault(); setPage(page - 1); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [page, pages, setPage]);
   if (t.total <= t.pageSize) return null;
   const from = t.page * t.pageSize + 1;
   const to = Math.min(t.total, (t.page + 1) * t.pageSize);

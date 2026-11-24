@@ -60,7 +60,8 @@ test('The librarian switches to School Store-keeper: pages, orders and the activ
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.user.role, 'sstore');
   r = await as('librarian', 'GET', '/api/auth/me');
   assert.equal(r.json.user.role, 'sstore'); assert.equal(r.json.user.school.id, em.id);
-  assert.equal((await as('librarian', 'GET', '/api/stock/deliveries')).status, 403, 'library pages are closed while working as School Store-keeper');
+  assert.equal((await as('librarian', 'GET', '/api/store/issues')).status, 403, 'library pages (scan out / return) are closed while working as School Store-keeper');
+  assert.equal((await as('librarian', 'GET', '/api/stock/deliveries')).status, 200, 'since 2026-11-24 the School Store-keeper receives the school store lines of a delivery');
   r = await as('librarian', 'POST', '/api/orders', { lines: [{ qty: 30, unit: 'pcs', particulars: 'Brooms' }] });
   assert.equal(r.status, 201, JSON.stringify(r.json));
   const o = r.json.order; assert.equal(o.place, 'store'); assert.equal(o.status, 'head'); assert.equal(o.writerRole, 'School Store-keeper');

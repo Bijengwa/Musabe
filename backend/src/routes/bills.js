@@ -80,7 +80,7 @@ function out(b, user) {
     schoolName: b.school_name, receiptTitle: b.receipt_title || b.school_name?.toUpperCase(), receiptContact: b.receipt_contact || '',
     studentId: b.student_id, studentName: b.student_name, studentClass: b.student_class, gender: b.gender, payerName: b.payer_name, payerPhone: b.payer_phone,
     total: b.total, note: b.note, status, statusLabel: STATUS[status], expiresAt: b.expires_at, createdBy: b.created_by_name, createdAt: b.created_at,
-    paidRef: b.paid_ref, paidBy: b.paid_by_name, paidAt: b.paid_at, receiptId: b.receipt_id, receiptNumber: b.receipt_number,
+    claimNetwork: b.claim_network, claimRef: b.claim_ref, claimAt: b.claim_at, paidRef: b.paid_ref, paidBy: b.paid_by_name, paidAt: b.paid_at, receiptId: b.receipt_id, receiptNumber: b.receipt_number,
     cancelledBy: b.cancelled_by_name, cancelledAt: b.cancelled_at, cancelReason: b.cancel_reason,
     canPay: can && ['acc', 'aacc'].includes(user.role) && b.status === 'pending' && !expired, canRenew: can && b.status === 'pending' && user.role === 'bursar',
     canCancel: can && b.status === 'pending',

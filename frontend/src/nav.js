@@ -39,6 +39,11 @@ export const NAV = [
   { group: 'Store & barcodes', items: [
     { key: 'books', label: 'Store books', icon: 'book', path: '/store-books', ready: true },
     { key: 'orders', label: 'Order Book', icon: 'inbox', path: '/orders', ready: true },
+    { key: 'notes', label: 'Issue Notes', icon: 'hand', path: '/notes', ready: true },
+    { key: 'grn', label: 'GRN', icon: 'receipt', path: '/grn', ready: true },
+    { key: 'fees', label: 'Fees', icon: 'receipt', path: '/fees', ready: true },
+    { key: 'calendar', label: 'School calendar', icon: 'file', path: '/calendar', ready: true },
+    { key: 'intaudit', label: 'Internal audit', icon: 'receipt', path: '/intaudit', ready: true },
     { key: 'requisitions', label: 'Payment requisitions', icon: 'file', path: '/requisitions', ready: true },
     { key: 'issue', label: 'Scan out / return', icon: 'scan', path: '/issue', ready: true },
     { key: 'labels', label: 'QR labels & ID cards', icon: 'tag', path: '/labels', ready: true },
@@ -59,6 +64,8 @@ export const NAV = [
     { key: 'duty', label: 'Teacher on Duty', icon: 'shield', path: '/duty', ready: true },
   ] },
   { group: 'Academic', items: [
+    { key: 'teaching', label: 'My teaching', icon: 'pen', path: '/teaching', ready: true },
+    { key: 'acadprogress', label: 'Academic progress', icon: 'trend', path: '/academic-progress', ready: true },
     { key: 'academics', label: 'Teaching & Academics', icon: 'grid', path: '/academics', ready: true },
     { key: 'year', label: 'Year progress', icon: 'trend', path: '/year', step: 'Step 3: Academic' },
     { key: 'watch', label: 'Students to watch', icon: 'flag', path: '/watch', step: 'Step 3: Academic' },
@@ -89,12 +96,12 @@ export const MY_PAGES = [
   { key: 'mysettings', label: 'Settings', icon: 'gear', path: '/settings' },
 ];
 
-export const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary'];
+export const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary', 'hr'];
 export const ROLE_LABELS = {
   patron: 'Patron / Matron',
   super: 'Super Admin', director: 'Director', adirector: 'Assistant Director', manager: 'Manager', amanager: 'Assistant Manager',
   fm: 'Finance Manager', afm: 'Assistant Finance Manager', acc: 'Accountant', aacc: 'Assistant Accountant', storekeeper: 'Store-keeper',
   cashier: 'Cashier', mapokezi: 'Mapokezi (reception)', secretary: 'Academic Secretary',
-  sadmin: 'School Admin', head: 'Head Master', second: 'Second Master', acad: 'Academic Master', teacher: 'Subject Teacher',
+  sadmin: 'School Admin', head: 'Head Master / Mistress', second: 'Second Master / Mistress', acad: 'Academic Master / Mistress', disc: 'Discipline Master / Mistress', hr: 'HR (Human Resources)', teacher: 'Subject Teacher',
   bursar: 'Bursar', librarian: 'Librarian', sstore: 'School Store-keeper',
 };

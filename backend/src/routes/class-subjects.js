@@ -19,7 +19,9 @@ router.use(requireAuth);
 const allSchools = (u) => ROLES[u.role]?.scope === 'all';
 const classLabel = (c) => [c.short_name || c.name, c.stream].filter(Boolean).join(' ');
 const clean = (v, n) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, n);
-const TEACHING_ROLES = ['teacher', 'acad', 'head'];
+// Who can be given a subject to teach (2026-11-24): the Head Master / Mistress does not teach in class; the Academic,
+// Discipline and Second Master still do when they were teachers first.
+const TEACHING_ROLES = ['teacher', 'acad', 'disc', 'second'];
 const OWN = new Set(['ICT', 'KUANDIKA', 'FRENCH', 'CHINESE']); // the school's own subjects (no government syllabus)
 
 // Teachers of a school: main role, or an extra role, of Subject Teacher, Academic Master or Head Master.
@@ -96,7 +98,7 @@ router.get('/class/:id', requirePage('students'), async (req, res) => {
     class: { id: c.id, schoolId: c.school_id, level: c.level, name: c.name, shortName: c.short_name, stream: c.stream, label: classLabel(c),
       fullName: [c.name, c.stream].filter(Boolean).join(' '), curriculum, curriculumLabel: CURRICULA[curriculum] || null, active: c.active,
       students: Number(counts.n), boys: Number(counts.boys), girls: Number(counts.girls) },
-    streams: streams.map((x) => ({ id: x.id, label: classLabel(x), stream: x.stream, active: x.active })),
+    streams: streams.filter((x) => x.active || x.id === c.id).map((x) => ({ id: x.id, label: classLabel(x), stream: x.stream, active: x.active })),
     subjects, teachers: staff, canEdit,
   });
 });
@@ -190,4 +192,6 @@ router.patch('/subject/:id', requirePage('classlist', 'f'), async (req, res) => 
   res.json({ ok: true });
 });
 
+router.topicsFor = topicsFor;
+router.teachersOf = teachersOf;
 module.exports = router;

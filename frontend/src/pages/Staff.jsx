@@ -61,13 +61,14 @@ export default function Staff() {
     <>
       <PageHead title="Staff accounts" sub={sub}>
         <ExcelButton href={`/api/users/export.xlsx`} />
+        {user.role === 'super' && <button className="btn" onClick={() => setModal({ kind: 'bulk' })}><Icon name="excel" /> Register from Excel</button>}
         {canCreate ? <button className="btn p" onClick={() => setModal({ kind: 'new' })}><Icon name="plus" /> New account</button>
           : <span className="pill"><Icon name="eye" /> View only</span>}
       </PageHead>
 
       <div className="filters">
         <div className="seg">
-          {[['', 'All'], ['reset', 'Asked for password'], ['off', 'Switched off']].map(([k, t]) => (
+          {[['', 'All'], ['reset', 'Asked for password'], ['temp', 'Temporary password'], ['off', 'Switched off']].map(([k, t]) => (
             <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>
           ))}
         </div>
@@ -104,6 +105,7 @@ export default function Staff() {
                       <button className="btn sm" onClick={() => setModal({ kind: 'edit', user: u })}><Icon name="edit" /> Edit</button>
                       <button className="btn sm" onClick={() => setModal({ kind: 'roles', user: u })}>Roles</button>
                       <button className={`btn sm${u.resetRequested ? ' p' : ''}`} onClick={() => setModal({ kind: 'reset', user: u })}>Reset password</button>
+                      {u.resetRequested && <button className="btn sm danger" onClick={() => setModal({ kind: 'refuse', user: u })}>Refuse</button>}
                       <button className={`btn sm${u.active ? ' danger' : ''}`} onClick={() => (u.active ? setModal({ kind: 'off', user: u }) : toggle(u))}>{u.active ? 'Switch off' : 'Switch on'}</button>
                       </>}
                     </div>
@@ -119,6 +121,8 @@ export default function Staff() {
       {modal?.kind === 'card' && <Modal wide title={`ID card · ${modal.user.fullName}`} onClose={() => setModal(null)} footer={<button className="btn" onClick={() => setModal(null)}>Close</button>}>
         <IdCardPanel kind="staff" id={modal.user.id} flush /></Modal>}
       {modal?.kind === 'roles' && <RolesBox u={modal.user} onClose={() => { setModal(null); load(); }} />}
+      {modal?.kind === 'refuse' && <RefuseReset u={modal.user} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); toast('Request refused'); }} />}
+      {modal?.kind === 'bulk' && <BulkStaff onClose={() => { setModal(null); load(); }} />}
       {modal?.kind === 'new' && <NewAccount onClose={() => setModal(null)} onDone={(d) => { setModal({ kind: 'creds', data: d }); load(); }} />}
       {modal?.kind === 'edit' && <EditAccount u={modal.user} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); toast('Saved'); }} />}
       {modal?.kind === 'off' && (
@@ -275,6 +279,70 @@ function RolesBox({ u, onClose }) {
           <ErrorNote error={error} />
         </div>
       )}
+    </Modal>
+  );
+}
+
+// Register many staff from one Excel file. The file is checked first; nothing is saved until the Super Admin presses Register.
+function BulkStaff({ onClose }) {
+  const [file, setFile] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [chk, setChk] = useState(null);
+  const [done, setDone] = useState(null);
+  const send = async (f, check) => {
+    setBusy(true); setError('');
+    try {
+      const r = await fetch(`/api/users/bulk${check ? '?check=1' : ''}`, { method: 'POST', credentials: 'include', headers: { 'X-File-Name': encodeURIComponent(f.name).slice(0, 200) }, body: f });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'The file could not be read.');
+      if (check) setChk(j); else setDone(j);
+    } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  const pick = (f) => { setFile(f); setChk(null); setDone(null); if (f) send(f, true); };
+  const csv = () => {
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [['S/N', 'Full name', 'Phone', 'Role', 'School', 'Username', 'Temporary password'], ...done.created.map((c, i) => [i + 1, c.fullName, c.phone || '', c.role, c.school, c.username, c.tempPassword])].map((l) => l.map(q).join(','));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/csv' }));
+    a.download = 'musabe-new-staff-passwords.csv'; a.click();
+  };
+  return (
+    <Modal wide title="Register staff from Excel" onClose={onClose}
+      footer={done ? <button className="btn p" onClick={onClose}>Done</button> : <><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" disabled={busy || !chk || !chk.ok} onClick={() => send(file, false)}>{busy ? 'Working…' : `Register ${chk?.ok || 0} people`}</button></>}>
+      {!done && <>
+        <p className="small muted" style={{ marginTop: 0 }}>Columns: Full name, Role, School, Phone. The system makes each username (first.last) and a temporary password. <a className="linkbtn" href="/api/users/bulk-template.xlsx" download>Download the template</a></p>
+        <label className="filepick">
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={busy} onChange={(e) => pick(e.target.files[0])} />
+          <Icon name="excel" /> {busy ? 'Checking the file…' : file ? file.name : 'Choose the Excel file (.xlsx)'}
+        </label>
+        <ErrorNote error={error} />
+        {chk && <>
+          <p><b>{chk.ok}</b> ready to register{chk.errors.length ? <>, <b style={{ color: 'var(--bad, #b00020)' }}>{chk.errors.length}</b> with mistakes (left out)</> : ''}.</p>
+          {chk.errors.length > 0 && <ul className="small">{chk.errors.map((e) => <li key={e.row}>Row {e.row} {e.name}: {e.message}</li>)}</ul>}
+          {chk.people.length > 0 && <div className="tw"><table className="stafftable"><thead><tr><th>S/N</th><th>Full name</th><th>Phone</th><th>Role</th><th>School</th></tr></thead><tbody>{chk.people.map((p, i) => <tr key={p.row}><td>{i + 1}</td><td>{p.fullName}</td><td className="mono">{p.phone || '—'}</td><td>{p.role}</td><td>{p.school}</td></tr>)}</tbody></table></div>}
+        </>}
+      </>}
+      {done && <>
+        <p><b>{done.created.length}</b> accounts made. Copy the passwords now: they are shown only once.</p>
+        <button className="btn" onClick={csv}><Icon name="excel" /> Download usernames and passwords</button>
+        <div className="tw" style={{ marginTop: 8 }}><table className="stafftable"><thead><tr><th>S/N</th><th>Full name</th><th>Phone</th><th>Role</th><th>School</th><th>Username</th><th>Temporary password</th></tr></thead><tbody>{done.created.map((c, i) => <tr key={c.id}><td>{i + 1}</td><td>{c.fullName}</td><td className="mono">{c.phone || '—'}</td><td>{c.role}</td><td>{c.school}</td><td><code>{c.username}</code></td><td><code>{c.tempPassword}</code></td></tr>)}</tbody></table></div>
+      </>}
+    </Modal>
+  );
+}
+
+// Refuse a password request: the person gets no new password.
+function RefuseReset({ u, onClose, onDone }) {
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+  const go = () => api.post(`/users/${u.id}/refuse-reset`, { reason }).then(onDone).catch((e) => setError(e.message));
+  return (
+    <Modal title="Refuse this password request?" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p danger-bg" onClick={go}>Refuse</button></>}>
+      <p style={{ marginTop: 0 }}><b>{u.fullName}</b> asked for a new password. If you refuse, no password is given and the request leaves the list. They can ask again.</p>
+      <label className="small">Why (optional)</label>
+      <input value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} style={{ width: '100%' }} />
+      <ErrorNote error={error} />
     </Modal>
   );
 }

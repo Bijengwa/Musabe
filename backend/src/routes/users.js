@@ -3,7 +3,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { publish } = require('../realtime');
-const { sendExcel } = require('../lib/excel');
+const { sendExcel, readRows } = require('../lib/excel');
+const { uploadLimit } = require('../lib/guard');
 const { HttpError, tempPassword, tzPhone, suggestUsername, audit } = require('../lib/util');
 const { requireAuth, requirePage, endAllSessions } = require('../auth/session');
 const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage, clash } = require('../auth/roles');
@@ -54,6 +55,7 @@ router.get('/', requirePage('staff'), async (req, res) => {
   else if (school) query = query.where('u.school_id', Number(school));
   if (role) query = query.where('u.role', role);
   if (status === 'off') query = query.where('u.active', false);
+  if (status === 'temp') query = query.where('u.must_change_password', true).where('u.active', true);
   if (status === 'reset') query = query.whereNotNull('u.reset_requested_at').where('u.active', true);
   if (q) query = query.where((w) => w.whereILike('u.full_name', `%${q}%`).orWhereILike('u.username', `%${q}%`));
   const rows = await query.orderByRaw('u.school_id NULLS FIRST').orderBy('u.role').orderBy('u.full_name');
@@ -115,6 +117,76 @@ router.post('/', requirePage('staff', 'f'), async (req, res) => {
   res.status(201).json({ user: shape(row, actor), tempPassword: temp });
 });
 
+
+// ---------- Register many staff from Excel (Super Admin) ----------
+// Columns: Full name, Role, School, Phone. The username is made by the system (first.last). Each person gets a temporary password,
+// shown once on the screen. ?check=1 only checks the file and saves nothing.
+const BULK_MAX = 200;
+router.get('/bulk-template.xlsx', requirePage('staff', 'f'), async (req, res) => {
+  if (req.user.role !== 'super') throw new HttpError(403, 'Only the Super Admin registers staff from Excel.');
+  const schools = await db('schools').where({ active: true }).orderBy('short_name').select('short_name');
+  const s = schools[0]?.short_name || 'Musabe Primary';
+  await sendExcel(res, 'musabe-staff-template', [{ name: 'Staff', title: 'Musabe Schools: staff to register', columns: [
+    { header: 'Full name', key: 'name', width: 30 }, { header: 'Role', key: 'role', width: 22 }, { header: 'School', key: 'school', width: 22 }, { header: 'Phone', key: 'phone', width: 16 }],
+  rows: [{ name: 'Mary John Mushi', role: 'Teacher', school: s, phone: '0712345678' }, { name: 'Asha Said Kombo', role: 'Bursar', school: s, phone: '' }] },
+  { name: 'Roles and schools', title: 'Write the role and school exactly like this', columns: [{ header: 'Role', key: 'r', width: 30 }, { header: 'School', key: 's', width: 30 }],
+    rows: Array.from({ length: Math.max(Object.keys(ROLES).length, schools.length) }, (_, i) => ({ r: Object.values(ROLES)[i]?.label || '', s: schools[i]?.short_name || '' })) }]);
+});
+
+router.post('/bulk', requirePage('staff', 'f'), uploadLimit, express.raw({ type: () => true, limit: '2mb' }), async (req, res) => {
+  const actor = req.user;
+  if (actor.role !== 'super') throw new HttpError(403, 'Only the Super Admin registers staff from Excel.');
+  const { rows: raw } = await readRows(req.body);
+  const norm = (v) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  let head = null, col = {};
+  for (const r of raw.slice(0, 10)) {
+    const m = {};
+    r.cells.forEach((c, i) => { const k = norm(c); if (['fullname', 'name', 'jina', 'majina'].includes(k)) m.name ??= i; else if (['role', 'cheo', 'position'].includes(k)) m.role ??= i; else if (['school', 'shule'].includes(k)) m.school ??= i; else if (['phone', 'simu', 'phonenumber', 'mobile'].includes(k)) m.phone ??= i; });
+    if (m.name !== undefined && m.role !== undefined) { head = r.row; col = m; break; }
+  }
+  if (!head) throw new HttpError(400, 'Could not find the columns "Full name" and "Role". Download the template to see.');
+  const data = raw.filter((r) => r.row > head);
+  if (!data.length) throw new HttpError(400, 'There are no people in this file.');
+  if (data.length > BULK_MAX) throw new HttpError(400, `Put at most ${BULK_MAX} people in one file.`);
+  const roleBy = {};
+  for (const [k, v] of Object.entries(ROLES)) { roleBy[norm(k)] = k; roleBy[norm(v.label)] = k; }
+  const schools = await db('schools').where({ active: true }).select('id', 'code', 'name', 'short_name');
+  const schoolBy = {};
+  for (const sc of schools) for (const n of [sc.code, sc.name, sc.short_name]) if (n) schoolBy[norm(n)] = sc;
+  const good = [], errors = [], seen = new Set();
+  for (const r of data) {
+    const name = String(r.cells[col.name] || '').trim().replace(/\s+/g, ' ');
+    const roleKey = roleBy[norm(r.cells[col.role])];
+    const sc = col.school !== undefined && r.cells[col.school] ? schoolBy[norm(r.cells[col.school])] : null;
+    let phone = null, problem = '';
+    if (col.phone !== undefined && r.cells[col.phone]) { try { phone = tzPhone(r.cells[col.phone]); } catch { problem = 'The phone number is not right (like 0712345678).'; } }
+    if (name.length < 4) problem ||= 'Type the full name.';
+    else if (!roleKey) problem ||= `Role "${r.cells[col.role] || ''}" is not known. See the "Roles and schools" sheet.`;
+    else if (!(CREATES.super || []).includes(roleKey)) problem ||= 'This role cannot be created here.';
+    else if (isAdminRole(roleKey) && r.cells[col.school]) problem ||= `${ROLES[roleKey].label} belongs to the administration: leave School empty.`;
+    else if (isSchoolRole(roleKey) && !sc) problem ||= `${ROLES[roleKey].label} needs a school that exists: "${r.cells[col.school] || ''}".`;
+    const key = `${norm(name)}|${roleKey}|${sc?.id || ''}`;
+    if (!problem && seen.has(key)) problem = 'This person is written twice in the file.';
+    if (problem) { errors.push({ row: r.row, name, message: problem }); continue; }
+    seen.add(key);
+    good.push({ row: r.row, name, role: roleKey, schoolId: isSchoolRole(roleKey) ? sc.id : null, school: sc?.short_name || '', phone });
+  }
+  if (req.query.check) return res.json({ checked: true, ok: good.length, errors, people: good.map((g) => ({ row: g.row, fullName: g.name, phone: g.phone, role: ROLES[g.role].label, school: g.school })) });
+  const created = await db.transaction(async (trx) => {
+    const out = [];
+    for (const g of good) {
+      const username = await suggestUsername(g.name, trx);
+      const temp = tempPassword();
+      const [row] = await trx('users').insert({ full_name: g.name, username, phone: g.phone, role: g.role, school_id: g.schoolId, password_hash: await bcrypt.hash(temp, 10), must_change_password: true, temp_password_expires_at: tempExpiry(), created_by: actor.id }).returning('id');
+      out.push({ row: g.row, id: row.id, fullName: g.name, phone: g.phone, username, tempPassword: temp, role: ROLES[g.role].label, school: g.school });
+    }
+    await audit(req, 'user.bulk', `Registered ${out.length} staff from Excel`, { detail: { count: out.length } }, trx);
+    return out;
+  });
+  publish({ topics: ['user'] }, db);
+  res.status(201).json({ created, errors });
+});
+
 async function loadTarget(req) {
   const t = await baseQuery().select(COLS).where('u.id', Number(req.params.id)).first();
   if (!t) throw new HttpError(404, 'Account not found.');
@@ -167,6 +239,19 @@ router.patch('/:id', requirePage('staff', 'f'), async (req, res) => {
 });
 
 // Give a temporary password (shown once, to be handed over in person).
+// Refuse a password request (2026-11-24): the person who asked does not get a new password. The request leaves the list; they may ask again.
+router.post('/:id/refuse-reset', requirePage('staff', 'f'), async (req, res) => {
+  const t = await loadTarget(req);
+  if (!t.reset_requested_at) throw new HttpError(409, 'This person has not asked for a password.');
+  const reason = String(req.body?.reason || '').trim().replace(/\s+/g, ' ').slice(0, 200);
+  await db.transaction(async (trx) => {
+    await trx('users').where({ id: t.id }).update({ reset_requested_at: null, updated_at: trx.fn.now() });
+    await audit(req, 'user.reset.refuse', `Password request refused for ${t.full_name}${reason ? `: ${reason}` : ''}`, { schoolId: t.school_id, detail: { userId: t.id } }, trx);
+  });
+  publish({ topics: ['user'] }, db);
+  res.json({ ok: true });
+});
+
 router.post('/:id/reset-password', requirePage('staff', 'f'), async (req, res) => {
   const t = await loadTarget(req);
   const temp = tempPassword();
