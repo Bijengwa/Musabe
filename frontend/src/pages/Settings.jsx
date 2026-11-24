@@ -4,7 +4,7 @@ import { api } from '../api';
 import { useLive } from '../live';
 import { chime } from '../layout/Bell';
 import { useAuth } from '../auth/AuthContext';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, useToast } from '../components/ui';
+import { ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, useToast, Loading } from '../components/ui';
 
 const THEMES = [
   { key: 'light', label: 'Light', icon: 'sun', hint: 'White pages' },
@@ -150,7 +150,7 @@ function Devices() {
     <Panel title="Where you are signed in" sub={rows ? `${rows.length} device${rows.length === 1 ? '' : 's'}` : ''} flush
       right={others > 0 && <button className="btn sm danger" onClick={endOthers}>Sign out all other devices</button>}>
       <ErrorNote error={error} />
-      {!rows ? <Empty>Loading…</Empty> : (
+      {!rows ? <Loading /> : (
         <div className="list">
           {rows.map((s) => {
             const d = describe(s.userAgent);

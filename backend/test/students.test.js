@@ -53,7 +53,7 @@ const P2 = () => [
   [20251821878, ADM(1), 'aaron', 'alberto', 'mgulunde', 'm', 'DANIEL MUSABE DAMIAN', '079 530 9020'],
   [20253235252, ADM(2), 'ABIGAEL', 'ANTHONY', 'KASOTA', 'f', 'DANIEL MUSABE DAMIAN', '0768279191'],
   [null, ADM(3), 'ALVIN', ' ', 'BENARD', 'm', 'DANIEL MUSABE DAMIAN', '0716399442'],
-  [20253235262, ADM(4), 'ANDREW', 'JOHNSON', 'YOHANA', 'm', 'DANIEL MUSABE DAMIAN', '079530902']
+  [20253235262, ADM(4), 'ANDREW', 'JOHNSON', 'YOHANA', 'm', 'JACKLINE PASTORY NUHI', '0784 000 111']
 ];
 
 test.before(async () => {
@@ -97,13 +97,12 @@ test('Excel in the school\'s own layout: columns found, phones cleaned, fees ign
   assert.equal(summary.errors, 0);
   assert.deepEqual(summary.otherSheets, ['PRIMARY II RE-ADJUSTMENT 2026']);
   assert.equal(lines[0].fullName, 'AARON ALBERTO MGULUNDE');
-  assert.equal(lines[0].parentPhone, '0795309020');
-  assert.equal(lines[0].parentName, 'DANIEL MUSABE DAMIAN');
-  assert.equal(lines[1].parentPhone, '0768279191');
+  // The old "PARENTS NAME" + "CONTACTS" columns are read as one guardian.
+  assert.deepEqual(lines[0].guardians, [{ fullName: 'DANIEL MUSABE DAMIAN', phone: '0795309020', relationship: 'guardian', relationshipLabel: 'Guardian' }]);
+  assert.equal(lines[1].guardians[0].phone, '0768279191');
   assert.equal(lines[2].fullName, 'ALVIN BENARD');
-  assert.equal(lines[2].parentPhone, '0716399442');
-  assert.equal(lines[3].parentPhone, null);
-  assert.match(lines[3].warnings.join(' '), /not a correct mobile number/);
+  assert.equal(lines[2].guardians[0].phone, '0716399442');
+  assert.equal(lines[3].guardians[0].phone, '0784000111');
   assert.equal(summary.shifted, 0);
   const ok = await as('sadmin', 'POST', `/api/students/imports/${up1}/approve`);
   assert.equal(ok.status, 200, JSON.stringify(ok.json));
@@ -114,28 +113,43 @@ test('Excel in the school\'s own layout: columns found, phones cleaned, fees ign
 test('Uploading again: no change; a new phone updates; empty cells never erase', { skip }, async () => {
   const rows = P2();
   rows[1][7] = '0711 222 333';
-  rows[2][6] = '';
+  rows[2][6] = ''; rows[2][7] = ''; // no guardian written: the saved guardians stay
   const r = await upload('sadmin', `/api/students/imports?class=${cls.id}`, await classFile(rows));
   const rev = await as('sadmin', 'GET', `/api/students/imports/${r.json.id}`);
   assert.equal(rev.json.summary.update, 1);
   assert.equal(rev.json.summary.same, 3);
   await as('sadmin', 'POST', `/api/students/imports/${r.json.id}/approve`);
-  const alvin = (await as('sadmin', 'GET', `/api/students?q=alvin%20benard`)).json.students[0];
-  assert.equal(alvin.parentName, 'JACKLINE PASTORY NUHI');
+  const alvin = (await as('sadmin', 'GET', `/api/students?q=${ADM(3)}`)).json.students[0];
+  assert.equal(alvin.guardians[0].fullName, 'DANIEL MUSABE DAMIAN');
+  const abigael = (await as('sadmin', 'GET', `/api/students?q=${ADM(2)}`)).json.students[0];
+  assert.equal(abigael.guardians.length, 1);
+  assert.equal(abigael.guardians[0].phone, '0711222333');
+  // Search by a guardian's phone finds the children.
+  const byPhone = (await as('sadmin', 'GET', '/api/students?q=0711222333')).json.students;
+  assert.ok(byPhone.some((x) => x.admissionNo === ADM(2)));
 });
 
 test('Mistakes block approval and show the row; shifted rows are warned', { skip }, async () => {
   const bad = P2().map((r, i) => (i === 1 ? [r[0], '', ...r.slice(2)] : i === 2 ? [...r.slice(0, 5), 'x', ...r.slice(6)] : r));
   bad.push([...P2()[0]]); // same admission number twice
+  bad.push([null, ADM('T1'), 'TITLE', '', 'NAME', 'f', 'Mr John', '0755 000 001']); // a title, not names
+  bad.push([null, ADM('T2'), 'ONE', '', 'NAME', 'f', 'GRACE', '0755 000 002']); // one name only
+  bad.push([null, ADM('T3'), 'BAD', '', 'PHONE', 'f', 'GRACE TIBAIJUKA', '079530902']); // phone too short
+  bad.push([null, ADM('T4'), 'NO', '', 'GUARDIAN', 'f', '', '']); // a new student needs a guardian
   const r = await upload('sadmin', `/api/students/imports?class=${cls2.id}`, await classFile(bad));
   const rev = await as('sadmin', 'GET', `/api/students/imports/${r.json.id}`);
-  assert.equal(rev.json.summary.errors, 3);
+  assert.equal(rev.json.summary.errors, 7, JSON.stringify(rev.json.lines.map((l) => l.errors)));
+  const err = (adm) => rev.json.lines.find((l) => l.admissionNo === ADM(adm)).errors.join(' ');
+  assert.match(err('T1'), /starts with a title/);
+  assert.match(err('T2'), /at least two names/);
+  assert.match(err('T3'), /not a correct mobile number/);
+  assert.match(err('T4'), /at least one guardian/);
   assert.equal(rev.json.lines[1].row, 4);
   assert.match(rev.json.lines[1].errors[0], /Admission No/);
   assert.equal((await as('sadmin', 'POST', `/api/students/imports/${r.json.id}/approve`)).status, 400);
   await as('sadmin', 'POST', `/api/students/imports/${r.json.id}/discard`);
 
-  const many = Array.from({ length: 6 }, (_, i) => [null, ADM(`S${i}`), `KID${'ABCDEF'[i]}`, `MID${'ABCDEF'[i]}`, `FAM${'ABCDEF'[i]}`, i % 2 ? 'f' : 'm', `MID${'ABCDEF'[i]} X FAM${'ABCDEF'[i]}`, '']);
+  const many = Array.from({ length: 6 }, (_, i) => [null, ADM(`S${i}`), `KID${'ABCDEF'[i]}`, `MID${'ABCDEF'[i]}`, `FAM${'ABCDEF'[i]}`, i % 2 ? 'f' : 'm', `MID${'ABCDEF'[i]} X FAM${'ABCDEF'[i]}`, `07550001${i}0`]);
   const s = await upload('sadmin', `/api/students/imports?class=${cls2.id}`, await classFile(many, { shifted: true }));
   const rs = await as('sadmin', 'GET', `/api/students/imports/${s.json.id}`);
   assert.ok(rs.json.summary.shifted >= 3, JSON.stringify(rs.json.summary));
@@ -144,38 +158,211 @@ test('Mistakes block approval and show the row; shifted rows are warned', { skip
   await as('sadmin', 'POST', `/api/students/imports/${s.json.id}/discard`);
 });
 
-test('Multiple guardians: create, show, verify and remove; Tanzanian phone normalization', { skip }, async () => {
-  const a = await as('sadmin', 'POST', '/api/students', {
-    admissionNo: ADM(20), firstName: 'guardian', lastName: 'student', sex: 'M', classId: cls.id,
-    parentName: 'DANIEL MUSABE DAMIAN', parentPhone: '0795309020',
-    guardians: [{ fullName: 'Amina Musabe', phone: '079 530 9020', relationship: 'mother' },
-      { fullName: 'Juma Musabe', phone: '0754123456', relationship: 'brother' }]
-  });
+test('Guardians: any number, real names, verify, edit keeps the verified mark', { skip }, async () => {
+  const six = ['father', 'mother', 'brother', 'grandmother', 'uncle', 'aunt'].map((relationship, i) => ({ fullName: `guardian${i} musabe`, phone: `07541234${i}0`, relationship }));
+  six[0] = { fullName: 'Daniel Musabe Damian', phone: '079 530 9020', relationship: 'Father' };
+  const a = await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(20), firstName: 'guardian', lastName: 'student', sex: 'M', classId: cls.id, guardians: six });
   assert.equal(a.status, 201, JSON.stringify(a.json));
   const id = a.json.student.id;
   let p = await as('sadmin', 'GET', `/api/students/${id}`);
-  assert.equal(p.status, 200);
-  assert.equal(p.json.student.guardians.length, 2);
+  assert.equal(p.json.student.guardians.length, 6); // more than 4
+  assert.equal(p.json.student.guardians[0].fullName, 'DANIEL MUSABE DAMIAN');
   assert.equal(p.json.student.guardians[0].phone, '0795309020');
+  assert.equal(p.json.student.guardians[3].relationshipLabel, 'Grandmother');
+  // Brothers and sisters: AARON has the same guardian phone.
+  assert.ok(p.json.siblings.some((x) => x.fullName === 'AARON ALBERTO MGULUNDE'));
   const guardianId = p.json.student.guardians[0].id;
-  const v = await as('sadmin', 'PATCH', `/api/students/${id}/guardians/${guardianId}/verify`, {
-    verificationMethod: 'Phone call by school staff', verificationNote: 'Confirmed by calling 0795309020'
-  });
+  const v = await as('sadmin', 'PATCH', `/api/students/${id}/guardians/${guardianId}/verify`, { verificationMethod: 'Phone call by school staff', verificationNote: 'Confirmed by calling 0795309020' });
   assert.equal(v.status, 200, JSON.stringify(v.json));
   assert.equal(v.json.guardian.verified, true);
   assert.equal((await as('bursar', 'PATCH', `/api/students/${id}/guardians/${guardianId}/verify`, { verificationMethod: 'phone' })).status, 403);
-  const edited = await as('sadmin', 'PATCH', `/api/students/${id}`, { guardians: [{ id: guardianId, fullName: 'Amina Musabe', phone: '0795309020', relationship: 'mother' }] });
+  // Keep only the first two; the first stays verified (same name and phone).
+  const keep = p.json.student.guardians.slice(0, 2).map((g) => ({ id: g.id, fullName: g.fullName, phone: g.phone, relationship: g.relationship }));
+  const edited = await as('sadmin', 'PATCH', `/api/students/${id}`, { guardians: keep });
   assert.equal(edited.status, 200, JSON.stringify(edited.json));
   p = await as('sadmin', 'GET', `/api/students/${id}`);
-  assert.equal(p.json.student.guardians.length, 1);
+  assert.equal(p.json.student.guardians.length, 2);
+  assert.equal(p.json.student.guardians[0].verified, true);
+  assert.ok(p.json.history.some((h) => /guardians: DANIEL MUSABE DAMIAN \(Father, 0795309020\)/.test(h.summary)));
+  // Wrong names, titles, phones, relationships, empty list.
+  const bad = async (g) => (await as('sadmin', 'PATCH', `/api/students/${id}`, { guardians: g })).json.error;
+  assert.match(await bad([{ fullName: 'Mr John', phone: '0754000001', relationship: 'father' }]), /title/);
+  assert.match(await bad([{ fullName: 'Mama Simon', phone: '0754000001', relationship: 'mother' }]), /title/);
+  assert.match(await bad([{ fullName: 'Grace', phone: '0754000001', relationship: 'mother' }]), /two names/);
+  assert.match(await bad([{ fullName: 'GRACE tibaijuka', phone: '0714-83523', relationship: 'mother' }]), /mobile number/);
+  assert.match(await bad([{ fullName: 'GRACE tibaijuka', phone: '0754000001', relationship: 'cousin' }]), /not known/);
+  assert.match(await bad([]), /at least one guardian/);
+  assert.match(await bad([{ fullName: 'GRACE TIBAIJUKA', phone: '0754000001', relationship: 'mother' }, { fullName: 'JOHN MATHIAS', phone: '0754 000 001', relationship: 'father' }]), /same as guardian 1/);
+});
+
+test('Excel download = the screen, and uploads back with no change', { skip }, async () => {
+  const res = await new Promise((resolve, reject) => {
+    http.get({ host: '127.0.0.1', port, path: `/api/students/export.xlsx?class=${cls.id}`, headers: { Cookie: people.sadmin.cookie } }, (r) => {
+      const parts = []; r.on('data', (c) => parts.push(c)); r.on('end', () => resolve(Buffer.concat(parts)));
+    }).on('error', reject);
+  });
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(res);
+  const ws = wb.worksheets[0];
+  const head = ws.getRow(2).values.slice(1);
+  assert.deepEqual(head.slice(0, 9), ['S/N', 'Admission No.', 'First name', 'Middle name', 'Last name', 'Sex', 'Guardian 1 Name', 'Guardian 1 Phone', 'Guardian 1 Relationship']);
+  assert.ok(head.includes('Guardian 2 Name') && !head.includes('Guardian 3 Name')); // as many groups as the student with most guardians (at least 2)
+  assert.ok(!head.some((h) => /parent/i.test(h)));
+  const screen = (await as('sadmin', 'GET', `/api/students?class=${cls.id}`)).json.students;
+  const names = []; ws.eachRow((r, n) => { if (n > 2) names.push(r.getCell(2).text); });
+  assert.deepEqual(names, screen.map((x) => x.admissionNo)); // same students, same order
+  const g1 = []; ws.eachRow((r, n) => { if (n > 2) g1.push(r.getCell(7).text); });
+  assert.deepEqual(g1, screen.map((x) => x.guardians[0]?.fullName || ''));
+  const up = await upload('sadmin', `/api/students/imports?class=${cls.id}`, res);
+  assert.equal(up.status, 201, JSON.stringify(up.json));
+  const rev = await as('sadmin', 'GET', `/api/students/imports/${up.json.id}`);
+  assert.equal(rev.json.summary.errors, 0, JSON.stringify(rev.json.lines.filter((l) => l.errors.length)));
+  assert.equal(rev.json.summary.changes, 0, JSON.stringify(rev.json.lines.filter((l) => l.change !== 'No change')));
+  await as('sadmin', 'POST', `/api/students/imports/${up.json.id}/discard`);
+});
+
+test('One wrong row: fix it on the review page, skip it, or save the good rows and leave it out', { skip }, async () => {
+  const rows = [
+    [null, ADM('F1'), 'GOOD', '', 'ONE', 'f', 'ASHA JUMA HAMISI', '0754 777 001'],
+    [null, ADM('F2'), 'BAD', '', 'GUARDIAN', 'm', 'Mr John', '0754 777 002'],
+    [null, ADM('F3'), 'BAD', '', 'PHONE', 'f', 'GRACE TIBAIJUKA', '07547'],
+    [null, ADM('F4'), 'GOOD', '', 'FOUR', 'm', 'PETER JOHN MREMA', '0754 777 004'],
+  ];
+  const up = await upload('sadmin', `/api/students/imports?class=${cls2.id}`, await classFile(rows));
+  const id = up.json.id;
+  let rev = (await as('sadmin', 'GET', `/api/students/imports/${id}`)).json;
+  assert.equal(rev.summary.errors, 2);
+  const bad = rev.lines.find((l) => l.admissionNo === ADM('F2'));
+  assert.equal(bad.input.firstName, 'BAD'); // what the row says, to fill the Fix form
+  assert.equal(bad.input.guardians[0].fullName, 'Mr John');
+  // Approve is refused while mistakes remain (unless the good rows are saved and the bad ones left out).
+  assert.match((await as('sadmin', 'POST', `/api/students/imports/${id}/approve`)).json.error, /Fix/);
+  // Fix row F2 here.
+  const fx = await as('sadmin', 'PUT', `/api/students/imports/${id}/rows/${bad.row}`, { admissionNo: ADM('F2'), firstName: 'Bad', middleName: '', lastName: 'Guardian', sex: 'M',
+    guardians: [{ fullName: 'JOHN MATHIAS', phone: '0754777002', relationship: 'father' }] });
+  assert.equal(fx.status, 200, JSON.stringify(fx.json));
+  assert.deepEqual(fx.json.line.errors, []);
+  assert.equal(fx.json.line.fixed, true);
+  assert.equal(fx.json.summary.errors, 1);
+  assert.equal((await as('bursar', 'PUT', `/api/students/imports/${id}/rows/${bad.row}`, { skip: true })).status, 403);
+  // Skip and undo.
+  const f3 = rev.lines.find((l) => l.admissionNo === ADM('F3'));
+  let sk = await as('sadmin', 'PUT', `/api/students/imports/${id}/rows/${f3.row}`, { skip: true });
+  assert.equal(sk.json.summary.errors, 0); assert.equal(sk.json.summary.skipped, 1);
+  sk = await as('sadmin', 'PUT', `/api/students/imports/${id}/rows/${f3.row}`, { undo: true });
+  assert.equal(sk.json.summary.errors, 1);
+  // Save the good rows (F1, fixed F2, F4); F3 is left out and can be downloaded.
+  const ok = await as('sadmin', 'POST', `/api/students/imports/${id}/approve`, { skipMistakes: true });
+  assert.equal(ok.status, 200, JSON.stringify(ok.json));
+  assert.equal(ok.json.summary.new, 3);
+  assert.deepEqual(ok.json.summary.leftOut.map((x) => x.admissionNo), [ADM('F3')]);
+  const f2 = (await as('sadmin', 'GET', `/api/students?q=${ADM('F2')}`)).json.students[0];
+  assert.equal(f2.guardians[0].fullName, 'JOHN MATHIAS');
+  assert.equal((await as('sadmin', 'GET', `/api/students?q=${ADM('F3')}`)).json.students.length, 0);
+  const xl = await new Promise((resolve, reject) => {
+    http.get({ host: '127.0.0.1', port, path: `/api/students/imports/${id}/left-out.xlsx`, headers: { Cookie: people.sadmin.cookie } }, (r) => {
+      const parts = []; r.on('data', (c) => parts.push(c)); r.on('end', () => resolve({ status: r.statusCode, buf: Buffer.concat(parts) }));
+    }).on('error', reject);
+  });
+  assert.equal(xl.status, 200);
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(xl.buf);
+  const r3 = wb.worksheets[0].getRow(2).values;
+  assert.ok(r3.includes(ADM('F3')) && r3.includes('GRACE TIBAIJUKA'));
+  // The left-out file, fixed, uploads again normally.
+  wb.worksheets[0].getRow(2).getCell(8).value = '0754777003';
+  const again = await upload('sadmin', `/api/students/imports?class=${cls2.id}`, Buffer.from(await wb.xlsx.writeBuffer()));
+  const rev2 = (await as('sadmin', 'GET', `/api/students/imports/${again.json.id}`)).json;
+  assert.equal(rev2.summary.errors, 0, JSON.stringify(rev2.lines.map((l) => l.errors)));
+  assert.equal(rev2.summary.new, 1);
+  await as('sadmin', 'POST', `/api/students/imports/${again.json.id}/discard`);
+  const ids = [];
+  for (const a of ['F1', 'F2', 'F4']) ids.push((await as('sadmin', 'GET', `/api/students?q=${ADM(a)}`)).json.students[0].id);
+  await as('sadmin', 'POST', '/api/students/move', { ids, left: true });
+});
+
+test('Bulk edit with Excel: whole school file, Class and Status columns decide', { skip }, async () => {
+  const get = (path) => new Promise((resolve, reject) => {
+    http.get({ host: '127.0.0.1', port, path, headers: { Cookie: people.sadmin.cookie } }, (r) => {
+      const parts = []; r.on('data', (c) => parts.push(c)); r.on('end', () => resolve(Buffer.concat(parts)));
+    }).on('error', reject);
+  });
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await get('/api/students/export.xlsx'));
+  const ws = wb.worksheets[0];
+  const head = ws.getRow(2).values;
+  const col = (h) => head.indexOf(h);
+  const rowOf = (adm) => { let x = null; ws.eachRow((r, n) => { if (n > 2 && r.getCell(col('Admission No.')).text === adm) x = r; }); return x; };
+  rowOf(ADM(1)).getCell(col('Class')).value = cls2.label;           // move
+  rowOf(ADM(4)).getCell(col('Status')).value = 'Left';             // left school
+  rowOf(ADM(2)).getCell(col('Middle name')).value = '-';           // erase middle name
+  const n = ws.rowCount + 1;
+  ws.getRow(n).values = [, '', ADM('X1'), 'NEW', '', 'KID', 'F', 'ASHA JUMA HAMISI', '0754999888', 'Mother'];
+  let buf = Buffer.from(await wb.xlsx.writeBuffer());
+  let up = await upload('sadmin', '/api/students/imports?class=many', buf);
+  assert.equal(up.status, 201, JSON.stringify(up.json));
+  let rev = (await as('sadmin', 'GET', `/api/students/imports/${up.json.id}`)).json;
+  assert.equal(rev.summary.many, true);
+  assert.match(rev.lines.find((l) => l.admissionNo === ADM('X1')).errors.join(' '), /Write the class/);
+  await as('sadmin', 'POST', `/api/students/imports/${up.json.id}/discard`);
+  ws.getRow(n).getCell(col('Class')).value = cls.label;
+  buf = Buffer.from(await wb.xlsx.writeBuffer());
+  up = await upload('sadmin', '/api/students/imports?class=many', buf);
+  rev = (await as('sadmin', 'GET', `/api/students/imports/${up.json.id}`)).json;
+  assert.equal(rev.summary.errors, 0, JSON.stringify(rev.lines.filter((l) => l.errors.length)));
+  assert.equal(rev.summary.new, 1); assert.equal(rev.summary.left, 1); assert.ok(rev.summary.move >= 1); assert.ok(rev.summary.update >= 1);
+  assert.equal(rev.upload.className, 'Many classes');
+  const ok = await as('sadmin', 'POST', `/api/students/imports/${up.json.id}/approve`);
+  assert.equal(ok.status, 200, JSON.stringify(ok.json));
+  const find = async (adm) => (await as('sadmin', 'GET', `/api/students?status=all&q=${adm}`)).json.students[0];
+  assert.equal((await find(ADM(1))).classId, cls2.id);
+  assert.equal((await find(ADM(4))).status, 'left');
+  assert.equal((await find(ADM(2))).middleName, null);
+  assert.equal((await find(ADM('X1'))).classId, cls.id);
+  const page = (await as('sadmin', 'GET', `/api/students/${(await find(ADM(1))).id}`)).json;
+  assert.ok(page.history.some((h) => /^Excel bulk edit/.test(h.summary)));
+  // Put things back for the next tests.
+  await as('sadmin', 'POST', '/api/students/move', { ids: [(await find(ADM(1))).id, (await find(ADM(4))).id], classId: cls.id });
+  await as('sadmin', 'PATCH', `/api/students/${(await find(ADM(2))).id}`, { middleName: 'ANTHONY' });
+  await as('sadmin', 'POST', '/api/students/move', { ids: [(await find(ADM('X1'))).id], left: true });
+});
+
+test('Bulk edit: many students at once; one mistake saves nothing', { skip }, async () => {
+  const list = (await as('sadmin', 'GET', `/api/students?class=${cls.id}`)).json.students.filter((x) => [ADM(1), ADM(3)].includes(x.admissionNo));
+  const [aaron, alvin] = list;
+  const rows = [
+    { id: aaron.id, firstName: 'Aaron', middleName: 'Alberto', lastName: 'Mgulunde', sex: 'M', admissionNo: aaron.admissionNo, classId: cls.id,
+      guardians: [{ fullName: 'DANIEL MUSABE DAMIAN', phone: '0795309020', relationship: 'father' }, { fullName: 'pendo costantine mbeikya', phone: '0713 111 222', relationship: 'mother' }] },
+    { id: alvin.id, sex: 'M', guardians: [{ fullName: 'Ms Grace', phone: '0713111223', relationship: 'mother' }] },
+  ];
+  const no = await as('sadmin', 'POST', '/api/students/bulk', { rows });
+  assert.equal(no.status, 400);
+  assert.equal(no.json.rows.length, 1);
+  assert.equal(no.json.rows[0].id, alvin.id);
+  assert.equal((await as('sadmin', 'GET', `/api/students/${aaron.id}`)).json.student.guardians.length, 1); // nothing saved
+  rows[1].guardians = [{ fullName: 'GRACE TIBAIJUKA', phone: '0713111223', relationship: 'aunt' }];
+  rows[1].classId = cls2.id;
+  const ok = await as('sadmin', 'POST', '/api/students/bulk', { rows });
+  assert.equal(ok.status, 200, JSON.stringify(ok.json));
+  assert.equal(ok.json.saved, 2);
+  const a2 = (await as('sadmin', 'GET', `/api/students/${aaron.id}`)).json;
+  assert.deepEqual(a2.student.guardians.map((g) => g.fullName), ['DANIEL MUSABE DAMIAN', 'PENDO COSTANTINE MBEIKYA']);
+  assert.ok(a2.history.some((h) => /^Bulk edit/.test(h.summary)));
+  const b2 = (await as('sadmin', 'GET', `/api/students/${alvin.id}`)).json.student;
+  assert.equal(b2.classId, cls2.id);
+  assert.equal(b2.guardians[0].relationship, 'aunt');
+  await as('sadmin', 'POST', '/api/students/move', { ids: [alvin.id], classId: cls.id });
+  // Saving the same again changes nothing; other school and bursar cannot.
+  assert.equal((await as('sadmin', 'POST', '/api/students/bulk', { rows })).json.saved, 1); // only the class (moved back above)
+  assert.equal((await as('boysAdmin', 'POST', '/api/students/bulk', { rows })).status, 403);
+  assert.equal((await as('bursar', 'POST', '/api/students/bulk', { rows })).status, 403);
 });
 
 test('Add, edit, move and mark as left; admission numbers stay unique', { skip }, async () => {
-  const a = await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(9), firstName: 'neema', middleName: 'john', lastName: 'masanja', sex: 'F', classId: cls.id, parentPhone: '0754 123 456' });
+  const mum = [{ fullName: 'asha juma', phone: '0754 123 456', relationship: 'mother' }];
+  assert.match((await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(9), firstName: 'neema', lastName: 'masanja', sex: 'F', classId: cls.id })).json.error, /at least one guardian/);
+  const a = await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(9), firstName: 'neema', middleName: 'john', lastName: 'masanja', sex: 'F', classId: cls.id, guardians: mum });
   assert.equal(a.status, 201, JSON.stringify(a.json));
   assert.equal(a.json.student.fullName, 'NEEMA JOHN MASANJA');
-  assert.equal((await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(9), firstName: 'x', lastName: 'y', sex: 'M', classId: cls.id })).status, 409);
-  assert.equal((await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(8), firstName: 'x', lastName: 'y', sex: 'M', classId: cls.id, parentPhone: '0714-83523' })).status, 400);
+  assert.equal((await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(9), firstName: 'x', lastName: 'y', sex: 'M', classId: cls.id, guardians: mum })).status, 409);
+  assert.equal((await as('sadmin', 'POST', '/api/students', { admissionNo: ADM(8), firstName: 'x', lastName: 'y', sex: 'M', classId: cls.id, guardians: [{ ...mum[0], phone: '0714-83523' }] })).status, 400);
   const id = a.json.student.id;
   const e = await as('sadmin', 'PATCH', `/api/students/${id}`, { middleName: '', classId: cls2.id });
   assert.equal(e.json.student.fullName, 'NEEMA MASANJA');

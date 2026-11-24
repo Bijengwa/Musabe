@@ -10,7 +10,9 @@ const sms = require('../lib/sms');
 const { ACCESS, CREATES } = require('../auth/roles');
 
 const router = express.Router();
-const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false,
+// Only failed sign-ins count (2026-11-23): a whole school signs in from one network address in the morning
+// (Teacher on Duty, roll call), so 30 good sign-ins in 15 minutes must not lock everyone out.
+const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, skipSuccessfulRequests: true, standardHeaders: true, legacyHeaders: false,
   message: { error: 'Too many attempts. Wait 15 minutes and try again.' } });
 
 // Wrong passwords:

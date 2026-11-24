@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, Icon, PageHead, Panel } from '../components/ui';
+import { ErrorNote, Icon, PageHead, Panel, Loading } from '../components/ui';
 import { DateRange, presets, useSchoolQs } from '../components/common';
 
 export default function Reports() {
@@ -25,7 +25,7 @@ export default function Reports() {
       <PageHead title="Reports" sub={`Excel files for your work. ${where || ''}`} />
       <div className="filters"><DateRange from={from} to={to} onChange={(a, b) => { setFrom(a); setTo(b); }} /></div>
       <ErrorNote error={error} />
-      {!data ? <Empty>Loading…</Empty> : !data.reports.length ? <Panel><p className="muted" style={{ margin: 0 }}>{data.note}</p></Panel> : groups.map((g) => (
+      {!data ? <Loading /> : !data.reports.length ? <Panel><p className="muted" style={{ margin: 0 }}>{data.note}</p></Panel> : groups.map((g) => (
         <Panel key={g} title={g} flush>
           <div className="list">{data.reports.filter((r) => r.group === g).map((r) => (
             <div key={r.key} className="li">

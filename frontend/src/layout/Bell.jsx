@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, Icon, fmtWhen, useToast } from '../components/ui';
+import { Empty, Icon, fmtWhen, useToast, Loading } from '../components/ui';
 
 // ---- sound: a short two-note chime made in the browser (no sound file needed) ----
 let ctx = null;
@@ -98,7 +98,7 @@ export default function Bell() {
           <div className="bhead"><b>Notifications</b>
             <Link to="/settings#notifications" onClick={() => setOpen(false)} title="Notification settings"><Icon name="gear" /></Link>
           </div>
-          {!data ? <Empty>Loading…</Empty> : !data.items.length ? <Empty>Nothing yet. New activity will show here.</Empty> : (
+          {!data ? <Loading /> : !data.items.length ? <Empty>Nothing yet. New activity will show here.</Empty> : (
             <div className="blist">
               {data.items.map((i) => (
                 <Wrap key={i.id} to={i.link} className={`bi${i.unread ? ' new' : ''}${i.link ? ' blink' : ''}`} onClick={() => setOpen(false)}>

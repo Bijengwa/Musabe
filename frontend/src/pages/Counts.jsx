@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 
 const TONE = { pending: 'warn', confirmed: 'ok', rejected: 'bad' };
@@ -39,7 +39,7 @@ function Checks() {
       )}
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.counts.length ? <Empty>No checks yet.</Empty> : (
+        {!data ? <Loading /> : !data.counts.length ? <Empty>No checks yet.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>No.</th><th>Week of</th><th className="stick">Store</th><th>What</th><th className="n">Items</th><th className="n">Different</th><th>Counted by</th><th>Status</th><th /></tr></thead>
             <tbody>{data.counts.map((c) => (
@@ -89,7 +89,7 @@ function Count({ categories, onClose }) {
       <div className="stack">
         <div className="fg"><label>What do you count?<select value={category} onChange={(e) => setCategory(e.target.value)}><option value="">Everything in the store</option>{categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></label></div>
         <p className="small muted" style={{ margin: 0 }}>Go to the shelf and count. Type what is really there (0 if there is none). The system number is not shown, so the count is honest.</p>
-        {!items ? <Empty>Loading…</Empty> : !items.length ? <Empty>This store holds nothing of this kind.</Empty> : (
+        {!items ? <Loading /> : !items.length ? <Empty>This store holds nothing of this kind.</Empty> : (
           <div className="tw"><table className="lines">
             <thead><tr><th>Item</th><th>Category</th><th className="n">Counted</th></tr></thead>
             <tbody>{items.map((i) => (
@@ -165,7 +165,7 @@ function Ledger() {
       </div>
       <ErrorNote error={error} />
       <Panel title={data ? `${data.store}: ${data.week} to ${data.to}` : 'Ledger'} sub={data?.notCounted ? `${data.notCounted} item${data.notCounted === 1 ? '' : 's'} not counted this week` : ''} flush>
-        {!data ? <Empty>Loading…</Empty> : !data.rows.length ? <Empty>This store held nothing in that week.</Empty> : (
+        {!data ? <Loading /> : !data.rows.length ? <Empty>This store held nothing in that week.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Item</th><th className="n">Opening</th><th className="n">Received</th><th className="n">Given out</th><th className="n">Corrections</th><th className="n">Closing</th><th className="n">Counted</th><th className="n">Difference</th><th>Check</th></tr></thead>
             <tbody>{data.rows.map((r) => (

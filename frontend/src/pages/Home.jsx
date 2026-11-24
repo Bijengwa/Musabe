@@ -8,7 +8,7 @@ import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
 import { CopyBox, Empty, Icon, Kpi, Modal, PageSkeleton, Panel, SkeletonTable, SchoolPill, fmtWhen } from '../components/ui';
 import { AcademicHome, AccountantHome, BursarHome, CashierHome, DirectorHome, FinanceHome, HeadHome, LibrarianHome, ManagerHome, MapokeziHome, SchoolAdminHome, SuperHome, ToDo, useDashboard, StoreHome } from './home/RoleHomes';
 
-const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'];
+const SCHOOL_ROLES = ['sadmin', 'head', 'second', 'acad', 'teacher', 'bursar', 'librarian', 'sstore'];
 
 function greeting(name) {
   const h = new Date().getHours();

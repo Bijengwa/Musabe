@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AppSkeleton } from './components/ui';
 import { useAuth } from './auth/AuthContext';
 import { ALL_PAGES } from './nav';
 import Shell from './layout/Shell';
@@ -40,6 +41,8 @@ const Lpo = lazy(() => import('./pages/Lpo'));
 const Contracts = lazy(() => import('./pages/Contracts'));
 const Vehicles = lazy(() => import('./pages/Vehicles'));
 const Academic = lazy(() => import('./pages/Academic'));
+const RollCall = lazy(() => import('./pages/RollCall'));
+const Duty = lazy(() => import('./pages/Duty'));
 import ComingSoon from './pages/ComingSoon';
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -47,26 +50,19 @@ import Splash from './splash/Splash';
 
 const SCREENS = { home: Home, staff: Staff, schools: Schools, audit: Audit, items: Items, sell: Sell, receipts: Receipts, give: Give, students: Students,
   stock: Stock, stockin: SendStock, incoming: Incoming, requests: Requests, damage: Damage, payments: Payments, bills: Bills, money: Money, salesdash: SalesDashboard, reports: Reports,
-  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles, academics: Academic };
+  issue: Issue, labels: Labels, purchases: Purchases, useitems: Store, counts: Counts, requisitions: Requisitions, orders: Orders, books: StoreBooks, interviews: Interviews, suppliers: Suppliers, lpo: Lpo, contracts: Contracts, vehicles: Vehicles, academics: Academic, rollcall: RollCall, duty: Duty };
 
 export default function App() {
   return <><Splash /><Routed /></>;
 }
 
-function PageLoader() {
-  return <div className="page-loader"><span className="route-progress" /><div className="route-loader-brand"><span className="spinner spinner-lg" aria-label="Loading page" /></div></div>;
-}
-
-function RouteProgress() {
-  const { pathname } = useLocation();
-  return <span key={pathname} className="route-progress route-progress-active" aria-hidden="true" />;
-}
 
 function Routed() {
   const { me } = useAuth();
   // The QR on a paper opens this without signing in.
   if (window.location.pathname.startsWith('/verify/')) return <Routes><Route path="verify/:type/:id" element={<Verify />} /></Routes>;
-  if (me === undefined) return <div className="boot boot-loading"><img className="logo lg boot-logo" src="/musabe-logo.png" alt="Musabe Schools" /><span className="boot-line"><i /></span><span className="boot-caption">Preparing your workspace…</span></div>;
+  // Loading = skeleton of the app (menu, top bar, page), never a spinner or a logo screen.
+  if (me === undefined) return <AppSkeleton />;
   if (!me) return <Login />;
   if (me.user.mustChangePassword) return <ChangePassword />;
 
@@ -74,8 +70,7 @@ function Routed() {
   const pages = ALL_PAGES.filter((p) => !p.sub && me.pages[p.key]); // "sub" items live inside their page's own routes
   return (
     <ScopeProvider>
-      <RouteProgress />
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<AppSkeleton />}>
       <Routes>
         <Route element={<Shell />}>
           {pages.map((p) => {

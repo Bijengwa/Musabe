@@ -2,12 +2,13 @@
 // FORM ONE … FORM FOUR). The Academic Master picks a class, adds its streams and sets the curriculum.
 // Everyone else with the Students page only looks.
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, useToast } from '../../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, useToast, Loading } from '../../components/ui';
 import { useClasses, useStudentSchool } from './shared';
 
-const CUR_TONE = { new: 'ok', old: 'warn', school: '' };
+const CUR_TONE = { new: 'ok', old: 'warn', school: '' };  // new = 2027 curriculum, old = 2026 and before
 
 export default function Classes() {
   const { can, user } = useAuth();
@@ -16,6 +17,8 @@ export default function Classes() {
   const school = useStudentSchool();
   const { classes, levels, curricula, error, reload } = useClasses(school);
   const [modal, setModal] = useState(null);
+  const navigate = useNavigate();
+  const openClass = (c) => navigate(`/students/classes/${c.id}`);
   const toggle = async (c) => {
     try { await api.patch(`/students/classes/${c.id}`, { active: !c.active }); toast(`${c.label} ${c.active ? 'switched off' : 'switched on'}`); reload(); }
     catch (e) { toast(e.message); }
@@ -32,17 +35,18 @@ export default function Classes() {
         <div className="warnnote"><Icon name="alert" /><span><b>{noLevel.length} unknown class record{noLevel.length === 1 ? ' exists' : 's exist'}.</b> Match it to one of the fixed BABY CLASS–FORM FOUR levels; new class names can no longer be created.</span></div>
       )}
       <Panel flush>
-        {!classes ? <Empty>Loading…</Empty> : !classes.length ? <Empty>{edit ? 'No fixed classes found. Run the standard class migration first.' : 'No fixed classes yet. Ask the Academic Master to apply the standard class setup.'}</Empty> : (
+        {!classes ? <Loading /> : !classes.length ? <Empty>{edit ? 'No fixed classes found. Run the standard class migration first.' : 'No fixed classes yet. Ask the Academic Master to apply the standard class setup.'}</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>Short</th><th>Class</th><th>Stream</th><th>Curriculum</th><th className="n">Students</th><th className="n">Boys</th><th className="n">Girls</th>{edit && <th />}</tr></thead>
             <tbody>{classes.map((c) => (
-              <tr key={c.id} className={c.active ? '' : 'off'}>
+              <tr key={c.id} className={`clickrow${c.active ? '' : ' off'}`} tabIndex={0} title="Open: subjects, teachers and syllabus"
+                onClick={() => openClass(c)} onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) openClass(c); }}>
                 <td><b className="mono">{c.label}</b>{!c.active && <span className="pill sm">Off</span>}</td>
                 <td data-l="Class">{c.name}{!c.level && <span className="pill sm warn" title="Typed by hand before the built-in list">Not from the list</span>}</td>
                 <td data-l="Stream">{c.stream || <span className="muted">—</span>}</td>
                 <td data-l="Curriculum">{c.curriculum ? <span className={`pill sm ${CUR_TONE[c.curriculum]}`}>{c.curriculumLabel}</span> : <span className="muted">—</span>}</td>
                 <td data-l="Students" className="n"><b>{c.students}</b></td><td data-l="Boys" className="n">{c.boys}</td><td data-l="Girls" className="n">{c.girls}</td>
-                {edit && <td className="acts-cell"><div className="row nowrap">
+                {edit && <td className="acts-cell" onClick={(e) => e.stopPropagation()}><div className="row nowrap">
                   <button className="btn sm" onClick={() => setModal(c)}><Icon name="edit" /> Edit</button>
                   <button className={`btn sm${c.active ? ' danger' : ''}`} onClick={() => toggle(c)}>{c.active ? 'Switch off' : 'Switch on'}</button>
                 </div></td>}
@@ -52,7 +56,7 @@ export default function Classes() {
         )}
       </Panel>
       <p className="small muted" style={{ margin: 0 }}>
-        Classes are in school order (lowest first). A class with students cannot be switched off: move them first.
+        Click a class to see its subjects, subject teachers and syllabus. Classes are in school order (lowest first). A class with students cannot be switched off: move them first.
         {!edit && user.role === 'sadmin' && ' To add a stream, ask the Academic Master.'}
       </p>
       {modal && <ClassForm cls={modal.id ? modal : null} classes={classes || []} levels={levels} curricula={curricula} school={school}

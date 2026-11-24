@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtPhone, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, SkeletonTable, fmtPhone, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { ControlSlip, PrintSlipButton, useSchoolQs } from '../components/common';
 import { PrintButton, ReceiptBook } from '../components/receipt';
 
@@ -111,7 +111,7 @@ export function BillModal({ id, onClose }) {
         {b.canPay && <button className="btn p" onClick={() => setMode('pay')}><Icon name="check" /> Mark as paid</button>}
       </>}>
       <ErrorNote error={error} />
-      {!b ? <Empty>Loading…</Empty> : (
+      {!b ? <Loading /> : (
         <div className="stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <span className={`pill ${TONE[b.status]}`}>{b.statusLabel}</span>

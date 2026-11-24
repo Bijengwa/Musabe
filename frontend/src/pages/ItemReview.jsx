@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Kpi, PageHead, Panel, fmtWhen, useToast } from '../components/ui';
+import { Empty, ErrorNote, Icon, Kpi, PageHead, Panel, fmtWhen, useToast, DetailSkeleton } from '../components/ui';
 
 // Review an Excel upload before it reaches the items list.
 // Shows every row by school: new items, new prices, start/stop selling, and mistakes (in red).
@@ -62,7 +62,7 @@ export default function ItemReview() {
     } catch (e) { setError(e.message); load(); } finally { setBusy(false); setSure(false); }
   };
 
-  if (!d) return <>{error ? <ErrorNote error={error} /> : <Empty>Loading…</Empty>}<Link className="btn" to="/items">Back to items</Link></>;
+  if (!d) return <>{error ? <ErrorNote error={error} /> : <DetailSkeleton />}<Link className="btn" to="/items">Back to items</Link></>;
   const { upload: u, summary: s } = d;
   const pending = u.status === 'pending';
   const count = (k) => (k === 'changes' ? s.changes + s.errors : k === 'mistakes' ? s.errors : k === 'all' ? s.rows

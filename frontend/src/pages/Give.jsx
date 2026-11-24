@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, fmtWhen, tsh, useToast, Loading } from '../components/ui';
 import { ReceiptDetails, ReceiptModal, StatusPill, waited } from '../components/receipt';
 import { ScanBox } from '../components/scan';
 
@@ -78,7 +78,7 @@ export default function Give() {
       )}
       <ErrorNote error={error} />
       <Panel flush>
-        {!rows ? <Empty>Loading…</Empty> : !rows.length ? <Empty>{who ? `${who.name} has nothing waiting to collect.` : q.trim() ? 'No receipt found. Check the number with the bursar.' : tab === 'open' ? 'Nothing waiting. Every paid receipt has been given.' : 'Nothing given yet today.'}</Empty> : (
+        {!rows ? <Loading /> : !rows.length ? <Empty>{who ? `${who.name} has nothing waiting to collect.` : q.trim() ? 'No receipt found. Check the number with the bursar.' : tab === 'open' ? 'Nothing waiting. Every paid receipt has been given.' : 'Nothing given yet today.'}</Empty> : (
           <div className="list">
             {rows.map((r) => (
               <div key={r.id} className={`li${r.late ? ' lateli' : ''}`}>
@@ -153,7 +153,7 @@ function GiveForm({ id, onClose }) {
       footer={<><button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn p" disabled={!r || busy || !count} onClick={give}>{busy ? 'Saving…' : all ? `Give all (${count})` : `Give ${count} item${count === 1 ? '' : 's'}`}</button></>}>
       <ErrorNote error={error} />
-      {!r ? <Empty>Loading…</Empty> : (
+      {!r ? <Loading /> : (
         <div className="stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <div><b>{r.studentName}</b> <span className="muted">· {r.studentClass}{r.gender ? ` · ${r.gender === 'boy' ? 'Boy' : 'Girl'}` : ''}</span></div>

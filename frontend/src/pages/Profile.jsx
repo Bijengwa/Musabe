@@ -7,7 +7,7 @@ import { IdCardPanel } from '../components/idcard';
 import { SignPad } from '../components/signing';
 import { cleanSignature } from '../components/cleanSignature';
 import './requisition.css';
-import { Avatar, Empty, ErrorNote, Icon, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
+import { Avatar, Empty, ErrorNote, Icon, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast, Loading } from '../components/ui';
 
 // My profile: who I am in the system.
 // Name, username, role and school are set by the administrator and are locked here,
@@ -139,7 +139,7 @@ export default function Profile() {
 
         <div className="stack">
           <Panel title="Account">
-            {!info ? <Empty>Loading…</Empty> : (
+            {!info ? <Loading /> : (
               <div className="stack kvlist">
                 <div className="kv"><span>Account made</span><b>{fmtWhen(info.createdAt)}</b></div>
                 <div className="kv"><span>Made by</span><b>{info.createdBy || 'System setup'}</b></div>
@@ -153,7 +153,7 @@ export default function Profile() {
           <SigningPanel user={user} refresh={refresh} />
 
           <Panel title="My recent activity" flush>
-            {!info ? <Empty>Loading…</Empty> : !info.activity.length ? <Empty>Nothing yet.</Empty> : (
+            {!info ? <Loading /> : !info.activity.length ? <Empty>Nothing yet.</Empty> : (
               <div className="list">
                 {info.activity.map((a) => (
                   <div className="li" key={a.id}>

@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, SchoolPill, fmtWhen, tsh, useToast, DetailSkeleton } from '../components/ui';
 import { LinesEditor, useSchoolItems, useSchoolQs } from '../components/common';
 import { DeliveryLabelsButton, PrintButton } from '../components/barcode';
 import { Paper, fmtDate } from '../components/paper';
@@ -146,8 +146,8 @@ export function deliveryPaper(d) {
 
 export function DeliveryList({ data, canCancel, onCancel, children, openAll }) {
   const [open, setOpen] = useState(null);
-  if (!data) return <Empty>Loading…</Empty>;
-  if (!data.deliveries.length) return <Empty>No deliveries yet.</Empty>;
+  if (!data) return <DetailSkeleton />;
+  if (!data.deliveries.length) return <Empty icon="up" title="No deliveries yet">When stock is sent to a school library it is listed here. The librarian confirms what arrived, and the stock then counts as received.</Empty>;
   return (
     <div className="list">
       {data.deliveries.map((d) => (

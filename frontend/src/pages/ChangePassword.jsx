@@ -48,7 +48,7 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="lg">
+    <div className="lg-page">
       <i className="lg-orb a" /><i className="lg-orb b" />
       <form className="lg-form" onSubmit={submit} noValidate>
         <header className="lg-top">

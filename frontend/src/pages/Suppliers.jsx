@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, phoneProblem, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, PhoneInput, fmtPhone, phoneProblem, tsh, useToast, DetailSkeleton, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 
 const TERMS = [['cash', 'Cash'], ['weekly', 'Weekly'], ['monthly', 'Monthly'], ['other', 'Other']];
@@ -49,7 +49,9 @@ function SupplierList() {
       </div>}
       <div className="filters"><div className="searchbox"><Icon name="search" /><input placeholder="Supplier name" value={q} onChange={(e) => setQ(e.target.value)} /></div></div>
       <Panel flush>
-        {!d ? <Empty>Loading…</Empty> : !d.suppliers.length ? <Empty>No suppliers yet.</Empty> : (
+        {!d ? <Loading /> : !d.suppliers.length ? <Empty icon="cart" title="No suppliers yet"
+          steps={['Add each shop or supplier with its payment terms.', 'Attach the price lists or proformas they give you.', 'Buy from them: anything taken on credit shows under "We owe".']}
+          action={d.canEdit && <button className="btn p" onClick={() => setForm({})}><Icon name="plus" /> New supplier</button>} /> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th className="stick">Supplier</th><th>Phone</th><th>Place</th><th>Terms</th><th className="n">Price lists</th><th>Last bought</th><th className="n">Owed (TSh)</th></tr></thead>
             <tbody>{d.suppliers.map((s) => (
@@ -139,7 +141,7 @@ function SupplierPage() {
   const load = useCallback(() => api.get(`/suppliers/${id}`).then((x) => { setD(x); setError(''); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useLive(['supplier', 'pricelist', 'purchase'], load);
-  if (!d) return <><Link to="/suppliers" className="btn sm">← Suppliers</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</>;
+  if (!d) return <><Link to="/suppliers" className="btn sm">← Suppliers</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</>;
   const s = d.supplier;
   return (
     <>

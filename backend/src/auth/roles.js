@@ -17,6 +17,7 @@ const ROLES = {
   secretary: { label: 'Academic Secretary',        scope: 'all' },   // Assistant Director's office: enters admission interview marks (2026-11-20)
   sadmin:    { label: 'School Admin',              scope: 'school' },
   head:      { label: 'Head Master',               scope: 'school' },
+  second:    { label: 'Second Master',             scope: 'school' },   // Deputy Head Master: appoints the Teachers on Duty each week (2026-11-23)
   acad:      { label: 'Academic Master',           scope: 'school' },
   teacher:   { label: 'Subject Teacher',           scope: 'own' },
   bursar:    { label: 'Bursar',                    scope: 'school' },
@@ -27,12 +28,12 @@ const ROLES = {
 
 // Administration roles have no school. School roles must have one.
 const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary'];
-const SCHOOL_ROLES = ['sadmin', 'head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'];
+const SCHOOL_ROLES = ['sadmin', 'head', 'second', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'];
 
 // Who can create (and manage) which accounts.
 const CREATES = {
   super: [...ADMIN_ROLES, ...SCHOOL_ROLES],
-  sadmin: ['head', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'],
+  sadmin: ['head', 'second', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', 'patron'],
 };
 
 // Page access: 'f' = full, 'v' = view only, missing = hidden.
@@ -125,6 +126,13 @@ for (const [page, { f, v }] of Object.entries(OFFICE)) {
 // Academic Secretary (2026-11-20, Assistant Director's office): enters the admission interviews (marks from the teacher who
 // marked, on paper or Excel). The School Admin of the school registers those who passed as students.
 ACCESS.secretary = parse('home interviews students:v reports');
+// Teacher on Duty and roll call (2026-11-23):
+// - duty = the weekly Teacher on Duty list (and the daily duty reports). The Second Master appoints and reads the reports.
+// - rollcall = taking the roll call. Teachers have 'f' but the server lets only this week's Teacher on Duty (or the
+//   Second Master) save a roll call; everyone else listed here only looks.
+ACCESS.second = parse('home students:v duty rollcall reports audit:v');
+for (const r of ['teacher', 'acad']) Object.assign(ACCESS[r], { duty: 'v', rollcall: 'f' });
+for (const r of ['head', 'super', 'director', 'adirector', 'sadmin']) Object.assign(ACCESS[r], { duty: 'v', rollcall: 'v' });
 // classlist (2026-11-20): the Academic Master (own school) adds the classes and streams, from the levels built into the
 // system (src/lib/levels.js). Everyone with the Students page still SEES the classes.
 

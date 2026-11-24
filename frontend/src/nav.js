@@ -12,6 +12,7 @@ export const NAV = [
     { key: 'students', label: 'Students', icon: 'users', path: '/students', ready: true },
     { key: 'student-add', perm: 'students', level: 'f', sub: true, label: 'Add student', icon: 'plus', path: '/students/new' },
     { key: 'student-upload', perm: 'students', level: 'f', sub: true, label: 'Upload class list', icon: 'upload', path: '/students/upload' },
+    { key: 'student-bulk', perm: 'students', level: 'f', sub: true, label: 'Edit many', icon: 'edit', path: '/students/bulk' },
     { key: 'student-move', perm: 'students', level: 'f', sub: true, label: 'Move / promote', icon: 'swap', path: '/students/move' },
     { key: 'student-classes', perm: 'students', editPerm: 'classlist', sub: true, label: 'Classes', icon: 'grid', path: '/students/classes' },
     { key: 'student-parents', perm: 'students', sub: true, label: "Parents' app requests", icon: 'users', path: '/students/parents' },
@@ -52,6 +53,11 @@ export const NAV = [
     { key: 'contracts', label: 'Work agreements', icon: 'pen', path: '/contracts', ready: true },
     { key: 'vehicles', label: 'Vehicles', icon: 'key', path: '/vehicles', ready: true },
   ] },
+  // Teacher on Duty and roll call (2026-11-23). The discipline office will join this group.
+  { group: 'Duty', items: [
+    { key: 'rollcall', label: 'Roll call', icon: 'check', path: '/rollcall', ready: true },
+    { key: 'duty', label: 'Teacher on Duty', icon: 'shield', path: '/duty', ready: true },
+  ] },
   { group: 'Academic', items: [
     { key: 'academics', label: 'Teaching & Academics', icon: 'grid', path: '/academics', ready: true },
     { key: 'year', label: 'Year progress', icon: 'trend', path: '/year', step: 'Step 3: Academic' },
@@ -89,6 +95,6 @@ export const ROLE_LABELS = {
   super: 'Super Admin', director: 'Director', adirector: 'Assistant Director', manager: 'Manager', amanager: 'Assistant Manager',
   fm: 'Finance Manager', afm: 'Assistant Finance Manager', acc: 'Accountant', aacc: 'Assistant Accountant', storekeeper: 'Store-keeper',
   cashier: 'Cashier', mapokezi: 'Mapokezi (reception)', secretary: 'Academic Secretary',
-  sadmin: 'School Admin', head: 'Head Master', acad: 'Academic Master', teacher: 'Subject Teacher',
+  sadmin: 'School Admin', head: 'Head Master', second: 'Second Master', acad: 'Academic Master', teacher: 'Subject Teacher',
   bursar: 'Bursar', librarian: 'Librarian', sstore: 'School Store-keeper',
 };

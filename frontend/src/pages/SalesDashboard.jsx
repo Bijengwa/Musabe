@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Kpi, PageHead, Panel, SchoolPill, tsh } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Kpi, PageHead, Panel, SchoolPill, tsh, Loading } from '../components/ui';
 import { BarList, DayBars } from '../components/charts';
 import { DateRange, presets, useSchoolQs } from '../components/common';
 
@@ -34,7 +34,7 @@ export default function SalesDashboard() {
       </PageHead>
       <div className="filters"><DateRange from={from} to={to} onChange={(a, b) => { setFrom(a); setTo(b); }} /></div>
       <ErrorNote error={error} />
-      {!d ? <Empty>Loading…</Empty> : (
+      {!d ? <Loading /> : (
         <>
           <div className="kpis">
             <Kpi tone="hi" label="Money in (TSh)" value={tsh(k.money)}

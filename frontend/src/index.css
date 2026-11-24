@@ -42,7 +42,7 @@ a { color: inherit }
 @keyframes page-enter { from { opacity: 0; transform: translateY(7px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes backdrop-enter { from { opacity: 0 } to { opacity: 1 } }
 @keyframes modal-enter { from { opacity: 0; transform: translateY(12px) scale(.985) } to { opacity: 1; transform: translateY(0) scale(1) } }
-@keyframes toast-enter { from { opacity: 0; transform: translate(-50%, 12px) } to { opacity: 1; transform: translate(-50%, 0) } }
+@keyframes toast-enter { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes icon-pop { 0% { transform: scale(.82) rotate(-5deg) } 55% { transform: scale(1.12) rotate(3deg) } 100% { transform: scale(1) rotate(0) } }
 @keyframes icon-nudge { 0%,100% { transform: translateX(0) } 50% { transform: translateX(3px) } }
 @keyframes icon-breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.08) } }
@@ -291,7 +291,15 @@ input:disabled, select:disabled { background: var(--soft) }
 .modal .mb { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px }
 .modal .mb p { margin: 0 }
 .modal .mf { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 60; font-weight: 500; max-width: calc(100% - 32px) }
+.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; width: max-content; max-width: calc(100% - 32px); pointer-events: none }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; background: var(--ink); color: var(--bg); padding: 10px 12px 10px 16px; border-radius: 10px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.22); border-left: 4px solid transparent }
+.toast.t-success { border-left-color: #2f9e63 }
+.toast.t-error { border-left-color: #e5484d }
+.toast .tact { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 2px 4px }
+.toast .tx { background: none; border: 0; color: inherit; opacity: .6; cursor: pointer; display: grid; place-items: center; padding: 2px }
+.toast .tx:hover { opacity: 1 }
+.btn.busy { position: relative; cursor: progress }
+.btn-spin { width: 13px; height: 13px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite }
 
 /* Scrollbars: transparent track, slim rounded thumb that follows the theme */
 * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--primary) 45%, transparent) transparent }
@@ -824,3 +832,141 @@ th.ck, td.ck { width: 34px; text-align: center } th.ck input, td.ck input { widt
 .ivscore { font-variant-numeric: tabular-nums; white-space: nowrap }
 .ivscore em { font-style: normal; color: var(--muted); font-size: 12px; margin-left: 4px }
 td.nowrap { white-space: nowrap }
+
+/* Guardians (2026-11-23): editor rows and read-only lines */
+.gedit { display: flex; flex-direction: column; gap: 10px; align-items: flex-start }
+.gedit .grow-row { display: grid; grid-template-columns: 22px minmax(180px, 2fr) minmax(140px, 1fr) minmax(130px, 1fr) auto; gap: 8px; align-items: end; width: 100% }
+.gedit .gnum { align-self: center; color: var(--muted); font-weight: 600; text-align: center }
+.gedit .gacts { display: flex; gap: 4px; align-self: center; justify-content: flex-end; min-width: 64px }
+.gedit .gfull { grid-column: 2 / -1 }
+.gedit.compact { gap: 6px }
+.gedit.compact .grow-row { grid-template-columns: 18px minmax(170px, 2fr) minmax(130px, 1fr) minmax(110px, 1fr) auto; gap: 6px }
+.gedit.compact input, .gedit.compact select { padding: 6px 8px }
+.gedit.compact .fieldhint { font-size: 11px }
+.btn.ghost { background: none; border-color: transparent }
+.glines { display: flex; flex-direction: column; gap: 2px; min-width: 220px }
+.glines > div { line-height: 1.35 }
+@media (max-width: 700px) {
+  .gedit .grow-row, .gedit.compact .grow-row { grid-template-columns: 22px 1fr; }
+  .gedit .grow-row > label, .gedit .gacts { grid-column: 2 }
+}
+/* Bulk edit grid */
+.bulkgrid td { vertical-align: top; padding: 6px }
+.bulkgrid input, .bulkgrid select { padding: 6px 8px }
+.bulkgrid tr.changed td { background: var(--primary-soft) }
+.bulkgrid tr.bad td { background: var(--bad-soft) }
+.bulkgrid .nm { min-width: 110px }
+.bulkgrid select.sx { min-width: 82px } .bulkgrid select.cl { min-width: 88px }
+.bulkbar { position: sticky; bottom: 0; z-index: 4; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 12px rgb(0 0 0 / .06) }
+
+/* Skeleton loading everywhere (2026-11-23): the app shell and pages show grey shimmering shapes while loading. */
+.app-skeleton .side { padding: 0 }
+.app-skeleton .skel-brand { display: flex; align-items: center; gap: 12px; padding: 18px 16px 12px }
+.app-skeleton .skel-logo { width: 46px; height: 46px; border-radius: 50%; background: #fff; padding: 4px; object-fit: contain; flex: none }
+.app-skeleton .skel-user { display: flex; align-items: center; gap: 10px; margin: 0 12px 12px; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--side-ink) 7%, transparent) }
+.app-skeleton .skel-nav { display: flex; align-items: center; gap: 12px; padding: 11px 18px }
+.skeleton.on-side { background: color-mix(in srgb, var(--side-ink) 13%, transparent) }
+.skeleton.on-side::after { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--side-ink) 14%, transparent), transparent) }
+.page-skeleton { display: flex; flex-direction: column; gap: 18px }
+.skel-chips { display: flex; gap: 8px; flex-wrap: wrap }
+@media (max-width: 900px) { .app-skeleton { grid-template-columns: minmax(0, 1fr) } .app-skeleton .side { display: none } }
+/* Empty states */
+.empty.rich { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 34px 16px }
+.empty-ic { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--soft); color: var(--primary); margin-bottom: 4px }
+.empty-t { color: var(--ink); font-size: 15px }
+.empty-a { margin-top: 8px }
+/* Sortable headers + pager */
+.sortbtn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit }
+.sortbtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px }
+.sortbtn .sortarrow { font-size: 9px; opacity: .35 }
+.sortbtn.on .sortarrow, .sortbtn:hover .sortarrow { opacity: 1; color: var(--primary) }
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid var(--line) }
+.pager .muted { margin-right: auto }
+/* Busy buttons */
+.btn[aria-busy="true"] { opacity: .85 }
+
+/* Keyboard shortcut list */
+.kbdlist { margin: 0; display: flex; flex-direction: column; gap: 8px }
+.kbdlist > div { display: flex; justify-content: space-between; gap: 12px; align-items: center }
+.kbdlist dt { white-space: nowrap } .kbdlist dd { margin: 0; color: var(--muted); text-align: right }
+kbd { font: 600 12px/1 inherit; background: var(--soft); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 3px 7px }
+/* Tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; margin-bottom: 14px }
+.tabs button { border: 0; background: none; padding: 10px 14px; color: var(--muted); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; cursor: pointer }
+.tabs button:hover { color: var(--ink) }
+.tabs button.on { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600 }
+.tabs button em { font-style: normal; font-size: 11.5px; background: var(--soft); border-radius: 999px; padding: 1px 7px; margin-left: 6px; color: var(--muted) }
+/* Stepper */
+.stepper { list-style: none; margin: 0 0 16px; padding: 0; display: flex; gap: 6px }
+.stepper li { flex: 1; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; position: relative; min-width: 0 }
+.stepper li:not(:last-child)::after { content: ''; flex: 1; height: 2px; background: var(--line); margin-left: 4px; border-radius: 2px }
+.stepper li.done::after { background: var(--primary) }
+.stepper .dot { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); font-size: 12px; font-weight: 700 }
+.stepper li.now { color: var(--ink); font-weight: 600 } .stepper li.now .dot { border-color: var(--primary); color: var(--primary) }
+.stepper li.done .dot { background: var(--primary); border-color: var(--primary); color: var(--primary-ink) }
+@media (max-width: 640px) { .stepper .lbl { display: none } .stepper li.now .lbl { display: inline } }
+
+.tabpanel { animation: page-enter .18s ease both; display: flex; flex-direction: column; gap: 14px }
+
+/* Class page: built-in syllabus (2026-11-23) */
+.syl-main { border-top: 1px solid var(--line); padding-top: 10px }
+.syl-main h3 { margin: 0 0 8px; font-size: 14px; color: var(--primary) }
+.syl-topic { padding: 6px 0 8px 12px; border-left: 3px solid var(--soft); margin-bottom: 6px }
+.syl-topic ul { margin: 6px 0 0; padding-left: 20px; font-size: 13px }
+.syl-topic li { margin: 2px 0 }
+@media (max-width: 640px) {
+  .subjtable thead { display: none }
+  .subjtable tr { display: grid; grid-template-columns: minmax(0, 1fr); padding: 10px 12px; border-bottom: 1px solid var(--line) }
+  .subjtable td { min-width: 0; max-width: 100%; box-sizing: border-box }
+  .subjtable td { border: 0; padding: 3px 0 }
+  .subjtable td.nocard { display: none }
+  .subjtable td[data-l="Syllabus"]::before, .subjtable td[data-l="Teacher"]::before, .subjtable td[data-l="Short"]::before { content: attr(data-l) ': '; color: var(--muted); font-size: 12px }
+  .tw > table.subjtable, .subjtable tbody { display: block; min-width: 0; width: 100% }
+  .subjtable td[data-l="Teacher"] { display: flex; flex-direction: column; gap: 2px }
+  .subjtable td select { width: 100%; min-width: 0 }
+}
+.empty.rich { max-width: 520px; margin: 0 auto }
+.empty-b { max-width: 440px; line-height: 1.5 }
+.empty-steps { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; font-size: 13px; color: var(--ink) }
+.empty-steps li { display: flex; gap: 10px; align-items: flex-start }
+.empty-steps li span { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--soft); color: var(--primary); display: grid; place-items: center; font-size: 11.5px; font-weight: 700 }
+.empty-a { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap }
+/* Class page: the subject list grows with the page (no scrollbar inside the page), and room under it for the Help button. */
+.tw.tw-full { max-height: none }
+.help-room { height: 0 }
+@media (max-width: 640px) { .help-room { height: 64px } }
+
+/* Teacher on Duty and roll call (2026-11-23) */
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 10px; border-radius: 999px; background: var(--primary-soft); border: 1px solid var(--line); font-size: 13px }
+.chip.big { padding: 8px 8px 8px 14px; font-size: 15px }
+.chip-x { border: 0; background: none; padding: 2px; display: inline-grid; place-items: center; border-radius: 50%; color: var(--muted); min-width: 24px; min-height: 24px }
+.chip-x:hover { background: var(--soft); color: var(--bad) }
+tr.on td { background: var(--primary-soft) }
+.rc-list { display: flex; flex-direction: column }
+.rc-row { display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line) }
+.rc-row.rc-out { background: var(--warn-soft) }
+.rc-name { display: flex; flex-direction: column; gap: 1px }
+.rc-name .pill { align-self: flex-start }
+.rc-marks { display: flex; gap: 4px }
+.rc-m { min-width: 44px; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; display: grid; place-items: center; line-height: 1 }
+.rc-m em { font-style: normal; font-weight: 400; font-size: 10px; color: var(--muted) }
+.rc-m.on.P { background: var(--ok); border-color: var(--ok); color: #fff }
+.rc-m.on.A { background: var(--bad); border-color: var(--bad); color: #fff }
+.rc-m.on.L, .rc-m.on.S { background: var(--warn); border-color: var(--warn); color: #fff }
+.rc-m.on.R { background: var(--primary); border-color: var(--primary); color: #fff }
+.rc-m.on em { color: inherit; opacity: .9 }
+.rc-m:disabled { cursor: default; opacity: .85 }
+.rc-note { grid-column: 2 / -1 }
+.rc-bar { position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: flex-start; padding: 10px 130px 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow) }
+.rc-bar > span { display: flex; flex-wrap: wrap; gap: 6px }
+.duty-rep summary { display: flex; gap: 8px; align-items: center; cursor: pointer; list-style: none; width: 100% }
+.duty-rep { flex-direction: column; align-items: stretch }
+.duty-rep dl { margin: 8px 0 }
+.duty-rep dl div { margin-bottom: 6px }
+.duty-rep dt { font-size: 12px; color: var(--muted) }
+.duty-rep dd { margin: 0; white-space: pre-wrap }
+@media (max-width: 640px) {
+  .rc-row { grid-template-columns: 1.6em minmax(0, 1fr) }
+  .rc-marks { grid-column: 1 / -1; justify-content: space-between }
+  .rc-m { flex: 1 }
+}

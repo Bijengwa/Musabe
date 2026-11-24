@@ -236,3 +236,34 @@ Agreed 2026-11-20: class names are built into the system; the Academic Master (n
 - [x] Tests: `test/office.test.js` (5) + requisitions / orders / moneyback / store tests updated — 103 of 107 pass (same 4 as before need the owner account or docs/test-data)
 - After pulling: `npm run migrate`, then run `db/provision-roles.sql` again. The Assistant Accountant now signs every requisition before the Manager.
 - Not yet: number series per school and per place (with stock per place); LPO paper not yet compared with a photo of the real LPO book.
+
+## Academic: class → subjects → built-in syllabus (2026-11-23)
+- [x] Migration `20261123_043_class_subjects_syllabus` (+ `db/provision-roles.sql`: `syllabi`, `syllabus_topics`, `syllabus_items` read-only)
+- [x] Subjects of each class level built in (`backend/src/lib/subjects.js`), from the school's subject sheets: names change by class (Numeracy → Arithmetic → Mathematics). P7 Social Studies = Geography + History (parts). Same list for every stream; each stream has its own subject teachers
+- [x] Built-in syllabus from the TIE PDFs (`backend/src/data/syllabus-2027-primary.json`, made by `backend/scripts/syllabus/`): pre-primary, Std I–II and 10 Std III–VI subjects; main competence → specific competence → learning activities, with periods (Maths P3 = 234 = 6 a week)
+- [x] Curriculum labels by year: "2027 curriculum" / "2026 and before curriculum" (keys new/old unchanged)
+- [x] Students → Classes: click a class → class page (`pages/student/ClassPage.jsx`, `routes/class-subjects.js`): subjects, teacher per stream (Academic Master), syllabus window with search, add / rename / switch off a subject
+- [x] Tests: `test/class-subjects.test.js` (5 pass)
+- After pulling: `npm run migrate`, then run `db/provision-roles.sql` again.
+- To confirm: French/Chinese in P4 and P6 (marked out on the sheet, left off); Std VII (2026 and before) syllabi not loaded yet.
+- Found: on a new empty database, migration 035 fails because 030 already made `suppliers` (035 needs `hasTable`). Existing databases are fine.
+
+## Academics test fixes (2026-11-23, from the test report)
+- [x] Teaching plans, Teaching & quizzes, Exam marks, Primary reports no longer go white (`useEffect` returned a Promise)
+- [x] Exam timetable and Teaching timetable: classes listed per stream (P 3 PINK and P 3 BLUE), subjects of the chosen class only, teachers from `GET /api/class-subjects/teachers` (the Academic Master cannot read Staff)
+- [x] "Subjects & syllabus" tab became "Subjects & teachers" and the Syllabus tab now opens the class pages: one place only for subjects, teachers and syllabus
+- [x] Syllabus text cleaned ("D evelop" -> "Develop", "pre- writing" -> "pre-writing", pre-primary cells that ran into the next column). Migration `044` reads the syllabi again; periods unchanged
+- [x] Class page: "1 topic" (not "1 topics"), "2 parts under SST", no scrollbar inside the page, room for the Help button on phones
+- [x] Migration 030 does nothing on a new empty database (035 makes suppliers): a fresh install now migrates (45 migrations)
+- Tests: `test/class-subjects.test.js` 6 pass. Still failing (older, known): Head Master release of report cards (needs marks: f).
+
+## Teacher on Duty and roll call (2026-11-23)
+- [x] Migration `045`: new school role **Second Master** (Deputy Head Master); `duty_rosters`, `roll_calls`, `roll_call_marks`, `duty_reports` (never deleted). `db/provision-roles.sql` grants added
+- [x] Teacher on Duty page (`pages/Duty.jsx`, `routes/duty.js`): the Second Master appoints 1–6 teachers per week (Monday–Sunday), this week or later; remove keeps the history. The teacher is told (bell)
+- [x] Roll call page (`pages/RollCall.jsx`): every class stream, morning / evening / night; P present, A absent, L late, S sick, R permission with a reason. Only this week's Teacher on Duty (today and yesterday) or the Second Master (last 30 days) saves; others look. Totals, "not present today", "absent 3 days in a row", Excel
+- [x] Daily duty report: the Teacher on Duty writes it; the Second Master / Head Master mark it read (then it is locked)
+- [x] Home To do: classes without today's roll call (Teacher on Duty), weeks without a Teacher on Duty and reports to read (Second Master)
+- [x] Sign-in limit counts only failed sign-ins (a whole school signs in from one network in the morning)
+- Tests: `test/duty.test.js` (5)
+- After pulling: `npm run migrate`, run `db/provision-roles.sql` again, then the School Admin creates the Second Master account.
+- Next: parents told when a child is absent; discipline office; the school's paper duty report layout (photo needed).

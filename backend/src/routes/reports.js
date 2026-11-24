@@ -92,14 +92,16 @@ const BUILD = {
     if (p.school) q.where('st.school_id', p.school);
     const rows = await q.orderBy('s.short_name').orderBy('c.short_name').orderBy('st.full_name').limit(50000)
       .select('st.*', 's.short_name as school', 'c.short_name as cls', 'c.stream',
-        db.raw('EXISTS (SELECT 1 FROM id_cards x WHERE x.student_id = st.id AND x.ended_at IS NULL) as card'));
+        db.raw('EXISTS (SELECT 1 FROM id_cards x WHERE x.student_id = st.id AND x.ended_at IS NULL) as card'),
+        db.raw(`(SELECT string_agg(g.full_name || ' (' || initcap(g.relationship) || ')', ', ' ORDER BY g.position, g.id) FROM student_guardians g WHERE g.student_id = st.id) as guardians`),
+        db.raw(`(SELECT string_agg(g.phone, ', ' ORDER BY g.position, g.id) FROM student_guardians g WHERE g.student_id = st.id) as phones`));
     await sendExcel(res, 'musabe-students', [{
       name: 'Students', title: `Students in the system, ${schoolName}`,
       columns: [{ header: 'S/N', key: 'sn', type: 'int', width: 6 }, { header: 'School', key: 'school', width: 16 }, { header: 'Class', key: 'cls', width: 10 },
         { header: 'Admission No.', key: 'adm', width: 16 }, { header: 'Name', key: 'name', width: 30 }, { header: 'Sex', key: 'sex', width: 6 },
-        { header: 'Parent', key: 'parent', width: 24 }, { header: 'Phone', key: 'phone', width: 13 }, { header: 'ID card', key: 'card', width: 11 }, { header: 'Added on', key: 'at', type: 'date', width: 18 }],
+        { header: 'Guardians', key: 'parent', width: 48 }, { header: 'Phones', key: 'phone', width: 26 }, { header: 'ID card', key: 'card', width: 11 }, { header: 'Added on', key: 'at', type: 'date', width: 18 }],
       rows: rows.map((r, i) => ({ sn: i + 1, school: r.school, cls: [r.cls, r.stream].filter(Boolean).join(' '), adm: r.admission_no, name: r.full_name, sex: r.sex,
-        parent: r.parent_name || '', phone: r.parent_phone || '', card: r.card ? 'Issued' : 'Not issued', at: d(r.created_at) })),
+        parent: r.guardians || '', phone: r.phones || '', card: r.card ? 'Issued' : 'Not issued', at: d(r.created_at) })),
     }]);
   },
   // ---------- The school's own sales book layout ----------

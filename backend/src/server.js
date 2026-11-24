@@ -46,6 +46,8 @@ app.use('/api/receipts', require('./routes/receipts'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/interviews', require('./routes/interviews'));
 app.use('/api/academic', require('./routes/academic'));
+app.use('/api/class-subjects', require('./routes/class-subjects'));
+app.use('/api/duty', require('./routes/duty'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/stock', require('./routes/stock'));
 app.use('/api/requests', require('./routes/requests'));

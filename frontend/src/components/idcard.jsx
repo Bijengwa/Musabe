@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Modal, Panel, fmtPhone, fmtWhen, useToast } from './ui';
+import { ErrorNote, Icon, Modal, Panel, fmtPhone, fmtWhen, useToast, Loading } from './ui';
 import { QR } from './qr';
 import { PrintButton } from './barcode';
 
@@ -72,7 +72,7 @@ export function IdCardBack({ h, issuedAt }) {
       <div className="nid-backfoot">
         <div className="nid-facts">
           <span>Imetolewa / Issued: <b>{dmy(issuedAt) || '........................'}</b></span>
-          {student && h.parentPhone && <span>Simu ya mzazi / Parent: <b>{fmtPhone(h.parentPhone)}</b></span>}
+          {student && h.parentPhone && <span>Simu ya mzazi / Guardian: <b>{fmtPhone(h.parentPhone)}</b></span>}
           {!student && h.phone && <span>Simu / Phone: <b>{fmtPhone(h.phone)}</b></span>}
         </div>
         <div className="nid-director"><span className="line" /><span>MKURUGENZI / DIRECTOR</span><span>MUSABE SCHOOLS</span></div>
@@ -147,7 +147,7 @@ export function IdCardPanel({ kind, id, me, flush }) {
     setBusy(false);
   };
   if (error) return <Panel title="ID card"><ErrorNote error={error} /></Panel>;
-  if (!d) return <Panel title="ID card"><Empty>Loading…</Empty></Panel>;
+  if (!d) return <Panel title="ID card"><Loading /></Panel>;
   const c = d.current;
   return (
     <Panel title="ID card" flush={flush}

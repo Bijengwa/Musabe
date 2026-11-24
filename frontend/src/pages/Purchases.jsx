@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSchools } from '../layout/scope';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, tsh, useToast, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 import { PinBox } from '../components/signing';
 import { NewItem } from './Store';
@@ -58,7 +58,7 @@ function PurchasesList() {
         <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.purchases.length ? <Empty>Nothing here.</Empty> : (
+        {!data ? <Loading /> : !data.purchases.length ? <Empty>Nothing here.</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>No.</th><th>Date</th><th>For</th><th className="stick">Supplier</th><th className="n">Cost (TSh)</th><th>Written by</th><th>Checked by</th><th>Status</th></tr></thead>
             <tbody>{data.purchases.map((p) => (

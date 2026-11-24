@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { useLive } from '../live';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, fmtWhen, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, Modal, PageHead, Panel, SchoolPill, fmtWhen, useToast, Loading } from '../components/ui';
 import { useSchoolItems, useSchoolQs } from '../components/common';
 
 const TONE = { pending: 'warn', approved: 'ok', rejected: 'bad' };
@@ -34,7 +34,7 @@ export default function Damage() {
         <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.damages.length ? <Empty>Nothing here.</Empty> : (
+        {!data ? <Loading /> : !data.damages.length ? <Empty>Nothing here.</Empty> : (
           <div className="list">{data.damages.map((d) => (
             <div key={d.id} className="li">
               <div className="grow">

@@ -5,7 +5,8 @@ import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
 import { useSchools, useScope } from '../layout/scope';
 import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
-import { CopyBox, Empty, ErrorNote, ExcelButton, Icon, Modal, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
+import { Pager, SortTh, useTable } from '../components/table';
+import { CopyBox, Empty, ErrorNote, ExcelButton, Icon, Loading, Modal, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
 
 export default function Staff() {
   const { user, me, can } = useAuth();
@@ -30,6 +31,7 @@ export default function Staff() {
   useEffect(() => { const t = setTimeout(load, q ? 250 : 0); return () => clearTimeout(t); }, [load, q]);
   useLive(['user', 'auth'], load);
 
+  const t = useTable(rows, { pageSize: 25, getters: { name: (u) => u.fullName, role: (u) => u.roleLabel, seen: (u) => u.lastLoginAt || '', status: (u) => (!u.active ? 2 : u.resetRequested ? 1 : 0) } });
   const schoolOf = (id) => schools.find((s) => s.id === id);
   const canCreate = can('staff', 'f') && me.canCreate.length > 0;
   const roleOptions = useMemo(() => Object.entries(ROLE_LABELS).filter(([k]) => user.scope === 'all' || !ADMIN_ROLES.includes(k)), [user.scope]);
@@ -79,10 +81,10 @@ export default function Staff() {
 
       <ErrorNote error={error} />
       <Panel flush>
-        {!rows ? <Empty>Loading…</Empty> : !rows.length ? <Empty>No accounts match.</Empty> : (
+        {!rows ? <Loading /> : !rows.length ? <Empty icon="users" title="No accounts match">Try a different role, status or search word.</Empty> : (
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>Name</th><th>Role</th><th>Place</th><th>Username</th><th>Last sign-in</th><th>Status</th><th /></tr></thead>
-            <tbody>{rows.map((u) => {
+            <thead><tr><SortTh t={t} k="name">Name</SortTh><SortTh t={t} k="role">Role</SortTh><th>Place</th><th>Username</th><SortTh t={t} k="seen">Last sign-in</SortTh><SortTh t={t} k="status">Status</SortTh><th /></tr></thead>
+            <tbody>{t.rows.map((u) => {
               const s = schoolOf(u.schoolId);
               return (
                 <tr key={u.id}>
@@ -111,6 +113,7 @@ export default function Staff() {
             })}</tbody>
           </table></div>
         )}
+        {rows && <Pager t={t} />}
       </Panel>
 
       {modal?.kind === 'card' && <Modal wide title={`ID card · ${modal.user.fullName}`} onClose={() => setModal(null)} footer={<button className="btn" onClick={() => setModal(null)}>Close</button>}>
@@ -253,7 +256,7 @@ function RolesBox({ u, onClose }) {
   };
   return (
     <Modal title={`Roles · ${u.fullName}`} onClose={onClose} footer={<button className="btn p" onClick={onClose}>Done</button>}>
-      {!d ? <Empty>Loading…</Empty> : (
+      {!d ? <Loading /> : (
         <div className="stack">
           <p className="small muted" style={{ margin: 0 }}>One person keeps one account. Give extra roles here (for example a librarian who is also the School Store-keeper). They choose "Working as" in the menu; everything they do is written with the role they used.</p>
           <div><b>Main role:</b> {d.main.label}</div>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
-import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, useToast } from '../../components/ui';
+import { Empty, ErrorNote, Icon, Modal, PageHead, Panel, useToast, Loading } from '../../components/ui';
 import { classOption, useClasses, useStudentSchool } from './shared';
 
 export default function MoveStudents() {
@@ -62,7 +62,7 @@ export default function MoveStudents() {
             {rows && <div className="searchbox"><Icon name="search" /><input placeholder="Find a student" value={q} onChange={(e) => setQ(e.target.value)} /></div>}
             {rows && <span className="row nowrap"><button className="linkbtn" onClick={() => setTicked(new Set(rows.map((s) => s.id)))}>Tick all</button><button className="linkbtn" onClick={() => setTicked(new Set())}>Tick none</button></span>}
           </div>
-          {!from ? <Empty>Choose the class to move from.</Empty> : !rows ? <Empty>Loading…</Empty> : !rows.length ? <Empty>No students in {fromC?.label}.</Empty> : (
+          {!from ? <Empty>Choose the class to move from.</Empty> : !rows ? <Loading /> : !rows.length ? <Empty>No students in {fromC?.label}.</Empty> : (
             <div className="list movelist">
               {shown.map((s) => (
                 <label key={s.id} className="li chk">

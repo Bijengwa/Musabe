@@ -3,23 +3,24 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api';
-import { ErrorNote, Icon, PhoneInput, phoneProblem } from '../../components/ui';
+import { ErrorNote, Icon, Stepper } from '../../components/ui';
 import { classOption } from './shared';
+import { GuardiansEditor } from './guardians';
+import { emptyGuardian, fromServer, guardianProblems, guardiansBody } from './guardianRules';
 
-const EMPTY = { admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', classId: '', parentName: '', parentPhone: '', guardians: [], note: '' };
+// A new student starts with two empty guardian rows (e.g. father and mother). More can be added; empty rows are ignored.
+const EMPTY = () => ({ admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', classId: '', guardians: [emptyGuardian(), emptyGuardian()], note: '' });
 
 export default function StudentForm({ student, classes, school, defaultClass, initial, extra, id = 'stform', onSaved, onBusy }) {
   const s = student;
   const [f, setF] = useState(() => (s ? {
     admissionNo: s.admissionNo, firstName: s.firstName, middleName: s.middleName || '', lastName: s.lastName,
-    sex: s.sex, classId: String(s.classId || ''), parentName: s.parentName || '', parentPhone: s.parentPhone || '',
-    guardians: (s.guardians || []).map((g) => ({ ...g, phone: g.phone || '' })), note: s.note || '',
-  } : { ...EMPTY, ...(initial || {}), classId: defaultClass || '' }));
+    sex: s.sex, classId: String(s.classId || ''),
+    guardians: s.guardians?.length ? fromServer(s.guardians) : [emptyGuardian()], note: s.note || '',
+  } : { ...EMPTY(), ...(initial || {}), classId: defaultClass || '' }));
   const [error, setError] = useState('');
   const [found, setFound] = useState({ probe: '', list: [] });
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
-  const setGuardian = (i, k, v) => setF((x) => ({ ...x, guardians: x.guardians.map((g, n) => n === i ? { ...g, [k]: v } : g) }));
-  const removeGuardian = (i) => setF((x) => ({ ...x, guardians: x.guardians.filter((_, n) => n !== i) }));
   const full = [f.firstName, f.middleName, f.lastName].map((x) => x.trim().toUpperCase()).filter(Boolean).join(' ');
 
   // Similar names already saved (new students only).
@@ -30,27 +31,32 @@ export default function StudentForm({ student, classes, school, defaultClass, in
     const t = setTimeout(() => api.get(`/students/search?school=${school}&q=${encodeURIComponent(probe)}`).then((d) => setFound({ probe, list: d.students })).catch(() => {}), 300);
     return () => clearTimeout(t);
   }, [probe, look, school]);
+  // Progress for a new student: the first unfinished part is "now", finished parts get a tick.
+  const stepDone = [
+    !!(f.firstName.trim() && f.lastName.trim() && f.sex),
+    !!(f.admissionNo.trim() && f.classId),
+    f.guardians.some((g) => g.fullName?.trim()) && guardianProblems(f.guardians).length === 0,
+  ];
+  const stepNow = stepDone.includes(false) ? stepDone.indexOf(false) : stepDone.length;
   const twins = look && found.probe === probe ? found.list : [];
 
   const save = async (e) => {
     e.preventDefault(); setError('');
     if (!f.sex) { setError('Choose Boy or Girl.'); return; }
-    if (phoneProblem(f.parentPhone)) { setError(`Phone: ${phoneProblem(f.parentPhone)}`); return; }
-    for (const [i, g] of f.guardians.entries()) {
-      if (!g.fullName?.trim() || !g.relationship) { setError(`Guardian ${i + 1}: full name and relationship are required.`); return; }
-      if (phoneProblem(g.phone)) { setError(`Guardian ${i + 1} phone: ${phoneProblem(g.phone)}`); return; }
-    }
+    const gp = guardianProblems(f.guardians);
+    if (gp.length) { setError(gp[0]); return; }
     onBusy?.(true);
     try {
-      const body = { ...f, classId: f.classId ? Number(f.classId) : null, schoolId: Number(school), ...(s ? {} : extra || {}) };
+      const body = { ...f, guardians: guardiansBody(f.guardians), classId: f.classId ? Number(f.classId) : null, schoolId: Number(school), ...(s ? {} : extra || {}) };
       const r = s ? await api.patch(`/students/${s.id}`, body) : await api.post('/students', body);
       onBusy?.(false);
-      onSaved(r.student, () => { setF((x) => ({ ...EMPTY, classId: x.classId })); }); // second argument: clear for the next student
+      onSaved(r.student, () => { setF((x) => ({ ...EMPTY(), classId: x.classId })); }, r.warnings || []); // second argument: clear for the next student
     } catch (err) { setError(err.message); onBusy?.(false); }
   };
 
   return (
     <form id={id} className="stack" onSubmit={save}>
+      {!s && <Stepper steps={['Child', 'Class', 'Guardians']} current={stepNow} />}
       <div className="fg">
         <label>First name<input value={f.firstName} onChange={(e) => set('firstName', e.target.value)} required autoFocus={!s} /></label>
         <label>Middle name<input value={f.middleName} onChange={(e) => set('middleName', e.target.value)} placeholder="If any" /></label>
@@ -70,24 +76,9 @@ export default function StudentForm({ student, classes, school, defaultClass, in
       <label>Class<select value={f.classId} onChange={(e) => set('classId', e.target.value)} required={s?.status !== 'left'}>
         <option value="">Choose class</option>{classes.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{classOption(c)}</option>)}
       </select></label>
-      <div className="fg">
-        <label>Parent / guardian<input value={f.parentName} onChange={(e) => set('parentName', e.target.value)} /></label>
-        <label>Parent phone<PhoneInput value={f.parentPhone} onChange={(v) => set('parentPhone', v)} /></label>
-      </div>
       <div className="panel-subtle stack">
-        <div className="row" style={{ justifyContent: 'space-between' }}><b>Additional guardians</b>
-          <button type="button" className="btn sm" disabled={f.guardians.length >= 10}
-            onClick={() => set('guardians', [...f.guardians, { fullName: '', phone: '', relationship: '' }])}>+ Add guardian</button></div>
-        {!f.guardians.length && <p className="small muted" style={{ margin: 0 }}>The primary Parent / guardian above remains compatible.</p>}
-        {f.guardians.map((g, i) => (
-          <div className="fg" key={g.id || i}>
-            <label>Guardian {i + 1} full name<input value={g.fullName || ''} onChange={(e) => setGuardian(i, 'fullName', e.target.value)} required /></label>
-            <label>Phone<PhoneInput value={g.phone || ''} onChange={(v) => setGuardian(i, 'phone', v)} /></label>
-            <label>Relationship<select value={g.relationship || ''} onChange={(e) => setGuardian(i, 'relationship', e.target.value)} required>
-              <option value="">Choose relationship</option>{['mother', 'father', 'brother', 'sister', 'guardian', 'other'].map((r) => <option key={r} value={r}>{r[0].toUpperCase() + r.slice(1)}</option>)}</select></label>
-            <button type="button" className="btn danger sm" onClick={() => removeGuardian(i)}>Remove</button>
-          </div>
-        ))}
+        <div><b>Guardians</b> <span className="small muted">Full names (at least two, no Mr / Mrs / Mama), phone and relationship. Add as many as needed.</span></div>
+        <GuardiansEditor value={f.guardians} onChange={(v) => set('guardians', v)} />
       </div>
       <label>Note<input value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="Optional" /></label>
       <ErrorNote error={error} />

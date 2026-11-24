@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { useLive } from '../../live';
-import { Empty, ErrorNote, Modal, PageHead, Panel, useToast } from '../../components/ui';
+import { Empty, ErrorNote, Modal, PageHead, Panel, useToast, Loading } from '../../components/ui';
 import { useStudentSchool } from './shared';
 
 const when = (d) => (d ? new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
@@ -44,7 +44,7 @@ export default function ParentRequests() {
       </div>
       <ErrorNote error={error} />
       <Panel flush>
-        {!data ? <Empty>Loading…</Empty> : !data.requests.length ? <Empty>{status === 'pending' ? 'No requests waiting.' : 'Nothing here yet.'}</Empty> : (
+        {!data ? <Loading /> : !data.requests.length ? <Empty>{status === 'pending' ? 'No requests waiting.' : 'Nothing here yet.'}</Empty> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>Asked</th><th>Parent</th><th>Child asked for</th><th>School</th><th>{status === 'pending' ? 'Students that match' : 'Answer'}</th></tr></thead>
             <tbody>{data.requests.map((r) => (
@@ -60,8 +60,8 @@ export default function ParentRequests() {
                     {r.matches.map((s) => (
                       <div key={s.id} className="row nowrap" style={{ gap: 8, justifyContent: 'space-between' }}>
                         <span><b>{s.fullName}</b> <span className="small muted">{s.admissionNo} · {s.class || 'no class'}{s.status === 'left' ? ' · left' : ''}</span>
-                          <div className="small muted">Parent on record: {s.parentName || '—'} {s.parentPhone ? `(${s.parentPhone})` : '(no phone)'}</div></span>
-                        {edit && <button className="btn sm p" onClick={() => link(r, s)}>{s.parentPhone && s.parentPhone !== r.parentPhone ? 'Add as 2nd parent' : 'Link'}</button>}
+                          <div className="small muted">Guardians on record: {s.guardians?.length ? s.guardians.map((g) => `${g.fullName} (${g.relationshipLabel}, ${g.phone})`).join(', ') : 'none'}</div></span>
+                        {edit && <button className="btn sm p" onClick={() => link(r, s)}>{s.guardians?.some((g) => g.phone === r.parentPhone) ? 'Link' : 'Add as guardian'}</button>}
                       </div>
                     ))}
                     {edit && <div><button className="btn sm danger" onClick={() => setReject(r)}>Turn down</button></div>}
@@ -75,7 +75,7 @@ export default function ParentRequests() {
         )}
       </Panel>
       <p className="small muted" style={{ margin: 0 }}>
-        Linking never removes the parent already on the record: if the student has another phone, this parent is added as a second parent / guardian.
+        Linking never removes the guardians already on the record: this parent is added to the student's guardians with their phone and relationship.
         To change the main parent phone, edit the student.
       </p>
       {reject && <Reject r={reject} onClose={() => setReject(null)} onDone={() => { setReject(null); toast('Answer sent to the parent'); reload(); }} />}

@@ -6,7 +6,7 @@ import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
 import { useSchools } from '../layout/scope';
-import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, tsh, useToast } from '../components/ui';
+import { Empty, ErrorNote, ExcelButton, Icon, Kpi, PageHead, Panel, tsh, useToast, DetailSkeleton, Loading } from '../components/ui';
 import { todayStr } from '../components/common';
 import { PrintButton } from '../components/barcode';
 import { PinBox, SealBadge, SealQR } from '../components/signing';
@@ -53,7 +53,9 @@ function LpoList() {
       <div className="filters"><div className="seg">{[['', 'All'], ['open', 'Open'], ['delivered', 'Goods received'], ['rejected', 'Rejected']].map(([k, t]) =>
         <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div></div>
       <Panel flush>
-        {!d ? <Empty>Loading…</Empty> : !d.lpos.length ? <Empty>No LPO yet.</Empty> : (
+        {!d ? <Loading /> : !d.lpos.length ? <Empty icon="receipt" title="No LPO yet"
+          steps={['Procurement prepares an LPO for a supplier.', 'The Head of Accounts certifies it.', 'The Manager authorises it, and the goods can be ordered.', 'When the goods arrive, mark them received.']}
+          action={d.canWrite && <Link className="btn p" to="/lpo/new"><Icon name="plus" /> New LPO</Link>} /> : (
           <div className="tw"><table className="stafftable">
             <thead><tr><th>LPO No.</th><th>Date</th><th className="stick">To (supplier)</th><th>Ship to</th><th>Items</th><th className="n">Total (TSh)</th><th>Terms</th><th>Status</th><th /></tr></thead>
             <tbody>{d.lpos.map((l) => (
@@ -192,7 +194,7 @@ function LpoPage() {
     );
   }
 
-  if (!l) return <div className="rq-wrap"><Link to="/lpo" className="btn sm">← All LPOs</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (!l) return <div className="rq-wrap"><Link to="/lpo" className="btn sm">← All LPOs</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
   const post = async (which, approve, cred = {}) => {
     await api.post(`/lpos/${l.id}/${which}`, { approve, note, lines: Object.entries(rates).map(([lineId, rate]) => ({ lineId: Number(lineId), rate })), ...cred });
     toast(`${l.number} ${approve ? 'signed' : 'rejected'}`); setNote(''); setRates({}); await load();

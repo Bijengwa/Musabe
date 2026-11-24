@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, tsh, useToast } from '../components/ui';
+import { ErrorNote, tsh, useToast, DetailSkeleton } from '../components/ui';
 import { PrintButton } from '../components/barcode';
 import { PinBox, SealBadge, SealQR, SignPad } from '../components/signing';
 import { fmtDate } from '../components/paper';
@@ -48,7 +48,7 @@ export default function Voucher() {
   const setLine = (i, k, val) => setF((x) => ({ ...x, lines: x.lines.map((l, j) => (j === i ? { ...l, [k]: val } : l)) }));
   const addRow = () => setF((x) => (x.lines.length < 14 ? { ...x, lines: [...x.lines, { detail: '', amount: '' }] } : x));
 
-  if (id && !v) return <div className="rq-wrap"><Link to="/payments" className="btn sm">← All vouchers</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (id && !v) return <div className="rq-wrap"><Link to="/payments" className="btn sm">← All vouchers</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
 
   const canPay = v?.canDecide;
   const canAuth = v?.canAuthorize;

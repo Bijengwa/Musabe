@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthContext';
-import { Empty, ErrorNote, tsh, useToast } from '../components/ui';
+import { ErrorNote, tsh, useToast, DetailSkeleton } from '../components/ui';
 import { NewItem } from './Store';
 import { PinBox, SealBadge, SealQR } from '../components/signing';
 import { DeliveryLabelsButton, PrintButton } from '../components/barcode';
@@ -56,7 +56,7 @@ export default function Manunuzi() {
     const d = await api.post('/purchases', { requisitionId: r.id, ordered: false, supplier, supplierId: Number(sp.supplierId) || undefined, wentWith: wentWith ? Number(wentWith) : null, pin, smsCode, lines: rows.map((x) => ({ itemId: Number(x.itemId), qty: Number(x.qty), unitCost: Number(x.price) })) });
     toast(`${d.purchase.number} signed and saved: Mapokezi checks the goods`); navigate(`/purchases/form/${d.purchase.id}`, { replace: true });
   };
-  if (!r || !store) return <div className="rq-wrap"><Link to="/requisitions" className="btn sm">← Back</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (!r || !store) return <div className="rq-wrap"><Link to="/requisitions" className="btn sm">← Back</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
   const pad = [...rows]; while (pad.length < 8) pad.push(null);
   return (
     <div className="rq-wrap">
@@ -116,7 +116,7 @@ export function ManunuziView() {
   const [ask, setAsk] = useState(null);
   const load = () => api.get(`/purchases/${id}`).then((d) => { setP(d.purchase); setSeen((s) => (Object.keys(s).length ? s : Object.fromEntries(d.purchase.lines.map((l) => [l.id, { qty: String(l.confirmed ?? l.qty), note: l.note || '' }])))); }).catch((e) => setError(e.message));
   useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!p) return <div className="rq-wrap"><Link to="/purchases" className="btn sm">← Back</Link><ErrorNote error={error} />{!error && <Empty>Loading…</Empty>}</div>;
+  if (!p) return <div className="rq-wrap"><Link to="/purchases" className="btn sm">← Back</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
   const worth = p.lines.reduce((s, l) => s + Number(l.unitCost) * (p.status === 'pending' ? Number(seen[l.id]?.qty ?? l.qty) : (l.confirmed ?? l.qty)), 0);
   const float = p.floatAmount || 0;
   const expected = float - worth;

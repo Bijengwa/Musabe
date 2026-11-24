@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../api';
 import { useLive } from '../live';
-import { Empty, ErrorNote, Icon, Modal, SchoolPill, fmtPhone, fmtWhen, tsh } from './ui';
+import { ErrorNote, Icon, Modal, SchoolPill, fmtPhone, fmtWhen, tsh, Loading } from './ui';
 
 export const STATUS_TONE = { waiting: 'warn', part: 'info', given: 'ok' };
 
@@ -167,7 +167,7 @@ export function ReceiptModal({ id, onClose, extra }) {
     <Modal wide title={r ? `Receipt ${r.number}` : 'Receipt'} onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Close</button>{r && extra?.(r, load)}{r && <PrintButton r={r} />}</>}>
       <ErrorNote error={error} />
-      {!r ? <Empty>Loading…</Empty> : <div className="rpreview"><ReceiptBook r={r} /></div>}
+      {!r ? <Loading /> : <div className="rpreview"><ReceiptBook r={r} /></div>}
     </Modal>
   );
 }

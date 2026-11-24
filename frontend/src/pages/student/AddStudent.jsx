@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { Empty, ErrorNote, Icon, PageHead, Panel, useToast } from '../../components/ui';
+import { Empty, ErrorNote, Icon, PageHead, Panel, useToast, Loading } from '../../components/ui';
 import StudentForm from './StudentForm';
+import { emptyGuardian } from './guardianRules';
 import { InterviewPanel } from '../Interviews';
 import { useClasses, useStudentSchool } from './shared';
 
@@ -34,17 +35,19 @@ export default function AddStudent() {
       <ErrorNote error={error || ivErr} />
       {iv && <div className="warnnote info"><Icon name="pen" /><span><b>From the admission interview:</b> {iv.fullName} · {iv.levelName || 'class not given'} · {iv.resultLabel}{iv.total != null ? ` · ${iv.total}${iv.outOf ? `/${iv.outOf}` : ''} marks` : ''}{iv.previousSchool ? ` · from ${iv.previousSchool}` : ''}. Give the Admission No. and check the class, then save.</span></div>}
       {iv?.studentId && <Panel><p style={{ margin: 0 }}>{iv.fullName} is already registered. <Link to={`/students/${iv.studentId}`}>Open the student</Link></p></Panel>}
-      {(ivId && !iv && !ivErr) ? <Empty>Loading…</Empty> : iv?.studentId ? null : !classes ? <Empty>Loading…</Empty> : !classes.some((c) => c.active) ? (
+      {(ivId && !iv && !ivErr) ? <Loading /> : iv?.studentId ? null : !classes ? <Loading /> : !classes.some((c) => c.active) ? (
         <Panel><p style={{ margin: 0 }}>No classes yet. The Academic Master adds them on <Link to="/students/classes">Classes</Link>.</p></Panel>
       ) : (
         <div className="sellgrid">
           <Panel title="Student">
             <StudentForm key={iv?.id || 'new'} classes={classes} school={school} onBusy={setBusy}
               defaultClass={params.get('class') || (iv && String(classes.find((c) => c.active && c.level === iv.level)?.id || '')) || ''}
-              initial={iv ? { firstName: iv.firstName, middleName: iv.middleName || '', lastName: iv.lastName, sex: iv.sex, parentName: iv.parentName || '', parentPhone: iv.parentPhone || '' } : undefined}
+              initial={iv ? { firstName: iv.firstName, middleName: iv.middleName || '', lastName: iv.lastName, sex: iv.sex,
+                // The parent written at the interview becomes guardian 1 (check the names and choose the relationship); a second phone, guardian 2.
+                guardians: [{ ...emptyGuardian(), fullName: iv.parentName || '', phone: iv.parentPhone || '' }, { ...emptyGuardian(), phone: iv.parentPhone2 || '' }] } : undefined}
               extra={iv ? { interviewId: iv.id } : undefined}
-              onSaved={(st, clear) => {
-                toast(`${st.fullName} added to ${st.className}`);
+              onSaved={(st, clear, warnings) => {
+                toast(`${st.fullName} added to ${st.className}${warnings?.length ? `. Check: ${warnings[0]}` : ''}`);
                 if (again && !iv) { clear(); setAdded((a) => [st, ...a]); } else navigate(`/students/${st.id}`);
               }} />
             <div className="row" style={{ marginTop: 14, justifyContent: 'flex-end' }}>

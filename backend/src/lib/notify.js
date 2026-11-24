@@ -113,6 +113,12 @@ const RULES = [
   { actions: ['student.import'], roles: ['super', 'sadmin', 'head', 'acad'], why: 'Class lists loaded' },
   // Parents' app: a parent says a child does not show. The School Admin of that school checks and links.
   { actions: ['parent.request'], roles: ['sadmin'], why: "Parents' app requests" },
+  // Teacher on Duty (2026-11-23): the teacher is told when appointed or removed; the Second Master and the Head Master
+  // when a duty report is written; the writer when it was read.
+  { actions: ['duty.appoint', 'duty.remove'], roles: ['teacher', 'acad', 'head'], why: 'You are Teacher on Duty', own: true },
+  { actions: ['duty.appoint', 'duty.remove'], roles: ['head'], why: 'Teachers on Duty of your school' },
+  { actions: ['duty.report'], roles: ['second', 'head'], why: 'Duty reports to read' },
+  { actions: ['duty.report_seen'], roles: ['teacher', 'acad'], why: 'Your duty report was read', own: true },
 ];
 
 const actionsFor = (role) => [...new Set(RULES.filter((r) => r.roles.includes(role)).flatMap((r) => r.actions))];
@@ -168,6 +174,9 @@ const LINKS = [
   [/^school\./, ['schools', '/schools']],
   [/^student\./, ['students', '/students']],
   [/^parent\./, ['students', '/students/parents']],
+  [/^duty\.report/, ['duty', '/duty?tab=report']],
+  [/^duty\./, ['duty', '/duty']],
+  [/^rollcall\./, ['rollcall', '/rollcall']],
 ];
 function linkFor(action, role) {
   const row = LINKS.find(([re]) => re.test(action));
