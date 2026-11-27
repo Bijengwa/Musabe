@@ -4,7 +4,7 @@ import { api } from '../api';
 import { useLive } from '../live';
 import { useAuth } from '../auth/AuthContext';
 import { useSchools, useScope } from '../layout/scope';
-import { ADMIN_ROLES, ROLE_LABELS } from '../nav';
+import { ADMIN_ROLES, ROLE_LABELS, roleLabelFor } from '../nav';
 import { Pager, SortTh, useTable } from '../components/table';
 import { CopyBox, Empty, ErrorNote, ExcelButton, Icon, Loading, Modal, PageHead, Panel, PhoneInput, SchoolPill, cleanPhone, fmtPhone, fmtWhen, phoneProblem, useToast } from '../components/ui';
 
@@ -155,7 +155,7 @@ function NewAccount({ onClose, onDone }) {
   const schools = useSchools();
   const [scope] = useScope();
   const allowed = me.canCreate;
-  const [f, setF] = useState({ fullName: '', role: allowed[0], schoolId: user.role === 'super' ? scope : '', phone: '', username: '' });
+  const [f, setF] = useState({ fullName: '', role: allowed[0], gender: '', schoolId: user.role === 'super' ? scope : '', phone: '', username: '' });
   const [touchedUser, setTouchedUser] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -169,10 +169,11 @@ function NewAccount({ onClose, onDone }) {
 
   const submit = async (e) => {
     e.preventDefault(); setError('');
+    if (!f.gender) return setError('Choose male or female: it gives Mr. or Ms. and the name of the post.');
     if (phoneProblem(f.phone)) return setError(`Phone: ${phoneProblem(f.phone)}`);
     setBusy(true);
     try {
-      const body = { fullName: f.fullName, role: f.role, phone: f.phone, username: f.username };
+      const body = { fullName: f.fullName, role: f.role, gender: f.gender, phone: f.phone, username: f.username };
       if (user.role === 'super' && !adminRole) body.schoolId = f.schoolId;
       const r = await api.post('/users', body);
       onDone({ fullName: r.user.fullName, username: r.user.username, password: r.tempPassword });
@@ -185,11 +186,15 @@ function NewAccount({ onClose, onDone }) {
     <Modal title="New account" onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" form="newacc" disabled={busy}>{busy ? 'Creating…' : 'Create account'}</button></>}>
       <form id="newacc" className="stack" onSubmit={submit}>
-        <label>Full name<input id="n-name" value={f.fullName} onChange={set('fullName')} onBlur={suggest} placeholder="e.g. Mr. Peter Mwakalinga" required autoFocus /></label>
+        <label>Full name<input id="n-name" value={f.fullName} onChange={set('fullName')} onBlur={suggest} placeholder="e.g. Peter Mwakalinga (Mr. or Ms. is added)" required autoFocus /></label>
+        <div className="field"><span className="l">Gender</span>
+          <div className="seg" role="radiogroup" aria-label="Gender">
+            {[['m', 'Male (Mr.)'], ['f', 'Female (Ms.)']].map(([k, t]) => <button key={k} type="button" role="radio" aria-checked={f.gender === k} className={f.gender === k ? 'on' : ''} onClick={() => setF((x) => ({ ...x, gender: k }))}>{t}</button>)}
+          </div></div>
         <div className="fg">
           <label>Role<select id="n-role" value={f.role} onChange={set('role')}>
-            {adminOpts.length > 0 && <optgroup label="Administration (all schools)">{adminOpts.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</optgroup>}
-            {schoolOpts.length > 0 && <optgroup label="One school">{schoolOpts.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</optgroup>}
+            {adminOpts.length > 0 && <optgroup label="Administration (all schools)">{adminOpts.map((r) => <option key={r} value={r}>{roleLabelFor(r, f.gender)}</option>)}</optgroup>}
+            {schoolOpts.length > 0 && <optgroup label="One school">{schoolOpts.map((r) => <option key={r} value={r}>{roleLabelFor(r, f.gender)}</option>)}</optgroup>}
           </select></label>
           {user.role === 'super' ? (
             <label>School<select id="n-school" value={adminRole ? '' : f.schoolId} onChange={set('schoolId')} disabled={adminRole} required={!adminRole}>
@@ -211,7 +216,7 @@ function NewAccount({ onClose, onDone }) {
 }
 
 function EditAccount({ u, onClose, onDone }) {
-  const [f, setF] = useState({ fullName: u.fullName, username: u.username, phone: cleanPhone(u.phone) });
+  const [f, setF] = useState({ fullName: u.fullName, username: u.username, gender: u.gender || '', phone: cleanPhone(u.phone) });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
@@ -219,13 +224,18 @@ function EditAccount({ u, onClose, onDone }) {
     e.preventDefault(); setError('');
     if (phoneProblem(f.phone)) return setError(`Phone: ${phoneProblem(f.phone)}`);
     setBusy(true);
-    try { await api.patch(`/users/${u.id}`, f); onDone(); } catch (err) { setError(err.message); } finally { setBusy(false); }
+    try { await api.patch(`/users/${u.id}`, { ...f, gender: f.gender || undefined }); onDone(); } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
   return (
     <Modal title={`Edit ${u.fullName}`} onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" form="editacc" disabled={busy}>Save</button></>}>
       <form id="editacc" className="stack" onSubmit={submit}>
         <label>Full name<input id="e-name" value={f.fullName} onChange={set('fullName')} required /></label>
+        <div className="field"><span className="l">Gender</span>
+          <div className="seg" role="radiogroup" aria-label="Gender">
+            {[['m', 'Male (Mr.)'], ['f', 'Female (Ms.)']].map(([k, t]) => <button key={k} type="button" role="radio" aria-checked={f.gender === k} className={f.gender === k ? 'on' : ''} onClick={() => setF((x) => ({ ...x, gender: k }))}>{t}</button>)}
+          </div>
+          {!u.gender && <span className="small muted">Not set yet. The name gets Mr. or Ms. and the post name follows (Head Master or Head Mistress).</span>}</div>
         <div className="fg">
           <label>Username<input id="e-user" value={f.username} onChange={set('username')} autoCapitalize="none" /></label>
           <label>Phone<PhoneInput id="e-phone" value={f.phone} onChange={(v) => setF((x) => ({ ...x, phone: v }))} /></label>

@@ -102,15 +102,14 @@ export function ProgressView({ qs, tab }) {
       {tab === 'teachers' && (
         <Panel title="Teachers: work and conduct" sub="Lessons written against the timetable, absences, syllabus covered and duty weeks">
           {!d.teachers.length ? <Empty>No teacher has a subject yet.</Empty> : (
-            <div className="tw"><table><thead><tr><th>Teacher</th><th>Post</th><th className="n">Classes</th><th>Lessons written</th><th className="n">Absent</th><th>Syllabus</th><th className="n">Duty weeks</th><th>Last written</th><th>Follow up</th><th /></tr></thead>
+            <div className="tw"><table><thead><tr><th>Teacher</th><th>Post</th><th className="n">Classes</th><th>Lessons written</th><th className="n">Absent</th><th>Syllabus</th><th className="n">Duty weeks</th><th>Last written</th><th>Follow up</th></tr></thead>
               <tbody>{d.teachers.map((t) => (
-                <tr key={t.id}><td><b>{t.name}</b></td><td>{t.role}</td><td className="n">{t.classes}</td>
+                <tr key={t.id} onClick={() => setOpen(t)} style={{ cursor: 'pointer' }}><td><b>{t.name}</b></td><td>{t.role}</td><td className="n">{t.classes}</td>
                   <td><div className="row" style={{ gap: 8 }}><Bar pct={t.compliance} /><span className="small">{t.written}/{t.expected}</span></div></td>
                   <td className="n" title={t.absentReasons.join('\n')}>{t.absent}</td>
                   <td><div className="row" style={{ gap: 8 }}><Bar pct={t.coverage} /><span className="small">{t.topicsDone}/{t.topics}</span></div></td>
                   <td className="n">{t.dutyWeeks}</td><td>{t.lastWritten ? fmtWhen(t.lastWritten) : '—'}</td>
-                  <td>{t.flags.map((f) => <span key={f} className="pill warn" style={{ marginRight: 4 }}>{f}</span>)}</td>
-                  <td><button className="btn sm" onClick={() => setOpen(t)}>Open</button></td></tr>
+                  <td>{t.flags.map((f) => <span key={f} className="pill warn" style={{ marginRight: 4 }}>{f}</span>)}</td></tr>
               ))}</tbody></table></div>
           )}
         </Panel>

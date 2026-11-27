@@ -152,7 +152,7 @@ export default function Sell() {
                       <b>{i.name}</b>
                       <span className="money">{p.price != null ? tsh(p.price) : [p.boys != null && `B ${tsh(p.boys)}`, p.girls != null && `G ${tsh(p.girls)}`].filter(Boolean).join(' · ')}</span>
                       {inCart && <em className="badge">{inCart.qty}</em>}
-                      {(free[i.id] ?? 0) <= 0 && <span className="nostock">None in the library</span>}
+                      <span className={`stk ${(free[i.id] ?? 0) > 0 ? 'in' : 'out'}`}>{(free[i.id] ?? 0) > 0 ? `${free[i.id]} in library` : 'none yet'}</span>
                     </button>
                   );
                 })}

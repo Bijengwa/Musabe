@@ -52,6 +52,7 @@ app.use('/api/duty', require('./routes/duty'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/grns', require('./routes/grn'));
 app.use('/api/fees', require('./routes/fees'));
+app.use('/api/bsmart', require('./routes/bsmart'));
 app.use('/api/intaudit', require('./routes/intaudit'));
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/teaching', require('./routes/teaching'));

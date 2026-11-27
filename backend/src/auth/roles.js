@@ -48,7 +48,7 @@ const ACCESS = {
   // Assistant Director (agreed 2026-11-17): own, smaller access — meetings and academics, not money or stock.
   // The academic secretary works under this office.
   adirector: parse('home students:v idcards:v academics year watch classes marks:v support:v reports audit:v interviews'),
-  manager:   parse('home books:v orders useitems:v schools:v staff:v students:v requisitions issue:v purchases:v counts:v receipts:v bills:v money:v requests:v stockin:v stock:v damage:v items:v payments year:v watch:v classes:v support:v reports audit:v interviews:v'),
+  manager:   parse('home books:v orders useitems:v schools:v staff:v students:v requisitions issue:v purchases counts:v receipts:v bills:v money:v requests:v stockin:v stock:v damage:v items:v payments year:v watch:v classes:v support:v reports audit:v interviews:v'),
   // Library and stock (agreed 2026-11-11 to 2026-11-17):
   // - Store-keeper (administration, one person): registers items the schools use but do not sell, sends stock to a
   //   school's library, handles the librarian's stock requests, puts the QR codes on. The ONLY one who sends stock.
@@ -65,7 +65,7 @@ const ACCESS = {
   // - Sales dashboard (salesdash): only the finance office and the accountant office (and Super Admin / Director). Not bursars.
   // - Control numbers (bills): the bursar makes them; the bursar or the accountant marks them paid.
   // - Daily money (money): the accountant confirms each bursar's day; a bursar sees only their own days.
-  fm:        parse('home books:v orders:v useitems students:v requisitions issue:v purchases:v counts:v items itemsupload requests:v receipts:v bills:v money:v salesdash stock damage payments reports audit:v'),
+  fm:        parse('home books:v orders:v useitems students:v requisitions issue:v purchases counts:v items itemsupload requests:v receipts:v bills:v money:v salesdash stock damage payments reports audit:v'),
   afm:       parse('home useitems:v students:v requisitions:v issue:v purchases:v counts:v items:v itemsupload requests:v receipts:v bills:v money:v salesdash stock:v damage:v reports audit:v'),
   acc:       parse('home books:v useitems:v students:v requisitions:v issue:v purchases counts items:v requests:v receipts:v bills money salesdash stock damage payments:v reports audit'),
   aacc:      parse('home books:v useitems:v students:v requisitions issue:v purchases counts items:v receipts:v bills:v money:v salesdash:v requests:v stock:v damage:v payments reports audit:v'),
@@ -100,7 +100,7 @@ ACCESS.storekeeper = parse('home books orders requisitions purchases useitems it
 //   sends it on.
 // Assistant Manager (2026-11-20): the person usually sent to buy, like the store-keeper. Writes payment requisitions
 // and purchases; no QR labels or sending to schools (the store-keeper's job).
-ACCESS.amanager = parse('home orders:v requisitions purchases useitems:v items:v stock:v requests:v reports audit:v');
+ACCESS.amanager = parse('home orders:v requisitions purchases payments useitems items:v stock:v requests:v reports audit:v');
 ACCESS.cashier = parse('home payments requisitions:v purchases audit:v');   // sees the paper requisition he pays from (read only; he gives the money on the paper itself)
 ACCESS.mapokezi = parse('home requisitions:v purchases audit:v');
 // School Store-keeper (agreed 2026-11-18): writes requisitions for staff who have no account (patron, cleaners...) and signs the
@@ -176,7 +176,7 @@ for (const r of ['second', 'acad', 'teacher', 'bursar', 'librarian', 'sstore', '
 
 const ISSUERS = ['librarian'];                           // gives out and takes back by scanning, counts the library (no main store)
 const PURCHASE_CONFIRMERS = ['aacc'];             // confirm purchases and weekly checks
-const STORE_ITEM_MAKERS = ['storekeeper'];               // add things the school uses but does not sell (not the Finance Manager); for things that ARE sold, the store-keeper only picks from the Finance Manager's existing list and records how many came in — never creates a new sellable item
+const STORE_ITEM_MAKERS = ['storekeeper', 'amanager'];               // add things the school uses but does not sell (not the Finance Manager); for things that ARE sold, the store-keeper only picks from the Finance Manager's existing list and records how many came in — never creates a new sellable item
 // ID cards (2026-11-16): the School Admin records that a card was handed over (own school, students and staff);
 // the Super Admin does it for administration staff and can do it everywhere.
 const CARD_ISSUERS = ['sadmin', 'super'];
@@ -190,7 +190,8 @@ const CARD_ISSUERS = ['sadmin', 'super'];
 // written ONLY by the people sent to buy: the Assistant Manager and the store-keeper.
 // Everyone else asks with the Order Book (routes/orders.js). The Manager OR the Finance Manager approves the money.
 const REQUISITION_MAKERS = ['amanager', 'storekeeper'];
-const MONEY_APPROVERS = ['manager', 'fm'];
+// Order (2026-11-25): the Manager; when he is away the Assistant Manager; when both are away the Finance Manager (lib/approvers.js decides who is "on").
+const MONEY_APPROVERS = ['manager', 'amanager', 'fm'];
 
 // Who approves damaged / lost items (agreed 2026-11-11): only these two.
 const DAMAGE_APPROVERS = ['fm', 'acc'];
@@ -227,6 +228,22 @@ const BLOCKED_PAIRS = [
 ];
 const clash = (roles) => BLOCKED_PAIRS.find(([a, b]) => roles.includes(a) && roles.includes(b)) || null;
 
+// The post name follows the person (2026-11-25): "Head Master" for a man, "Head Mistress" for a woman.
+// Without a known gender the old text "Head Master / Mistress" stays.
+const roleLabelFor = (role, gender) => {
+  const l = ROLES[role]?.label;
+  if (!l || !gender) return l;
+  return l.replace('Master / Mistress', gender === 'f' ? 'Mistress' : 'Master').replace('Patron / Matron', gender === 'f' ? 'Matron' : 'Patron');
+};
+// Mr. / Ms. at the front of the name, from the gender. Other titles (Dr., Prof., Eng., Rev....) are kept as they are.
+const titled = (name, gender) => {
+  const n = String(name || '').trim().replace(/\s+/g, ' ');
+  if (!gender || !n) return n;
+  const title = gender === 'f' ? 'Ms.' : 'Mr.';
+  if (/^(dr|prof|eng|rev|fr|sr|pastor|sheikh|hon|adv|cpa)\b\.?\s/i.test(n)) return n;
+  return `${title} ${n.replace(/^(mr|mrs|miss|ms|bw|bi)\b\.?\s+/i, '')}`;
+};
+
 const isAdminRole = (r) => ADMIN_ROLES.includes(r);
 const isSchoolRole = (r) => SCHOOL_ROLES.includes(r);
 const pageAccess = (role, page) => ACCESS[role]?.[page] || null;
@@ -240,4 +257,4 @@ function canManage(actor, target) {
   return true;
 }
 
-module.exports = { ROLES, ADMIN_ROLES, SCHOOL_ROLES, CREATES, ACCESS, DAMAGE_APPROVERS, ISSUERS, PURCHASE_CONFIRMERS, STORE_ITEM_MAKERS, CARD_ISSUERS, REQUISITION_MAKERS, MONEY_APPROVERS, REPORTS, canReport, BLOCKED_PAIRS, clash, isAdminRole, isSchoolRole, pageAccess, canManage };
+module.exports = { ROLES, ADMIN_ROLES, SCHOOL_ROLES, CREATES, ACCESS, DAMAGE_APPROVERS, ISSUERS, PURCHASE_CONFIRMERS, STORE_ITEM_MAKERS, CARD_ISSUERS, REQUISITION_MAKERS, MONEY_APPROVERS, REPORTS, canReport, BLOCKED_PAIRS, clash, roleLabelFor, titled, isAdminRole, isSchoolRole, pageAccess, canManage };

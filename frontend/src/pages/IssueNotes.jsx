@@ -41,14 +41,13 @@ export default function IssueNotes() {
             {!d ? <Loading /> : !d.notes.length ? <Empty icon="inbox" title="No Issue Notes here"
               steps={['The parent pays and the Bursar writes the receipt.', 'The Second Master writes the Issue Note from the receipt.', 'The Librarian or the School Store-keeper gives the things against the note.']} /> : (
               <div className="tw"><table className="stafftable">
-                <thead><tr><th className="stick">Note</th><th>For</th><th>Place</th><th>Status</th><th>Written</th><th /></tr></thead>
+                <thead><tr><th className="stick">Note</th><th>For</th><th>Place</th><th>Status</th><th>Written</th></tr></thead>
                 <tbody>{d.notes.map((n) => (
                   <tr key={n.id} onClick={() => setOpen(n.id)} style={{ cursor: 'pointer' }}>
                     <td className="stick nowrap"><b className="mono">{n.number}</b></td>
                     <td>{n.kind === 'receipt' ? <>{n.student} <span className="small muted">({n.receipt})</span></> : n.recipient}<div className="small muted">{n.kindLabel}</div></td>
                     <td>{n.placeLabel}</td><td><span className={`pill ${TONE[n.status]}`}>{n.statusLabel}</span></td>
                     <td className="small nowrap">{fmtWhen(n.writtenAt)}<div className="muted">{n.writtenBy}</div></td>
-                    <td><button className="btn sm">Open</button></td>
                   </tr>
                 ))}</tbody>
               </table></div>

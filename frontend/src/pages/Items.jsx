@@ -44,7 +44,7 @@ function ItemList() {
   }, [allSchools, scope, user]);
 
   const load = useCallback(async () => {
-    const p = new URLSearchParams({ status });
+    const p = new URLSearchParams({ status: status === 'unpriced' ? 'active' : status });
     if (cat) p.set('category', cat);
     if (q.trim()) p.set('q', q.trim());
     try { const d = await api.get(`/items?${p}`); setRows(d.items); setCats(d.categories); setError(''); } catch (e) { setError(e.message); }
@@ -53,12 +53,20 @@ function ItemList() {
   useLive(['item'], load);
 
   // With one school chosen, list only what that school sells (Finance Manager still sees everything, to add prices).
-  const shown = rows && (schools.length === 1 && !canEdit ? rows.filter((i) => i.prices[schools[0].id]) : rows);
+  const shown0 = rows && (schools.length === 1 && !canEdit ? rows.filter((i) => i.prices[schools[0].id]) : rows);
+  // "Waiting for a price": registered (for example by the store-keeper when he bought it) but not priced by the finance office yet.
+  const shown = status === 'unpriced' ? shown0?.filter((i) => !Object.keys(i.prices).length) : shown0;
 
   const setActive = async (item, active) => {
     try { await api.post(`/items/${item.id}/active`, { active }); toast(active ? `${item.name} is on sale again` : `${item.name} is no longer sold`); load(); }
     catch (e) { toast(e.message); }
   };
+
+  const [usage, setUsage] = useState(null);      // the "where are items used" list
+  const [askDelete, setAskDelete] = useState(null); // one item waiting for "Yes, delete"
+  const [cleanup, setCleanup] = useState(null);      // { rows } the clean-up box
+  const showUsage = async () => { try { setUsage((await api.get('/items/usage')).items); } catch (e) { toast(e.message); } };
+  const openCleanup = async () => { try { setCleanup({ rows: (await api.get('/items/usage')).items }); } catch (e) { toast(e.message); } };
 
   return (
     <>
@@ -67,6 +75,8 @@ function ItemList() {
         : 'What the library sells and the price for each school.'}>
         <ExcelButton href="/api/items/export.xlsx" />
         {canUpload && <button className="btn" onClick={() => setModal({ kind: 'upload' })}><Icon name="upload" /> Upload Excel</button>}
+        {canEdit && <button className="btn" onClick={showUsage}><Icon name="search" /> Where are items used?</button>}
+        {canEdit && <button className="btn danger" onClick={openCleanup}><Icon name="trash" /> Delete unused items</button>}
         {canEdit ? <button className="btn p" onClick={() => setModal({ kind: 'edit' })}><Icon name="plus" /> New item</button>
           : <span className="pill"><Icon name="eye" /> View only</span>}
       </PageHead>
@@ -75,7 +85,7 @@ function ItemList() {
 
       <div className="filters">
         <div className="seg">
-          {[['active', 'On sale'], ['archived', 'Stopped']].map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}
+          {[['active', 'On sale'], ...(canEdit ? [['unpriced', 'Waiting for a price']] : []), ['archived', 'Stopped']].map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}
         </div>
         <select aria-label="Category" value={cat} onChange={(e) => setCat(e.target.value)}>
           <option value="">All categories</option>
@@ -87,7 +97,7 @@ function ItemList() {
 
       <ErrorNote error={error} />
       <Panel flush>
-        {!shown ? <Loading /> : !shown.length ? <Empty>{status === 'archived' ? 'No stopped items.' : 'No items match.'}</Empty> : (
+        {!shown ? <Loading /> : !shown.length ? <Empty>{status === 'archived' ? 'No stopped items.' : status === 'unpriced' ? 'Every item has a price.' : 'No items match.'}</Empty> : (
           <div className="tw"><table className="itemtable">
             <thead><tr>
               <th className="sn">S/N</th><th className="stick">Item</th><th>Category</th>
@@ -104,6 +114,7 @@ function ItemList() {
                   <td className="acts-cell"><div className="row nowrap">
                     <button className="btn sm" onClick={() => setModal({ kind: 'history', item: i })} title="Price history"><Icon name="clock" /></button>
                     {canEdit && <button className="btn sm" onClick={() => setModal({ kind: 'edit', item: i })}><Icon name="edit" /> Edit</button>}
+                    {canEdit && <button className="btn sm danger" onClick={() => setAskDelete(i)} title="Delete (only if never used)"><Icon name="trash" /></button>}
                     {canEdit && (i.active
                       ? <button className="btn sm danger" onClick={() => setActive(i, false)}>Stop selling</button>
                       : <button className="btn sm" onClick={() => setActive(i, true)}>Sell again</button>)}
@@ -115,6 +126,20 @@ function ItemList() {
         )}
       </Panel>
 
+      {askDelete && <DeleteOne item={askDelete} onClose={() => setAskDelete(null)} onDone={() => { toast(`${askDelete.name} deleted`); setAskDelete(null); load(); }} />}
+      {cleanup && <Cleanup rows={cleanup.rows} onClose={() => setCleanup(null)} onDone={(r) => { setCleanup(null); toast(`${r.deleted} deleted, ${r.kept} kept (they have history)`); load(); }} />}
+      {usage && (
+        <Modal title="Where are the items used?" onClose={() => setUsage(null)} wide
+          footer={<><button className="btn" onClick={() => setUsage(null)}>Close</button>
+            <button className="btn danger" disabled={!usage.some((i) => !i.usedIn.length)} onClick={() => { setCleanup({ rows: usage }); setUsage(null); }}><Icon name="trash" /> Delete the {usage.filter((i) => !i.usedIn.length).length} unused</button></>}>
+          <p className="muted small" style={{ marginTop: 0 }}>An item that is used anywhere stays (stop selling it if you do not want it). Items used nowhere can be deleted.</p>
+          <div className="tw"><table className="stafftable"><thead><tr><th>Item</th><th>Used in</th></tr></thead>
+            <tbody>{usage.map((i) => (
+              <tr key={i.id}><td><b>{i.name}</b></td>
+                <td>{i.usedIn.length ? i.usedIn.map((u) => <span key={u.table} className="pill sm warn" style={{ marginRight: 4 }}>{u.table.replace(/_/g, ' ')} ({u.n})</span>) : <span className="pill sm ok">Not used: can be deleted</span>}</td></tr>
+            ))}</tbody></table></div>
+        </Modal>
+      )}
       {modal?.kind === 'edit' && <ItemForm item={modal.item} cats={cats} onClose={() => setModal(null)} onSaved={(name) => { setModal(null); toast(`${name} saved`); load(); }} />}
       {modal?.kind === 'history' && <History item={modal.item} onClose={() => setModal(null)} />}
       {modal?.kind === 'upload' && <Upload onClose={() => setModal(null)} onUploaded={(id) => navigate(`/items/review/${id}`)} />}
@@ -280,6 +305,59 @@ function Upload({ onClose, onUploaded }) {
         <Icon name="excel" /> {busy ? 'Checking the file…' : 'Choose Excel file (.xlsx)'}
       </label>
       <ErrorNote error={error} />
+    </Modal>
+  );
+}
+
+
+// Delete one item: a clear box, not a browser pop-up.
+function DeleteOne({ item, onClose, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const go = async () => { setBusy(true); setError(''); try { await api.del(`/items/${item.id}`); onDone(); } catch (e) { setError(e.message); setBusy(false); } };
+  return (
+    <Modal title="Delete this item?" onClose={onClose}
+      footer={<><button className="btn" onClick={onClose} disabled={busy}>Cancel</button><button className="btn danger" onClick={go} disabled={busy}><Icon name="trash" /> {busy ? 'Deleting…' : 'Yes, delete'}</button></>}>
+      <div className="stack">
+        <p style={{ margin: 0 }}><b>{item.name}</b> will be removed from the system.</p>
+        <p className="note" style={{ margin: 0 }}><Icon name="alert" /> This cannot be undone. An item that was already bought, sold, counted or sent cannot be deleted: use "Stop selling" for it.</p>
+        <ErrorNote error={error} />
+      </div>
+    </Modal>
+  );
+}
+
+// Delete every unused item: shows what goes and what stays, and asks to type DELETE.
+function Cleanup({ rows, onClose, onDone }) {
+  const gone = rows.filter((i) => !i.usedIn.length);
+  const stay = rows.filter((i) => i.usedIn.length);
+  const [word, setWord] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const go = async () => { setBusy(true); setError(''); try { onDone(await api.post('/items/delete-unused', { confirm: 'DELETE' })); } catch (e) { setError(e.message); setBusy(false); } };
+  return (
+    <Modal title="Delete unused items" onClose={onClose}
+      footer={<><button className="btn" onClick={onClose} disabled={busy}>Cancel</button>
+        <button className="btn danger" onClick={go} disabled={busy || word !== 'DELETE' || !gone.length}><Icon name="trash" /> {busy ? 'Deleting…' : `Delete ${gone.length} item${gone.length === 1 ? '' : 's'}`}</button></>}>
+      <div className="stack">
+        {!gone.length ? <p className="okmsg" style={{ margin: 0 }}>Every item is used somewhere. Nothing can be deleted.</p> : (
+          <>
+            <div>
+              <div className="row" style={{ justifyContent: 'space-between' }}><b>Will be deleted</b><span className="pill bad">{gone.length}</span></div>
+              <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginTop: 8, maxHeight: 170, overflow: 'auto' }}>{gone.map((i) => <span key={i.id} className="pill sm bad">{i.name}</span>)}</div>
+            </div>
+            {!!stay.length && (
+              <div>
+                <div className="row" style={{ justifyContent: 'space-between' }}><b>Stay (they have history)</b><span className="pill ok">{stay.length}</span></div>
+                <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginTop: 8, maxHeight: 110, overflow: 'auto' }}>{stay.map((i) => <span key={i.id} className="pill sm">{i.name}</span>)}</div>
+              </div>
+            )}
+            <p className="note" style={{ margin: 0 }}><Icon name="alert" /> This cannot be undone. You will register the items again and give them prices.</p>
+            <label>Type <b>DELETE</b> to confirm<input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" placeholder="DELETE" /></label>
+          </>
+        )}
+        <ErrorNote error={error} />
+      </div>
     </Modal>
   );
 }

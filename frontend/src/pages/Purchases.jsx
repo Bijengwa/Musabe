@@ -18,7 +18,7 @@ import { SupplierPick } from './Suppliers';
 import GoodsSummary from './GoodsSummary';
 
 const TONE = { pending: 'warn', checked: 'info', confirmed: 'ok', rejected: 'bad' };
-const SchoolTag = ({ p }) => (p.school ? <SchoolPill code={p.school.code} name={p.school.short} /> : <span className="muted">Main store (old)</span>);
+const SchoolTag = ({ p }) => (p.school ? <SchoolPill code={p.school.code} name={p.school.short} /> : <span className="muted">{p.forAdmin ? 'Administration' : 'Main store (old)'}</span>);
 
 export default function Purchases() {
   return (
@@ -83,7 +83,7 @@ export function Write({ onClose, requisition, ordered: orderedStart = false }) {
   const toast = useToast();
   const [store, setStore] = useState(null);
   const schools = useSchools().filter((x) => x.active !== false);
-  const [f, setF] = useState({ supplier: '', invoiceNo: '', boughtOn: todayStr(), note: '', ordered: orderedStart, expectedOn: '', schoolId: requisition?.schoolId || '' });
+  const [f, setF] = useState({ supplier: '', invoiceNo: '', boughtOn: todayStr(), note: '', ordered: orderedStart, expectedOn: '', schoolId: requisition ? (requisition.schoolId || 'admin') : '' });
   const [lines, setLines] = useState([]);
   const [pick, setPick] = useState('');
   const [adding, setAdding] = useState(false);
@@ -99,13 +99,13 @@ export function Write({ onClose, requisition, ordered: orderedStart = false }) {
   const save = async ({ pin, smsCode } = {}) => {
     setBusy(true); setError('');
     try {
-      const d = await api.post('/purchases', { pin, smsCode, ...f, supplierId: Number(f.supplierId) || undefined, lpoId: Number(f.lpoId) || undefined, onCredit: !!f.onCredit, schoolId: Number(f.schoolId) || null, expectedOn: f.ordered ? f.expectedOn || null : null, requisitionId: requisition?.id, lines: lines.map((l) => ({ itemId: l.itemId, qty: Number(l.qty), unitCost: Number(l.unitCost || 0) })) });
+      const d = await api.post('/purchases', { pin, smsCode, ...f, supplierId: Number(f.supplierId) || undefined, lpoId: Number(f.lpoId) || undefined, onCredit: !!f.onCredit, schoolId: Number(f.schoolId) || null, admin: f.schoolId === 'admin', expectedOn: f.ordered ? f.expectedOn || null : null, requisitionId: requisition?.id, lines: lines.map((l) => ({ itemId: l.itemId, qty: Number(l.qty), unitCost: Number(l.unitCost || 0) })) });
       toast(f.ordered ? `${d.purchase.number}: order saved. When the goods arrive, Mapokezi checks them against the receipts.` : `${d.purchase.number} saved: Mapokezi checks it against the receipts`); onClose();
     } catch (e) { setError(e.message); setBusy(false); }
   };
   return (
     <Modal wide title={requisition ? `Buy or order for ${requisition.number} · ${requisition.school}` : f.ordered ? 'New order' : 'Bought now'} onClose={onClose}
-      footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" disabled={busy || f.supplier.trim().length < 3 || !f.schoolId || !lines.length || lines.some((l) => !Number(l.qty))} onClick={() => setAsk(true)}>{busy ? 'Saving…' : `${f.ordered ? 'Save order' : 'Save for counting'} · TSh ${tsh(total)}`}</button></>}>
+      footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn p" disabled={busy || !f.schoolId || !lines.length || lines.some((l) => !Number(l.qty))} onClick={() => setAsk(true)}>{busy ? 'Saving…' : `${f.ordered ? 'Save order' : 'Save for counting'} · TSh ${tsh(total)}`}</button></>}>
       <div className="stack">
         {requisition && (
           <div className="stack" style={{ gap: 4 }}>
@@ -118,7 +118,7 @@ export function Write({ onClose, requisition, ordered: orderedStart = false }) {
           <button key={t} type="button" className={f.ordered === k ? 'on' : ''} onClick={() => set('ordered', k)}>{t}</button>)}</div>
         <div className="fg">
           <label>Goes to (school)<select value={f.schoolId} disabled={!!requisition} onChange={(e) => set('schoolId', e.target.value)}>
-            <option value="">Choose the school…</option>{schools.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <option value="">Choose the school…</option><option value="admin">Administration (no school)</option>{schools.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           {f.ordered && <label>Expected on (not required)<input type="date" min={todayStr()} value={f.expectedOn} onChange={(e) => set('expectedOn', e.target.value)} /></label>}
         </div>
         <SupplierPick value={f} onChange={(v) => setF(v)} allowCredit={!requisition} allowLpo />

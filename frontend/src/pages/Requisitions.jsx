@@ -78,17 +78,15 @@ function RList() {
         <Panel flush>
           {!data ? <Loading /> : !rows.length ? <Empty>Nothing here.</Empty> : (
             <div className="tw"><table className="stafftable">
-              <thead><tr><th>No.</th><th>School</th><th className="stick">Details of request</th><th>Applicant</th><th className="n">Total (TSh)</th><th>Signed</th><th>Status</th><th /></tr></thead>
+              <thead><tr><th>No.</th><th>School</th><th>Applicant</th><th className="n">Total (TSh)</th><th>Signed</th><th>Status</th></tr></thead>
               <tbody>{rows.map((r) => (
                 <tr key={r.id} onClick={() => navigate(`/requisitions/${r.id}`)} style={{ cursor: 'pointer' }}>
                   <td className="mono small">{r.number}<div className="muted">{fmtWhen(r.requestedAt)}</div></td>
-                  <td><SchoolPill code={r.code} name={r.school} /><div className="small muted">{r.department}</div></td>
-                  <td className="stick small" style={{ maxWidth: 240 }}>{r.lines.slice(0, 3).map((l) => { const q = l.approvedQty ?? l.qty; return `${q != null ? `${q} × ` : ''}${l.item}`; }).join(', ')}{r.lines.length > 3 ? ` +${r.lines.length - 3}` : ''}{r.neededBy && <div className="muted">needed by {r.neededBy}</div>}</td>
+                  <td>{r.school ? <SchoolPill code={r.code} name={r.school} /> : <span className="pill">Administration</span>}<div className="small muted">{r.department}</div></td>
                   <td className="small">{r.applicantName}<div className="muted">{r.kind === 'academic' ? 'for lessons' : 'general'}</div></td>
                   <td className="n">{r.total == null ? <span className="muted">—</span> : tsh(r.total)}</td>
                   <td><Dots r={r} /></td>
-                  <td><span className={`pill ${r.returned ? 'bad' : TONE[r.status]}`}>{r.statusLabel}</span>{r.waiting && <div className="small muted">{r.waiting.names.length ? r.waiting.names.join(', ') : `no ${r.waiting.role} set up`}</div>}</td>
-                  <td><Link className={`btn sm${r.turn && r.turn !== 'withdraw' ? ' p' : ''}`} to={`/requisitions/${r.id}`} onClick={(e) => e.stopPropagation()}>{{ correct: 'Correct it', fulfil: 'Buy / order' }[r.turn] || (r.turn && r.turn !== 'withdraw' ? 'Sign' : 'Open')}</Link></td>
+                  <td><span className={`pill wrap ${r.returned ? 'bad' : TONE[r.status]}`}>{r.statusLabel}</span>{r.turn && r.turn !== 'withdraw' && <span className="pill warn sm" style={{ marginLeft: 6 }}>Your turn</span>}{r.waiting && <div className="small muted">{r.waiting.names.length ? r.waiting.names.join(', ') : `no ${r.waiting.role} set up`}</div>}</td>
                 </tr>
               ))}</tbody>
             </table></div>
@@ -171,6 +169,9 @@ function Page() {
   const [ask, setAsk] = useState(null);                        // the signing PIN box: { id, title, call(cred) }
   const [note, setNote] = useState('');
   const [backAmt, setBackAmt] = useState('');
+  const [given, setGiven] = useState('');                       // the Cashier: amount given on the form (may differ from the total)
+  const [payee, setPayee] = useState({ name: '', image: null });  // the buyer who receives the money and signs
+  const [payAsk, setPayAsk] = useState(false);
   const [editing, setEditing] = useState(!id);                 // writing a new one, or correcting one sent back
   const [dept, setDept] = useState(user.school?.name || '');
   const [who, setWho] = useState(user.fullName || '');
@@ -218,7 +219,7 @@ function Page() {
     setEditing(true);
   };
   const submitForm = () => setAsk({ id: r?.id || 0, title: r ? `Sign the correction of ${r.number}` : 'Sign and send', call: async (cred) => {
-    const body = { kind: buyer && !r ? (order?.place === 'academic' ? 'academic' : 'general') : kind, ...(buyer && !r ? { schoolId: Number(schoolId), orderId: order?.id || undefined, priceListId: Number(priceListId) || undefined } : {}), department: dept, applicantName: who, neededBy: needed || null, lines: used.map((x) => ({ lineId: x.lineId, name: x.name, qty: num(x.qty), estCost: num(x.cost), total: num(x.total) })), ...cred };
+    const body = { kind: buyer && !r ? (order?.place === 'academic' ? 'academic' : 'general') : kind, ...(buyer && !r ? { schoolId: Number(schoolId) || null, admin: schoolId === 'admin', orderId: order?.id || undefined, priceListId: Number(priceListId) || undefined } : {}), department: dept, applicantName: who, neededBy: needed || null, lines: used.map((x) => ({ lineId: x.lineId, name: x.name, qty: num(x.qty), estCost: num(x.cost), total: num(x.total) })), ...cred };
     if (r) { await api.post(`/requisitions/${r.id}/correct`, body); toast(`${r.number} corrected and sent on`); setEditing(false); await load(); return; }
     const d = await api.post('/requisitions', body); toast(`${d.requisition.number} sent`); setEditing(false); navigate(`/requisitions/${d.requisition.id}`, { replace: true });
   } });
@@ -230,8 +231,8 @@ function Page() {
         {r?.returned && <p className="rq-note bad"><b>{r.returned.by} sent it back:</b> {r.returned.note}</p>}
         {!r && buyer && (
           <div className="row" style={{ alignItems: 'end', gap: 12, flexWrap: 'wrap' }}>
-            <label>School it is for<select value={schoolId} disabled={!!order} onChange={(e) => { setSchoolId(e.target.value); const s = schools.find((x) => String(x.id) === e.target.value); if (s) setDept(s.name); }}>
-              <option value="">Choose the school…</option>{schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+            <label>School it is for<select value={schoolId} disabled={!!order} onChange={(e) => { setSchoolId(e.target.value); const s = schools.find((x) => String(x.id) === e.target.value); if (s) setDept(s.name); if (e.target.value === 'admin') setDept('Administration'); }}>
+              <option value="">Choose the school…</option><option value="admin">Administration (no school)</option>{schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
             {order && <span className="pill info">From order {order.number} ({order.placeLabel})</span>}
             <label>Price list / proforma (from the supplier)<select value={priceListId} onChange={(e) => setPriceListId(e.target.value)}>
               <option value="">{lists.length ? 'Choose the paper the prices come from…' : 'None entered yet (Suppliers page)'}</option>
@@ -379,7 +380,7 @@ function Page() {
       )}
       {r.moneyBack && <p className="rq-note ok"><b>Money given back:</b> TSh {tsh(r.moneyBack.amount)} received by {r.moneyBack.by} on {fmtDate(r.moneyBack.at)}{r.moneyBack.note ? ` (${r.moneyBack.note})` : ''}. Nothing was bought; this requisition is closed.</p>}
       {!r.moneyBack && r.moneyBackAsked && <p className="rq-note info">The buyer said on {fmtDate(r.moneyBackAsked)} that he brings the money back. Waiting for the Cashier to receive it.</p>}
-      {money$ && <p className="rq-note info">Money: <b>{money$.number}</b> TSh {tsh(money$.amount)} · {money$.status === 'paid' ? `given by ${money$.paidBy} on ${fmtDate(money$.paidAt)}` : money$.status === 'rejected' ? 'the Cashier rejected it' : 'waiting for the Cashier'}</p>}
+      {money$ && <p className="rq-note info">Money for this form · {money$.status === 'paid' ? <><b>Given TSh {tsh(money$.amount)}</b>{money$.estAmount != null && money$.estAmount !== money$.amount ? ` (the total approved was TSh ${tsh(money$.estAmount)})` : ''} by {money$.paidBy} on {fmtDate(money$.paidAt)}</> : money$.status === 'rejected' ? 'the Cashier rejected it' : `approved TSh ${tsh(money$.amount)} · waiting for the Cashier to give it`}</p>}
 
       <div className="rq-sheet">
         <Top number={r.number} date={fmtDate(r.requestedAt)} dept={r.department} who={r.applicantName} />
@@ -410,14 +411,14 @@ function Page() {
           {!byBuyer && <Sig label="Checked by (Store-keeper)" sign={r.signs.store} hint={r.signs.store ? '' : turn === 'store' ? 'your turn' : ''}>{empty('store') && signHere('store')}</Sig>}
           <Sig label="Checked by (Assistant Accountant)" sign={r.signs.check} hint={r.signs.check ? '' : turn === 'check' ? 'your turn' : r.status === 'check' ? 'waiting' : ''}>{empty('check') && signHere('check')}</Sig>
           <Sig label="Authorised by (Manager / Finance Manager)" sign={r.signs.manager} hint={r.signs.manager ? '' : mgr ? 'your turn' : ''}>{empty('manager') && signHere('manager')}</Sig>
-          <Sig label="Money given (Cashier)" sign={money$?.status === 'paid' ? { by: money$.paidBy, at: money$.paidAt } : null} hint={money$ && money$.status !== 'paid' ? (payer ? 'your turn' : 'waiting') : ''}>{money$ && <Link className="btn sm" to={`/payments/${money$.id}`}>{payer ? `Pay TSh ${tsh(money$.amount)}` : 'Open voucher'}</Link>}</Sig>
+          <Sig label="Money given (Cashier)" sign={money$?.status === 'paid' ? { by: money$.paidBy, at: money$.paidAt } : null} hint={money$ && money$.status !== 'paid' ? (payer ? 'your turn' : 'waiting') : ''}>{money$?.status === 'paid' && <span className="rq-small">Given TSh {tsh(money$.amount)}</span>}{payer && <span className="rq-small">use the box below</span>}</Sig>
         </div>
       </div>
 
       <SealQR type="requisition" id={r.id} seal={r.seal} />
       <div className="rq-actions">
         <ErrorNote error={error} />
-        {(signer || r.canStop) && <label>{mgr ? 'Note (needed to reject, to give less, or to send back)' : 'Note (needed to reject, to stop or to send back)'}<input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} /></label>}
+        {(signer || r.canStop || payer) && <label>{mgr ? 'Note (needed to reject, to give less, or to send back)' : 'Note (needed to reject, to stop or to send back)'}<input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} /></label>}
         <div className="row">
           {signer && <button className="btn danger" disabled={busy || !note.trim()} onClick={() => sign(false)}>Reject</button>}
           {r.canReturn && <button className="btn" disabled={busy || !note.trim()} onClick={sendBack}>Send back to applicant</button>}
@@ -427,6 +428,18 @@ function Page() {
           {turn === 'fulfil' && !r.moneyBackAsked && <Link className="btn p" to={`/purchases/buy/${r.id}`}>{r.purchases?.some((b) => b.status === 'rejected') ? 'Go back to the market (new buying form)' : 'Fill the buying form'}</Link>}
           {r.canAskMoneyBack && <button className="btn" disabled={busy} onClick={askBack}>Give the money back to the Cashier</button>}
         </div>
+        {payer && (
+          <div className="rq-sheet" style={{ padding: 14 }}>
+            <b>Give the money for this form</b>
+            <p className="rq-small" style={{ margin: '4px 0' }}>The total approved is TSh {tsh(money$.amount)}. It is only an estimate: the amount you give may be equal, more or less. Write what you really give.</p>
+            <label>Amount given (TSh)<input inputMode="numeric" value={given} placeholder={String(money$.amount)} onChange={(e) => setGiven(e.target.value.replace(/\D/g, ''))} style={{ maxWidth: 200 }} /></label>
+            <label>Name of the buyer who receives the money<input value={payee.name || r.requestedBy || ''} maxLength={120} onChange={(e) => setPayee({ ...payee, name: e.target.value })} /></label>
+            <div className="row">
+              <button className="btn danger" disabled={busy || !note.trim()} onClick={() => run(() => api.post(`/payments/${money$.id}/decide`, { approve: false, note }), `${r.number}: money not given`)}>Cannot give the money</button>
+              <button className="btn p" disabled={busy || (payee.name || r.requestedBy || '').trim().length < 3} onClick={() => setPayAsk(true)}>Give TSh {tsh(Number(given || money$.amount))} and sign</button>
+            </div>
+          </div>
+        )}
         {r.canReceiveMoneyBack && (
           <div className="row" style={{ alignItems: 'end' }}>
             <label>Money received back (TSh)<input inputMode="numeric" value={backAmt} placeholder={String(r.money?.amount ?? '')} onChange={(e) => setBackAmt(e.target.value.replace(/\D/g, ''))} style={{ maxWidth: 180 }} /></label>
@@ -438,6 +451,8 @@ function Page() {
         {fills && <p className="small muted" style={{ margin: 0 }}>Yellow boxes are empty on the paper: you may fill them. Written amounts cannot be changed.</p>}
       </div>
       {ask && <PinBox type="requisition" id={ask.id} title={ask.title} onCancel={() => setAsk(null)} onConfirm={async (cred) => { await ask.call(cred); setAsk(null); }} />}
+      {payAsk && <PinBox type="voucher" id={money$?.id} title={`Sign: gave TSh ${tsh(Number(given || money$?.amount || 0))}`} amountNote={`To ${(payee.name || r.requestedBy || '').trim()} for ${r.number}.`} onCancel={() => setPayAsk(false)}
+        onConfirm={async ({ pin, smsCode }) => { await api.post(`/payments/${money$.id}/decide`, { approve: true, amountGiven: given || String(money$.amount), payeeName: (payee.name || r.requestedBy || '').trim(), note, pin, smsCode }); toast(`${r.number}: TSh ${tsh(Number(given || money$.amount))} given`); setPayAsk(false); setNote(''); setGiven(''); await load(); }} />}
     </div>
   );
 }

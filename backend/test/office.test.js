@@ -92,7 +92,7 @@ test('LPO: procurement prepares â†’ Head of Accounts certifies (fills a rate) â†
   r = await as('acc', 'POST', `/api/lpos/${l.id}/certify`, { lines: [{ lineId: l.lines[1].id, rate: 4000 }] });
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.lpo.status, 'authorise'); assert.equal(r.json.lpo.total, 40 * 18500 + 5 * 4000);
   assert.equal((await as('acc', 'POST', `/api/lpos/${l.id}/authorise`, {})).status, 403);
-  r = await as('fm', 'POST', `/api/lpos/${l.id}/authorise`, {});
+  r = await as('manager', 'POST', `/api/lpos/${l.id}/authorise`, {});
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.lpo.status, 'authorised'); assert.equal(r.json.lpo.seal.status, 'valid');
   assert.equal(r.json.lpo.authorisedAs, 'Finance Manager');
   await assert.rejects(db('lpos').where({ id: l.id }).update({ status: 'certify' }), /go back|signed/);

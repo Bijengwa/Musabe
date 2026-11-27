@@ -12,7 +12,8 @@
     "rollback": "knex migrate:rollback",
     "seed": "knex seed:run",
     "setup": "npm run migrate && npm run seed",
-    "test": "node --test"
+    "test": "node --test",
+    "reset:students": "node scripts/reset-students.js"
   },
   "engines": {
     "node": ">=20"

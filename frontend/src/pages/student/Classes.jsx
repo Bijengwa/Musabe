@@ -41,7 +41,7 @@ export default function Classes() {
       <Panel flush>
         {!classes ? <Loading /> : !classes.length ? <Empty>{edit ? 'No fixed classes found. Run the standard class migration first.' : 'No fixed classes yet. Ask the Academic Master to apply the standard class setup.'}</Empty> : (
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>Short</th><th>Class</th><th>Stream</th><th>Curriculum</th><th className="n">Students</th><th className="n">Boys</th><th className="n">Girls</th>{edit && <th />}</tr></thead>
+            <thead><tr><th>Short</th><th>Class</th><th>Stream</th><th>Curriculum</th><th className="n">Students</th><th className="n">Boys</th><th className="n">Girls</th><th className="n">Boarding</th><th className="n">Day</th>{edit && <th />}</tr></thead>
             <tbody>{classes.map((c) => (
               <tr key={c.id} className={`clickrow${c.active ? '' : ' off'}`} tabIndex={0} title="Open: subjects, teachers and syllabus"
                 onClick={() => openClass(c)} onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) openClass(c); }}>
@@ -49,7 +49,7 @@ export default function Classes() {
                 <td data-l="Class">{c.name}{!c.level && <span className="pill sm warn" title="Typed by hand before the built-in list">Not from the list</span>}</td>
                 <td data-l="Stream">{c.stream || <span className="muted">—</span>}</td>
                 <td data-l="Curriculum">{c.curriculum ? <span className={`pill sm ${CUR_TONE[c.curriculum]}`}>{c.curriculumLabel}</span> : <span className="muted">—</span>}</td>
-                <td data-l="Students" className="n"><b>{c.students}</b></td><td data-l="Boys" className="n">{c.boys}</td><td data-l="Girls" className="n">{c.girls}</td>
+                <td data-l="Students" className="n"><b>{c.students}</b></td><td data-l="Boys" className="n">{c.boys}</td><td data-l="Girls" className="n">{c.girls}</td><td data-l="Boarding" className="n">{c.boarders}</td><td data-l="Day" className="n">{c.dayScholars}</td>
                 {edit && <td className="acts-cell" onClick={(e) => e.stopPropagation()}><div className="row nowrap">
                   <button className="btn sm" onClick={() => setModal(c)}><Icon name="edit" /> Edit</button>
                   {!split(c) && <button className={`btn sm${c.active ? ' danger' : ''}`} onClick={() => toggle(c)}>{c.active ? 'Switch off' : 'Switch on'}</button>}

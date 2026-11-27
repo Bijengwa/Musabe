@@ -31,7 +31,7 @@ const express = require('express');
 const db = require('../db');
 const { HttpError, audit } = require('../lib/util');
 const { requireAuth, requirePage } = require('../auth/session');
-const { ROLES, REQUISITION_MAKERS, MONEY_APPROVERS } = require('../auth/roles');
+const { ROLES, REQUISITION_MAKERS } = require('../auth/roles');
 const { sendExcel } = require('../lib/excel');
 const stock = require('../lib/stock');
 const seal = require('../lib/seal');
@@ -90,13 +90,13 @@ function turn(user, r) {
   if (r.status === 'store') return user.role === 'storekeeper' ? 'store' : null;
   // The Assistant Accountant checks the prices (and the supplier's price list) before the money step (2026-11-21).
   if (r.status === 'check') return user.role === 'aacc' && !mine ? 'check' : null;
-  if (r.status === 'manager') return MONEY_APPROVERS.includes(user.role) && !mine ? 'manager' : null;
+  if (r.status === 'manager') return user.canApproveMoney && !mine ? 'manager' : null;
   if (r.status === 'approved') return user.role === 'storekeeper' || (user.role === 'amanager' && mine) ? 'fulfil' : null;
   return null;
 }
 
 function list(user, f = {}) {
-  const q = db('requisitions as r').join('schools as s', 's.id', 'r.school_id').join('users as u', 'u.id', 'r.requested_by')
+  const q = db('requisitions as r').leftJoin('schools as s', 's.id', 'r.school_id').join('users as u', 'u.id', 'r.requested_by')
     .leftJoin('users as a', 'a.id', 'r.acad_by').leftJoin('users as h', 'h.id', 'r.head_by').leftJoin('users as k', 'k.id', 'r.store_by').leftJoin('users as m', 'm.id', 'r.manager_by').leftJoin('users as ck', 'ck.id', 'r.check_by')
     .leftJoin('price_lists as pl', 'pl.id', 'r.price_list_id').leftJoin('suppliers as plsup', 'plsup.id', 'pl.supplier_id')
     .leftJoin('users as x', 'x.id', 'r.rejected_by').leftJoin('users as rt', 'rt.id', 'r.returned_by').leftJoin('users as mb', 'mb.id', 'r.money_back_by').leftJoin('deliveries as d', 'd.id', 'r.delivery_id');
@@ -183,7 +183,7 @@ async function withLines(rows, user) {
       purchases: buys.filter((p) => p.requisition_id === r.id).map((p) => ({ id: p.id, number: p.number, status: p.status, statusLabel: BUY_LABEL[p.status], total: Number(p.total), supplier: p.supplier,
         checkedBy: p.checked_name, decidedBy: p.decided_name ? `${p.decided_name} (${ROLES[p.decided_role]?.label || ''})` : null, decidedAt: p.decided_at, note: p.decision_note })),
       ...moneyBack(user, r, money, buys.filter((p) => p.requisition_id === r.id)),
-      lines: ls, removedLines: taken, waiting: waitingFor(r, money), canStop: MONEY_APPROVERS.includes(user.role) && ['acad', 'head', 'store', 'check'].includes(r.status),
+      lines: ls, removedLines: taken, waiting: waitingFor(r, money), canStop: user.canApproveMoney && ['acad', 'head', 'store', 'check'].includes(r.status),
       canWithdraw: r.requested_by === user.id && ['acad', 'head'].includes(r.status),
       // Can a signer send it back to the applicant now?
       canReturn: SIGN_STEPS.includes(t),
@@ -314,8 +314,11 @@ void writeBySchool;
 // so it goes straight to the money step: the Manager or the Finance Manager. orderId: the Order Book order it answers.
 async function writeByBuyer(req, res) {
   const b = req.body || {};
-  const schoolRow = await db('schools').where({ id: Number(b.schoolId) || 0 }).first('id', 'name');
-  if (!schoolRow) throw new HttpError(400, 'Choose the school this requisition is for.');
+  // 2026-11-25: buying that starts at the buying office for the administration (car spares...) has NO school and no Order Book.
+  const forAdmin = b.admin === true;
+  const schoolRow = forAdmin ? { id: null, name: 'Administration' } : await db('schools').where({ id: Number(b.schoolId) || 0 }).first('id', 'name');
+  if (!schoolRow) throw new HttpError(400, 'Choose the school this requisition is for, or choose "Administration (no school)".');
+  if (forAdmin && b.orderId) throw new HttpError(400, 'An Order Book order is for a school. Choose the school.');
   const f = readForm(req.user, b, schoolRow.name);
   f.kind = b.kind === 'academic' ? 'academic' : 'general';
   const missing = f.lines.filter((l) => l.line_total === null).map((l) => l.item_name);
@@ -343,7 +346,7 @@ async function writeByBuyer(req, res) {
       await trx('orders').where({ id: order.id }).update({ status: 'requisition', requisition_id: rid, keeper_by: req.user.id, keeper_at: trx.fn.now() });
       await audit(req, 'order.requisition', `${order.number}: ${req.user.full_name} wrote ${number} for it`, { schoolId: order.school_id, detail: { orderId: order.id, requisitionId: rid, userId: order.written_by } }, trx);
     }
-    await audit(req, 'requisition.create', `${number}: ${f.applicant} (${ROLES[req.user.role].label}) asks for ${sum(f.lines)} for ${schoolRow.name}${order ? ` (order ${order.number})` : ''}${priceList ? `, prices from ${priceList.number}` : ''}. Waiting for the Assistant Accountant to check it`,
+    await audit(req, 'requisition.create', `${number}: ${f.applicant} (${ROLES[req.user.role].label}) asks for ${sum(f.lines)} for ${forAdmin ? 'the administration' : schoolRow.name}${order ? ` (order ${order.number})` : ''}${priceList ? `, prices from ${priceList.number}` : ''}. Waiting for the Assistant Accountant to check it`,
       { schoolId: schoolRow.id, detail: { requisitionId: rid } }, trx);
     return rid;
   });
@@ -650,7 +653,7 @@ router.post('/:id/correct', requirePage('requisitions', 'f'), async (req, res) =
 // The Manager may stop a requisition that is still with the school or the store-keeper (with a reason).
 router.post('/:id/stop', requirePage('requisitions', 'f'), async (req, res) => {
   const note = clean(req.body?.note, 300);
-  if (!MONEY_APPROVERS.includes(req.user.role)) throw new HttpError(403, 'Only the Manager or the Finance Manager can stop a requisition.');
+  if (!req.user.canApproveMoney) throw new HttpError(403, 'Only the person who approves money now can stop a requisition.');
   if (!note) throw new HttpError(400, 'Write why it is stopped, so the school knows.');
   await db.transaction(async (trx) => {
     const r = await trx('requisitions').where({ id: Number(req.params.id) || 0 }).forUpdate().first();

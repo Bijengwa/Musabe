@@ -66,7 +66,7 @@ publicRouter.get('/:type/:id/:code', async (req, res) => {
   const sigs = await db('document_signatures').where({ doc_type: type, doc_id: id }).orderBy('id').select('step', 'user_name', 'role', 'signed_at', 'acting');
   let info;
   if (type === 'requisition') {
-    const r = await db('requisitions as r').join('schools as s', 's.id', 'r.school_id').where('r.id', id).first('r.number', 'r.status', 'r.department', 'r.applicant_name', 's.name as school', 'r.requested_at');
+    const r = await db('requisitions as r').leftJoin('schools as s', 's.id', 'r.school_id').where('r.id', id).first('r.number', 'r.status', 'r.department', 'r.applicant_name', 's.name as school', 'r.requested_at');
     info = { number: r.number, title: 'Payment requisition', school: r.school, department: r.department, applicant: r.applicant_name, status: r.status, date: r.requested_at, amount: await docs.amountOf(type, id) };
   } else {
     const p = await db('payment_requests').where({ id }).first('number', 'status', 'payee_name', 'requested_at');

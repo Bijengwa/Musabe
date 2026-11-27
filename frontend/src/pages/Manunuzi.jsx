@@ -10,6 +10,7 @@ import { NewItem } from './Store';
 import { PinBox, SealBadge, SealQR } from '../components/signing';
 import { DeliveryLabelsButton, PrintButton } from '../components/barcode';
 import { fmtDate } from '../components/paper';
+import { inWords } from '../components/words';
 import { SupplierPick } from './Suppliers';
 import './requisition.css';
 
@@ -64,7 +65,7 @@ export default function Manunuzi() {
       <div className="rq-sheet">
         <div className="rq-top"><img src="/musabe-logo.png" alt="" /><div><h2 style={{ margin: 0 }}>MUSABE SCHOOLS</h2><div className="rq-small">P.O. Box 5154, BUGANDO, MWANZA</div></div></div>
         <div className="rq-title">Fomu ya Manunuzi ya Kila Siku</div>
-        <div className="rq-line"><span className="rq-no">For <b>{r.number}</b> · {r.school}</span><span className="rq-field" style={{ flex: '0 1 240px' }}><span>Date</span><span className="rq-val">{dmy()}</span></span></div>
+        <div className="rq-line"><span className="rq-no">For <b>{r.number}</b> · {r.school || 'Administration (no school)'}</span><span className="rq-field" style={{ flex: '0 1 240px' }}><span>Date</span><span className="rq-val">{dmy()}</span></span></div>
         <div className="rq-line"><span className="rq-field"><span>FEDHA KUTOKA OFISINI</span><b>TSh {tsh(float)}</b></span></div>
         <div className="rq-line" style={{ display: 'block' }}><span className="rq-small">DUKA / SUPPLIER</span><SupplierPick value={sp} onChange={setSp} allowCredit={false} allowLpo={false} /></div>
         {buyers.length > 0 && <div className="rq-line"><label className="rq-field"><span>WENT WITH (not required)</span><select value={wentWith} onChange={(e) => setWentWith(e.target.value)} aria-label="Went with" style={{ flex: 1, border: 0, borderBottom: '1.5px dotted #2745a8', fontWeight: 600 }}>
@@ -90,7 +91,7 @@ export default function Manunuzi() {
       </div>
       <div className="rq-actions"><ErrorNote error={error} />
         {balance < 0 && <p className="rq-note bad">You spent TSh {tsh(-balance)} more than the office gave.</p>}
-        <div className="row"><button className="btn p" disabled={!ready || supplier.trim().length < 3} onClick={() => setAsk(true)}>Sign and send to Mapokezi</button>{supplier.trim().length < 3 && <span className="small muted">Write the shop / supplier first.</span>}</div></div>
+        <div className="row"><button className="btn p" disabled={!ready} onClick={() => setAsk(true)}>Sign and send to Mapokezi</button><span className="small muted">The shop name is not required (you may buy in several shops).</span></div></div>
       {adding && <NewItem d={store} onClose={() => setAdding(null)} onSaved={(i) => { set(adding, 'itemId', i.id); loadItems(); setAdding(null); }} />}
       {ask && <PinBox type="purchase" id={0} title="Sign: what you bought" onCancel={() => setAsk(false)} onConfirm={save} />}
     </div>
@@ -111,6 +112,8 @@ export function ManunuziView() {
   const [seen, setSeen] = useState({});
   const [note, setNote] = useState('');
   const [back, setBack] = useState('');
+  const [method, setMethod] = useState('cash');
+  const [chequeNo, setChequeNo] = useState('');
   const [noRc, setNoRc] = useState(false);
   const [noRcWhy, setNoRcWhy] = useState('');
   const [ask, setAsk] = useState(null);
@@ -123,9 +126,11 @@ export function ManunuziView() {
   const sg = p.signs || {};
   const signWent = async ({ pin, smsCode }) => { await api.post(`/purchases/${p.id}/went-with`, { pin, smsCode }); toast(`${p.number} signed`); setAsk(null); await load(); };
   const check = async ({ pin, smsCode }) => { await api.post(`/purchases/${p.id}/check`, { note, noReceipt: noRc, noReceiptReason: noRc ? noRcWhy : undefined, pin, smsCode, lines: p.lines.map((l) => ({ lineId: l.id, countedQty: Number(seen[l.id].qty || 0), note: seen[l.id].note })) }); toast(`${p.number} checked and signed`); setAsk(null); await load(); };
-  const settle = async ({ pin, smsCode }) => { await api.post(`/purchases/${p.id}/decide`, { approve: true, note, returnedAmount: back, pin, smsCode }); toast(`${p.number} closed: goods go to ${p.school?.short || 'the school'}`); setAsk(null); await load(); };
+  const settle = async ({ pin, smsCode }) => { await api.post(`/purchases/${p.id}/decide`, { approve: true, note, returnedAmount: back, method, chequeNo, pin, smsCode }); toast(`${p.number} closed: goods go to ${p.school?.short || 'the school'}`); setAsk(null); await load(); };
+  const acheck = async ({ pin, smsCode }) => { await api.post(`/purchases/${p.id}/acheck`, { approve: true, note, pin, smsCode }); toast(`${p.number} checked and signed`); setAsk(null); setNote(''); await load(); };
+  const approveIt = async ({ pin, smsCode }) => { await api.post(`/purchases/${p.id}/approve`, { approve: true, note, pin, smsCode }); toast(`${p.number} approved`); setAsk(null); setNote(''); await load(); };
   const send = async () => { try { await api.post(`/purchases/${p.id}/send`, {}); toast(`${p.number}: sent to ${p.school?.short || 'the school'}. Print the QR labels.`); await load(); } catch (e) { setError(e.message); } };
-  const reject = async () => { try { await api.post(`/purchases/${p.id}/decide`, { approve: false, note }); toast(`${p.number} rejected`); await load(); } catch (e) { setError(e.message); } };
+  const reject = async () => { try { await api.post(`/purchases/${p.id}/${p.stage === 'acheck' ? 'acheck' : p.stage === 'manager' ? 'approve' : 'decide'}`, { approve: false, note }); toast(`${p.number} rejected`); await load(); } catch (e) { setError(e.message); } };
   return (
     <div className="rq-wrap">
       <div className="rq-bar"><Link to="/purchases" className="btn sm">← All purchases</Link><span className={`pill ${p.status === 'confirmed' ? 'ok' : p.status === 'rejected' ? 'bad' : 'warn'}`}>{p.statusLabel}</span><SealBadge seal={p.seal} /><span className="grow" />
@@ -159,28 +164,58 @@ export function ManunuziView() {
           <Sg label="Jina la Mnunuzi + Sahihi" s={sg.bought} hint="" />
           {p.wentWith && <Sg label="Went with (Sahihi)" s={sg.wentWith} hint={p.wentWith.signedAt ? '' : `waiting for ${p.wentWith.name}`} />}
           <Sg label="Imeidhinishwa (Mapokezi)" s={sg.checked} hint={p.status === 'pending' ? 'waiting' : ''} />
-          <Sg label={p.floatAmount != null ? 'Money back received (Cashier)' : 'Confirmed (accountant office)'} s={sg.settled || sg.confirmed} hint={p.status === 'checked' ? 'waiting' : p.status === 'confirmed' ? 'nothing to give back' : ''} />
+          {p.floatAmount != null && <Sg label="Checked (Assistant Accountant)" s={sg.acheck} hint={p.stage === 'acheck' ? 'waiting' : ''} />}
+          {p.floatAmount != null && <Sg label="Approved (Manager / Finance Manager)" s={sg.approved} hint={p.stage === 'manager' ? 'waiting' : ''} />}
+          <Sg label={p.floatAmount != null ? 'Payment voucher and change (Cashier)' : 'Confirmed (accountant office)'} s={sg.settled || sg.confirmed} hint={p.stage === 'voucher' ? 'waiting' : ''} />
         </div>
       </div>
+      {p.floatAmount != null && (p.stage === 'voucher' || p.payMethod) && (
+        <div className="rq-sheet">
+          <div className="rq-top"><img src="/musabe-logo.png" alt="" /><div><h2 style={{ margin: 0 }}>KARAGWE MARKETING COMPANY LIMITED</h2><b>MUSABE SCHOOLS</b><div className="rq-small">P.O BOX 5154 MWANZA</div></div></div>
+          <div className="rq-title">Cheque / Cash Payment Voucher</div>
+          <div className="rq-line"><span className="rq-no">For <b style={{ color: '#c01818' }}>{p.number}</b>{p.requisition ? ` · ${p.requisition.number}` : ''}</span>
+            <span className="rq-field" style={{ flex: '0 1 240px' }}><span>Date</span><span className="rq-val">{p.decidedAt ? fmtDate(p.decidedAt) : dmy()}</span></span></div>
+          <div className="rq-line"><span className="rq-field"><span>Paid to / supplier</span><span className="rq-val">{p.supplier}</span></span>
+            <span className="rq-field" style={{ flex: '0 1 240px' }}><span>By</span><b>{p.payMethod ? (p.payMethod === 'cheque' ? `Cheque${p.chequeNo ? ` No. ${p.chequeNo}` : ''}` : 'Cash') : method === 'cheque' ? `Cheque${chequeNo ? ` No. ${chequeNo}` : ''}` : 'Cash'}</b></span></div>
+          <div className="tw"><table className="rq-t">
+            <thead><tr><th>DETAIL</th><th className="n" style={{ width: 170 }}>AMOUNT (TSh)</th></tr></thead>
+            <tbody>
+              <tr><td>Money given by the Cashier</td><td className="n">{tsh(float)}</td></tr>
+              <tr><td>Real cost of what was bought (counted by Mapokezi)</td><td className="n"><b>{tsh(p.actualAmount ?? worth)}</b></td></tr>
+              <tr><td>Change to give back to the Cashier{expected < 0 ? ' (he spent more than he was given: the office settles the difference)' : ''}</td><td className="n">{tsh(Math.max(p.balanceExpected ?? expected, 0))}</td></tr>
+              {p.returnedAmount != null && <tr><td>Change received</td><td className="n"><b>{tsh(p.returnedAmount)}</b></td></tr>}
+            </tbody>
+            <tfoot><tr><td><b>TOTAL PAID FOR THE GOODS</b></td><td className="n"><b>{tsh(p.actualAmount ?? worth)}</b></td></tr></tfoot>
+          </table></div>
+          <div className="rq-line" style={{ marginTop: 10 }}><span className="rq-field"><span>Total in words</span><b>{inWords(p.actualAmount ?? worth)}</b></span></div>
+          <p className="rq-small" style={{ margin: '6px 0 0' }}>Real amounts, not estimates. The Assistant Accountant checked it, the Manager / Finance Manager approved it, and the Cashier writes this voucher.</p>
+        </div>
+      )}
       <SealQR type="purchase" id={p.id} seal={p.seal} />
       <div className="rq-actions"><ErrorNote error={error} />
-        {(p.canCheck || p.canSettle || p.canDecide || p.canReject) && <label>Note {p.canCheck ? '(needed if some came fewer)' : '(needed to reject, or if the money back is different)'}<input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} /></label>}
+        {(p.canCheck || p.canAcheck || p.canApprove || p.canSettle || p.canDecide || p.canReject) && <label>Note {p.canCheck ? '(needed if some came fewer)' : '(needed to reject, or if the money back is different)'}<input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} /></label>}
         {p.canCheck && (
           <div className="stack" style={{ gap: 6 }}>
             <label style={{ display: 'flex', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'flex-start' }}><input type="checkbox" checked={noRc} onChange={(e) => setNoRc(e.target.checked)} style={{ width: 'auto' }} /><b>No receipt came with these goods</b></label>
             {noRc && <label>Why is there no receipt? (the Finance Manager, the Manager and the Director are told)<input value={noRcWhy} maxLength={300} onChange={(e) => setNoRcWhy(e.target.value)} placeholder="e.g. the shop will bring the invoice on Monday" /></label>}
           </div>
         )}
-        {p.canSettle && <label>Money the buyer gave back (TSh). It should be {tsh(Math.max(expected, 0))}<input inputMode="numeric" value={back} onChange={(e) => setBack(digits(e.target.value))} /></label>}
+        {p.canSettle && <div className="fg">
+          <label>Paid by<select value={method} onChange={(e) => setMethod(e.target.value)}><option value="cash">Cash</option><option value="cheque">Cheque</option></select></label>
+          {method === 'cheque' && <label>Cheque number<input value={chequeNo} maxLength={40} onChange={(e) => setChequeNo(e.target.value)} /></label>}
+        </div>}
+        {p.canSettle && <label>Change the buyer gave back (TSh). It should be {tsh(Math.max(expected, 0))}<input inputMode="numeric" value={back} onChange={(e) => setBack(digits(e.target.value))} /></label>}
         {p.wentWith && !p.wentWith.signedAt && p.status === 'pending' && !p.canSignWentWith && <p className="small muted" style={{ margin: 0 }}>Mapokezi checks after {p.wentWith.name} signs that he went too.</p>}
         <div className="row">
           {p.canSignWentWith && <button className="btn p" onClick={() => setAsk('wentwith')}>I went to the market too: sign</button>}
           {p.canReject && <button className="btn danger" disabled={!note.trim()} onClick={reject}>Reject</button>}
           {p.canCheck && <button className="btn p" disabled={noRc && noRcWhy.trim().length < 5} onClick={() => setAsk('check')}>I checked: sign</button>}
           {p.canSend && <button className="btn p" onClick={send}>Send to {p.school?.short || 'the school'}</button>}
-          {p.canDecide && <button className="btn p" disabled={p.canSettle && back === ''} onClick={() => setAsk('settle')}>{p.canSettle ? 'I received the money: sign and close' : 'Confirm'}</button>}
+          {p.canAcheck && <button className="btn p" onClick={() => setAsk('acheck')}>I checked the prices and sums: sign</button>}
+          {p.canApprove && <button className="btn p" onClick={() => setAsk('approve')}>Approve: sign</button>}
+          {p.canDecide && <button className="btn p" disabled={p.canSettle && (back === '' || (method === 'cheque' && !chequeNo.trim()))} onClick={() => setAsk('settle')}>{p.canSettle ? 'I wrote the voucher and received the change: sign and close' : 'Confirm'}</button>}
         </div></div>
-      {ask && <PinBox type="purchase" id={p.id} title={ask === 'check' ? 'Sign: goods checked' : ask === 'wentwith' ? 'Sign: I went to the market too' : 'Sign: money back received'} onCancel={() => setAsk(null)} onConfirm={ask === 'check' ? check : ask === 'wentwith' ? signWent : settle} />}
+      {ask && <PinBox type="purchase" id={p.id} title={ask === 'check' ? 'Sign: goods checked' : ask === 'acheck' ? 'Sign: prices and sums checked' : ask === 'approve' ? 'Sign: approved' : ask === 'wentwith' ? 'Sign: I went to the market too' : 'Sign: payment voucher and change'} onCancel={() => setAsk(null)} onConfirm={ask === 'check' ? check : ask === 'acheck' ? acheck : ask === 'approve' ? approveIt : ask === 'wentwith' ? signWent : settle} />}
     </div>
   );
 }

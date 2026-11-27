@@ -9,13 +9,13 @@ import { GuardiansEditor } from './guardians';
 import { emptyGuardian, fromServer, guardianProblems, guardiansBody } from './guardianRules';
 
 // A new student starts with two empty guardian rows (e.g. father and mother). More can be added; empty rows are ignored.
-const EMPTY = () => ({ admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', classId: '', guardians: [emptyGuardian(), emptyGuardian()], note: '' });
+const EMPTY = () => ({ admissionNo: '', firstName: '', middleName: '', lastName: '', sex: '', residence: '', classId: '', guardians: [emptyGuardian(), emptyGuardian()], note: '' });
 
 export default function StudentForm({ student, classes, school, defaultClass, initial, extra, id = 'stform', onSaved, onBusy }) {
   const s = student;
   const [f, setF] = useState(() => (s ? {
     admissionNo: s.admissionNo, firstName: s.firstName, middleName: s.middleName || '', lastName: s.lastName,
-    sex: s.sex, classId: String(s.classId || ''),
+    sex: s.sex, residence: s.residence || '', classId: String(s.classId || ''),
     guardians: s.guardians?.length ? fromServer(s.guardians) : [emptyGuardian()], note: s.note || '',
   } : { ...EMPTY(), ...(initial || {}), classId: defaultClass || '' }));
   const [error, setError] = useState('');
@@ -73,6 +73,7 @@ export default function StudentForm({ student, classes, school, defaultClass, in
         <label>Admission No.<input value={f.admissionNo} onChange={(e) => set('admissionNo', e.target.value)} required className="mono" /></label>
         <div className="lab">Sex<div className="seg">{[['M', 'Boy'], ['F', 'Girl']].map(([k, t]) => <button type="button" key={k} className={f.sex === k ? 'on' : ''} onClick={() => set('sex', k)}>{t}</button>)}</div></div>
       </div>
+      <div className="fg"><div className="lab">Day or boarding<div className="seg">{[['day', 'Day scholar'], ['boarding', 'Boarding']].map(([k, t]) => <button type="button" key={k} className={f.residence === k ? 'on' : ''} onClick={() => set('residence', f.residence === k ? '' : k)}>{t}</button>)}</div></div></div>
       <label>Class<select value={f.classId} onChange={(e) => set('classId', e.target.value)} required={s?.status !== 'left'}>
         <option value="">Choose class</option>{classes.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{classOption(c)}</option>)}
       </select></label>

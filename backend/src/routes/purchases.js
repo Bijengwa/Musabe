@@ -20,7 +20,7 @@ const express = require('express');
 const db = require('../db');
 const { HttpError, audit } = require('../lib/util');
 const { requireAuth, requirePage } = require('../auth/session');
-const { PURCHASE_CONFIRMERS } = require('../auth/roles');
+const { PURCHASE_CONFIRMERS, ROLES } = require('../auth/roles');
 const { sendExcel } = require('../lib/excel');
 const stock = require('../lib/stock');
 const seal = require('../lib/seal');
@@ -34,13 +34,18 @@ const clean = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, m
 const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
 const money = (n) => `TSh ${Number(n).toLocaleString('en-GB')}`;
 const STATUS = { ordered: 'Ordered: waiting for the goods', tosend: 'Confirmed: the store-keeper sends it to the school', pending: 'Waiting for Mapokezi to check', checked: 'Checked by Mapokezi: waiting for the Cashier (money back)', confirmed: 'Confirmed', rejected: 'Rejected' };
+// Buying with office money (2026-11-25): Mapokezi accepts the goods -> the Assistant Accountant checks -> the Manager (or Finance Manager)
+// approves -> the Cashier writes the Cheque / Cash Payment Voucher with the REAL amounts and receives the change. Only then is it confirmed.
+const STAGE = { acheck: 'Checked by Mapokezi: waiting for the Assistant Accountant', manager: 'Checked by the Assistant Accountant: waiting for the Manager / Finance Manager', voucher: 'Approved: waiting for the Cashier to write the payment voucher' };
+const stageOf = (p) => (p.status !== 'checked' || !p.float_id ? null : !p.acheck_at ? 'acheck' : !p.mgr_at ? 'manager' : 'voucher');
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
 
 function list(f = {}) {
   const q = db('purchases as p').join('users as u', 'u.id', 'p.created_by').leftJoin('users as d', 'd.id', 'p.decided_by')
     .leftJoin('users as k', 'k.id', 'p.checked_by').leftJoin('requisitions as r', 'r.id', 'p.requisition_id').leftJoin('schools as rs', 'rs.id', 'r.school_id')
     .leftJoin('schools as ps', 'ps.id', 'p.school_id').leftJoin('deliveries as dl', 'dl.id', 'p.delivery_id').leftJoin('users as ww', 'ww.id', 'p.went_with')
-    .leftJoin('lpos as lp', 'lp.id', 'p.lpo_id').leftJoin('users as sb', 'sb.id', 'p.sent_by');
+    .leftJoin('lpos as lp', 'lp.id', 'p.lpo_id').leftJoin('users as sb', 'sb.id', 'p.sent_by')
+    .leftJoin('users as ac', 'ac.id', 'p.acheck_by').leftJoin('users as mg', 'mg.id', 'p.mgr_by');
   if (Number(f.school)) q.where('p.school_id', Number(f.school));
   if (f.status && STATUS[f.status]) q.where('p.status', f.status);
   if (f.q) { const w = `%${clean(f.q, 60)}%`; q.where((x) => x.whereILike('p.supplier', w).orWhereILike('p.number', w).orWhereILike('p.invoice_no', w)); }
@@ -48,16 +53,16 @@ function list(f = {}) {
   if (isDate(f.to)) q.where('p.bought_on', '<=', f.to);
   return q.select('p.*', db.raw('p.bought_on::text as bought'), 'u.full_name as by_name', 'd.full_name as decided_by_name', 'k.full_name as checked_by_name',
     'r.number as requisition_no', 'rs.short_name as requisition_school', db.raw('p.expected_on::text as expected'), 'ps.short_name as school', 'ps.name as school_name', 'ps.code as school_code',
-    'dl.number as delivery_no', 'dl.status as delivery_status', 'ww.full_name as went_with_name', 'lp.number as lpo_no', 'sb.full_name as sent_by_name', db.raw('(select amount from payment_requests f where f.id = p.float_id) as float_amount'));
+    'dl.number as delivery_no', 'dl.status as delivery_status', 'ww.full_name as went_with_name', 'lp.number as lpo_no', 'sb.full_name as sent_by_name', 'ac.full_name as acheck_name', 'mg.full_name as mgr_name', db.raw('(select amount from payment_requests f where f.id = p.float_id) as float_amount'));
 }
 async function withLines(rows, user) {
   const lines = rows.length ? await db('purchase_lines').whereIn('purchase_id', rows.map((r) => r.id)).orderBy('id') : [];
   return rows.map((p) => ({
-    school: p.school ? { id: p.school_id, name: p.school_name, short: p.school, code: p.school_code } : null, ordered: p.ordered, expectedOn: p.expected,
+    school: p.school ? { id: p.school_id, name: p.school_name, short: p.school, code: p.school_code } : null, forAdmin: !!p.for_admin, ordered: p.ordered, expectedOn: p.expected,
     waitingGoods: p.ordered && p.status === 'pending',
     delivery: p.delivery_id ? { id: p.delivery_id, number: p.delivery_no, status: p.delivery_status } : null,
     id: p.id, number: p.number, supplier: p.supplier, supplierId: p.supplier_id, invoiceNo: p.invoice_no, boughtOn: p.bought, note: p.note, total: Number(p.total), status: p.status,
-    statusLabel: p.ordered && p.status === 'pending' ? STATUS.ordered : p.status === 'confirmed' && p.school_id && !p.delivery_id ? STATUS.tosend : STATUS[p.status],
+    statusLabel: stageOf(p) ? STAGE[stageOf(p)] : p.ordered && p.status === 'pending' ? STATUS.ordered : p.status === 'confirmed' && p.school_id && !p.delivery_id ? STATUS.tosend : STATUS[p.status],
     lpo: p.lpo_id ? { id: p.lpo_id, number: p.lpo_no } : null, onCredit: p.on_credit, noReceipt: p.no_receipt ? { reason: p.no_receipt_reason } : null,
     sentBy: p.sent_by_name, toSend: p.status === 'confirmed' && !!p.school_id && !p.delivery_id,
     canSend: p.status === 'confirmed' && !!p.school_id && !p.delivery_id && user.role === 'storekeeper',
@@ -69,9 +74,16 @@ async function withLines(rows, user) {
     wentWith: p.went_with ? { id: p.went_with, name: p.went_with_name, signedAt: p.went_with_signed_at } : null,
     canSignWentWith: p.status === 'pending' && p.went_with === user.id && !p.went_with_signed_at,
     canCheck: p.status === 'pending' && user.role === 'mapokezi' && (!p.went_with || !!p.went_with_signed_at),
-    canSettle: p.status === 'checked' && !!p.float_id && user.role === 'cashier',
-    canDecide: p.status === 'checked' && (p.float_id ? user.role === 'cashier' : PURCHASE_CONFIRMERS.includes(user.role)) && p.created_by !== user.id,
-    canReject: ['pending', 'checked'].includes(p.status) && ((p.float_id ? user.role === 'cashier' : PURCHASE_CONFIRMERS.includes(user.role)) || (user.role === 'mapokezi' && p.status === 'pending')),
+    stage: stageOf(p),
+    acheck: p.acheck_at ? { by: p.acheck_name, at: p.acheck_at, note: p.acheck_note } : null,
+    approval: p.mgr_at ? { by: p.mgr_name, at: p.mgr_at, note: p.mgr_note } : null,
+    payMethod: p.pay_method, chequeNo: p.cheque_no, actualAmount: p.actual_amount == null ? null : Number(p.actual_amount),
+    canAcheck: stageOf(p) === 'acheck' && user.role === 'aacc' && p.created_by !== user.id,
+    canApprove: stageOf(p) === 'manager' && user.canApproveMoney && p.created_by !== user.id,
+    canSettle: stageOf(p) === 'voucher' && user.role === 'cashier',
+    canDecide: p.status === 'checked' && (p.float_id ? stageOf(p) === 'voucher' && user.role === 'cashier' : PURCHASE_CONFIRMERS.includes(user.role)) && p.created_by !== user.id,
+    canReject: (p.status === 'checked' && p.float_id ? (stageOf(p) === 'acheck' && user.role === 'aacc') || (stageOf(p) === 'manager' && user.canApproveMoney) || (stageOf(p) === 'voucher' && user.role === 'cashier')
+      : ['pending', 'checked'].includes(p.status) && PURCHASE_CONFIRMERS.includes(user.role)) || (user.role === 'mapokezi' && p.status === 'pending'),
     canCancel: p.status === 'pending' && p.ordered && p.created_by === user.id,
     lines: lines.filter((l) => l.purchase_id === p.id).map((l) => ({ id: l.id, itemId: l.item_id, item: l.item_name, unit: l.unit, qty: l.qty, unitCost: l.unit_cost,
       amount: Number(l.amount), confirmed: l.confirmed_qty, note: l.note })),
@@ -92,7 +104,7 @@ const one = async (id, user) => {
   const out = (await withLines([p], user))[0];
   const sigs = await seal.signaturesOf(db, 'purchase', [p.id]);
   const sg = (step) => { const x = sigs.filter((q) => q.step === step).pop(); return x ? { by: x.user_name, at: x.signed_at, image: x.image } : null; };
-  return { ...out, signs: { bought: sg('bought'), wentWith: sg('wentwith'), checked: sg('checked'), settled: sg('settled'), confirmed: sg('confirmed') }, seal: await seal.seal(db, 'purchase', p.id, await docs.purchase(db, p.id)) };
+  return { ...out, signs: { bought: sg('bought'), wentWith: sg('wentwith'), checked: sg('checked'), acheck: sg('acheck'), approved: sg('mgrok'), settled: sg('settled'), confirmed: sg('confirmed') }, seal: await seal.seal(db, 'purchase', p.id, await docs.purchase(db, p.id)) };
 };
 const signPre = async (req, id, amount) => seal.checkSigning(req.user, { pin: req.body?.pin, smsCode: req.body?.smsCode, type: 'purchase', id: Number(id) || 0, amount });
 const signStamp = async (trx, req, id, step) => seal.stamp(trx, req, 'purchase', id, step, await docs.purchase(trx, id));
@@ -129,7 +141,8 @@ router.post('/', requirePage('purchases', 'f'), async (req, res) => {
   // A supplier from the list (2026-11-21), or a shop name typed (small shops bought from once).
   const sup = b.supplierId ? await db('suppliers').where({ id: Number(b.supplierId) || 0, active: true }).first() : null;
   if (b.supplierId && !sup) throw new HttpError(400, 'That supplier was not found. Reload the page.');
-  const supplier = sup ? sup.name : clean(b.supplier, 120).toUpperCase();
+  // The shop is NOT required (2026-11-25): a buyer may buy in several shops. Empty = "VARIOUS SHOPS".
+  const supplier = sup ? sup.name : clean(b.supplier, 120).toUpperCase() || 'VARIOUS SHOPS';
   // From an authorised LPO: same supplier; the goods come on the LPO's terms.
   const lpo = b.lpoId ? await db('lpos').where({ id: Number(b.lpoId) || 0 }).first() : null;
   if (b.lpoId && !lpo) throw new HttpError(400, 'That LPO was not found.');
@@ -148,7 +161,6 @@ router.post('/', requirePage('purchases', 'f'), async (req, res) => {
   }
   const ordered = b.ordered === true;
   const expectedOn = ordered && isDate(b.expectedOn) ? b.expectedOn : null;
-  if (supplier.length < 3) throw new HttpError(400, 'Type the shop or supplier name (where you bought).');
   if (boughtOn > today()) throw new HttpError(400, 'The buying date cannot be in the future.');
   const want = new Map();
   for (const l of Array.isArray(b.lines) ? b.lines : []) {
@@ -163,11 +175,18 @@ router.post('/', requirePage('purchases', 'f'), async (req, res) => {
   const items = await db('items').whereIn('id', [...want.keys()]).where({ active: true });
   if (items.length !== want.size) throw new HttpError(400, 'One of the items is not in the list. Reload the page.');
   // The school it goes to (a requisition decides it). Things for sale must be sold in that school.
+  // 2026-11-25: buying can also start at the buying office for the administration (car spares...): no school, no delivery, no stock.
   let schoolId = Number(b.schoolId) || null;
-  if (b.requisitionId) schoolId = (await db('requisitions').where({ id: Number(b.requisitionId) || 0 }).first('school_id'))?.school_id ?? schoolId;
+  let forAdmin = b.admin === true && !b.requisitionId;
+  if (b.requisitionId) {
+    const rq = await db('requisitions').where({ id: Number(b.requisitionId) || 0 }).first('school_id');
+    if (rq && !rq.school_id) forAdmin = true;
+    schoolId = rq?.school_id ?? schoolId;
+  }
+  if (forAdmin) schoolId = null;
   const school = schoolId ? await db('schools').where({ id: schoolId, active: true }).first() : null;
-  if (!school) throw new HttpError(400, 'Choose the school these goods go to.');
-  await require('./stock').readLines([...want].map(([itemId, x]) => ({ itemId, qty: x.qty })), school.id);
+  if (!school && !forAdmin) throw new HttpError(400, 'Choose the school these goods go to, or choose "Administration (no school)".');
+  if (school) await require('./stock').readLines([...want].map(([itemId, x]) => ({ itemId, qty: x.qty })), school.id);
   const lines = items.map((i) => ({ item_id: i.id, item_name: i.name, unit: i.unit, qty: want.get(i.id).qty, unit_cost: want.get(i.id).cost, amount: want.get(i.id).qty * want.get(i.id).cost }));
   const total = lines.reduce((s, l) => s + l.amount, 0);
   await signPre(req, 0, total);
@@ -183,7 +202,7 @@ router.post('/', requirePage('purchases', 'f'), async (req, res) => {
     const number = stock.paperNo('PUR', pid);
     if (onCredit && rqn && (await trx('payment_requests').where({ requisition_id: rqn.id, kind: 'float', status: 'paid' }).first('id'))) throw new HttpError(400, 'The Cashier gave money for this requisition: it is bought with that money, not on credit.');
     await trx('purchases').insert({ id: pid, number, supplier, invoice_no: invoiceNo, supplier_id: sup?.id ?? lpo?.supplier_id ?? null, lpo_id: lpo?.id ?? null, on_credit: onCredit, bought_on: boughtOn, note: clean(b.note, 300) || null, total, created_by: req.user.id, went_with: wentWith?.id ?? null,
-      requisition_id: rqn?.id ?? null, school_id: school.id, ordered, expected_on: expectedOn,
+      requisition_id: rqn?.id ?? null, school_id: school?.id ?? null, for_admin: forAdmin, ordered, expected_on: expectedOn,
       float_id: rqn ? (await trx('payment_requests').where({ requisition_id: rqn.id, kind: 'float', status: 'paid' }).first('id'))?.id ?? null : null });
     await trx('purchase_lines').insert(lines.map((l) => ({ ...l, purchase_id: pid })));
     await signStamp(trx, req, pid, 'bought');
@@ -192,7 +211,7 @@ router.post('/', requirePage('purchases', 'f'), async (req, res) => {
       await trx('requisitions').where({ id: rqn.id }).update({ status: 'buying' });
       await audit(req, 'requisition.buying', `${rqn.number}: being bought on ${number}`, { schoolId: rqn.school_id, detail: { requisitionId: rqn.id, userId: rqn.requested_by } }, trx);
     }
-    await audit(req, 'purchase.create', `${number}: ${ordered ? 'ordered' : 'bought'} from ${supplier} for ${school.short_name}, ${money(total)}${onCredit ? ' ON CREDIT' : ''}${lpo ? ` (LPO ${lpo.number})` : ''}${rqn ? ` (for ${rqn.number})` : ''}: ${lines.map((l) => `${l.qty} ${l.unit} × ${l.item_name}`).join(', ')}. ${ordered ? `Expected ${expectedOn || 'soon'}; when it arrives Mapokezi checks it against the receipts` : 'Waiting for Mapokezi to check it against the receipts'}`,
+    await audit(req, 'purchase.create', `${number}: ${ordered ? 'ordered' : 'bought'} from ${supplier} for ${school ? school.short_name : 'the administration'}, ${money(total)}${onCredit ? ' ON CREDIT' : ''}${lpo ? ` (LPO ${lpo.number})` : ''}${rqn ? ` (for ${rqn.number})` : ''}: ${lines.map((l) => `${l.qty} ${l.unit} × ${l.item_name}`).join(', ')}. ${ordered ? `Expected ${expectedOn || 'soon'}; when it arrives Mapokezi checks it against the receipts` : 'Waiting for Mapokezi to check it against the receipts'}`,
       { detail: { purchaseId: pid } }, trx);
     return pid;
   });
@@ -250,18 +269,7 @@ router.post('/:id/check', requirePage('purchases', 'f'), async (req, res) => {
       await audit(req, 'purchase.no_receipt', `${p.number}: goods from ${p.supplier} (${money(p.total)}) came WITHOUT a receipt. Bought by ${buyer?.full_name || '—'}. Reason: ${noReceiptReason}`,
         { schoolId: p.school_id, detail: { purchaseId: p.id } }, trx);
     }
-    // Office money spent exactly: nothing to give back to the Cashier, so it closes now and the goods go to the school.
-    let closed = false;
-    if (p.float_id) {
-      const given = Number((await trx('payment_requests').where({ id: p.float_id }).first('amount'))?.amount || 0);
-      const worth = (await trx('purchase_lines').where({ purchase_id: p.id })).reduce((x, l) => x + Number(l.unit_cost) * (l.confirmed_qty ?? l.qty), 0);
-      if (given === worth) {
-        await finish(trx, req, { ...p, status: 'checked', checked_by: req.user.id }, { approve: true, note: 'Nothing to give back: closed when Mapokezi accepted the goods', returned: 0, auto: true });
-        closed = true;
-      }
-    }
-    if (closed) return;
-    await audit(req, 'purchase.check', `${p.number} (${p.supplier}) ${p.ordered ? 'arrived and ' : ''}checked by Mapokezi against the receipts${shorts.length ? `. Less than written: ${shorts.join('; ')}` : ': everything as written'}. ${p.float_id ? 'Waiting for the Cashier: the buyer gives back the money left' : 'Waiting for the accountant office'}`,
+    await audit(req, 'purchase.check', `${p.number} (${p.supplier}) ${p.ordered ? 'arrived and ' : ''}checked by Mapokezi against the receipts${shorts.length ? `. Less than written: ${shorts.join('; ')}` : ': everything as written'}. ${p.float_id ? 'Waiting for the Assistant Accountant, then the Manager, then the Cashier (payment voucher)' : 'Waiting for the accountant office'}`,
       { detail: { purchaseId: p.id, userId: p.created_by } }, trx);
   });
   res.json({ purchase: await one(req.params.id, req.user) });
@@ -278,6 +286,14 @@ router.post('/:id/decide', requirePage('purchases', 'f'), async (req, res) => {
   const writer = ['storekeeper', 'amanager'].includes(req.user.role);   // may cancel his own order (checked below)
   if (!approve && !confirmer && req.user.role !== 'mapokezi' && !writer) throw new HttpError(403, 'Your account is not allowed to do this.');
   const returned = b.returnedAmount === undefined || b.returnedAmount === '' ? null : Number(String(b.returnedAmount).replace(/[,\s]/g, ''));
+  // The Cheque / Cash Payment Voucher (the Cashier, for buying with office money): paid by cash or by cheque.
+  const method = clean(b.method, 10);
+  const voucher = { method: method || null, chequeNo: clean(b.chequeNo, 40) || null };
+  if (approve && req.user.role === 'cashier') {
+    if (!['cash', 'cheque'].includes(method)) throw new HttpError(400, 'Choose how it is paid on the voucher: cash or cheque.');
+    if (method === 'cheque' && !voucher.chequeNo) throw new HttpError(400, 'Write the cheque number.');
+    if (method === 'cash') voucher.chequeNo = null;
+  }
   if (approve) await signPre(req, req.params.id, await docs.amountOf('purchase', Number(req.params.id) || 0));
   await db.transaction(async (trx) => {
     const p = await trx('purchases').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
@@ -285,6 +301,7 @@ router.post('/:id/decide', requirePage('purchases', 'f'), async (req, res) => {
     if (approve && p.float_id && req.user.role !== 'cashier') throw new HttpError(403, 'This buying used money from the office: the Cashier confirms it, when the buyer gives back what is left.');
     if (approve && !p.float_id && req.user.role === 'cashier') throw new HttpError(403, 'The Cashier only confirms buying that used money from the office.');
     if (!['pending', 'checked'].includes(p.status)) throw new HttpError(409, `${p.number} was already ${p.status}.`);
+    if (approve && p.float_id && p.status === 'checked' && stageOf(p) !== 'voucher') throw new HttpError(409, `${p.number}: the Assistant Accountant and the Manager must approve first. Now: ${STAGE[stageOf(p)].toLowerCase()}.`);
     // The one who wrote an ORDER may cancel it while the goods have not come (the shop cannot supply, ...).
     const cancelOwnOrder = !approve && p.created_by === req.user.id && p.ordered && p.status === 'pending';
     if (p.created_by === req.user.id && !cancelOwnOrder) throw new HttpError(403, 'Nobody confirms or rejects their own purchase.');
@@ -292,7 +309,7 @@ router.post('/:id/decide', requirePage('purchases', 'f'), async (req, res) => {
     if (!confirmer && p.status !== 'pending') throw new HttpError(409, `${p.number} is already checked. Only the accountant office decides now.`);
     if (approve && p.status !== 'checked') throw new HttpError(409, `${p.number} must first be checked by Mapokezi.`);
     if (approve && p.checked_by === req.user.id) throw new HttpError(403, 'The one who counted cannot also confirm.');
-    await finish(trx, req, p, { approve, note, returned });
+    await finish(trx, req, p, { approve, note, returned, voucher });
   });
   res.json({ purchase: await one(req.params.id, req.user) });
 });
@@ -300,7 +317,7 @@ router.post('/:id/decide', requirePage('purchases', 'f'), async (req, res) => {
 
 // Confirm (goods go to the school, money settled) or reject a purchase. Used by the Cashier / Assistant Accountant,
 // by Mapokezi's reject, and by itself when Mapokezi accepts goods bought with office money and nothing is left to give back.
-async function finish(trx, req, p, { approve, note, returned, auto = false }) {
+async function finish(trx, req, p, { approve, note, returned, voucher, auto = false }) {
   const lines = await trx('purchase_lines').where({ purchase_id: p.id }).orderBy('id');
   let delivery = null;
   const rqn = p.requisition_id ? await trx('requisitions').where({ id: p.requisition_id }).forUpdate().first() : null;
@@ -311,6 +328,12 @@ async function finish(trx, req, p, { approve, note, returned, auto = false }) {
       await audit(req, 'requisition.arrived', `${rqn.number}: bought on ${p.number}. The store-keeper sends it to the school`, { schoolId: rqn.school_id, detail: { requisitionId: rqn.id, userId: rqn.requested_by } }, trx);
     }
     if (p.lpo_id) await trx('lpos').where({ id: p.lpo_id, status: 'authorised' }).update({ status: 'delivered' });
+  } else if (approve && p.for_admin) {
+    // For the administration: nothing goes to a school and no stock moves. The requisition is finished.
+    if (rqn && rqn.status === 'buying') {
+      await trx('requisitions').where({ id: rqn.id }).update({ status: 'done' });
+      await audit(req, 'requisition.done', `${rqn.number}: bought on ${p.number} for the administration`, { detail: { requisitionId: rqn.id, userId: rqn.requested_by } }, trx);
+    }
   } else if (approve) { // old purchases written before 2026-11-16 (no school): into the old main store
     for (const l of lines) {
       if (l.confirmed_qty > 0) await stock.move(trx, { schoolId: null, itemId: l.item_id, itemName: l.item_name, change: l.confirmed_qty, kind: 'buy', ref: p.number, refId: p.id, note: p.supplier, by: req.user.id });
@@ -323,7 +346,7 @@ async function finish(trx, req, p, { approve, note, returned, auto = false }) {
     const expected = given - worth;
     if (!Number.isInteger(returned) || returned < 0) throw new HttpError(400, 'Write how much money the buyer gave back (0 if nothing).');
     if (returned !== Math.max(expected, 0) && !note) throw new HttpError(400, `The money back should be TSh ${Math.max(expected, 0).toLocaleString('en-GB')}${expected < 0 ? ' (he spent more than he was given: the office settles the difference)' : ''}. Write a note why it is different.`);
-    settle = { balance_expected: expected, returned_amount: returned, settle_note: note };
+    settle = { balance_expected: expected, returned_amount: returned, settle_note: note, actual_amount: worth, pay_method: voucher?.method || null, cheque_no: voucher?.chequeNo || null };
   }
   await trx('purchases').where({ id: p.id }).update({ status: approve ? 'confirmed' : 'rejected', decided_by: auto ? null : req.user.id, decided_at: trx.fn.now(), decision_note: note,
     delivery_id: delivery?.id ?? null, ...settle });
@@ -338,6 +361,48 @@ async function finish(trx, req, p, { approve, note, returned, auto = false }) {
     if (!open) await trx('requisitions').where({ id: rqn.id }).update({ status: 'approved' });
   }
 }
+
+// Step 3a (2026-11-25): buying with office money. The Assistant Accountant checks the prices, the sums and Mapokezi's count.
+router.post('/:id/acheck', requirePage('purchases', 'f'), async (req, res) => {
+  if (req.user.role !== 'aacc') throw new HttpError(403, 'The Assistant Accountant checks this buying.');
+  const approve = req.body?.approve === true;
+  const note = clean(req.body?.note, 300) || null;
+  if (!approve && !note) throw new HttpError(400, 'Write why it is rejected, so the buyer knows.');
+  if (approve) await signPre(req, req.params.id, await docs.amountOf('purchase', Number(req.params.id) || 0));
+  await db.transaction(async (trx) => {
+    const p = await trx('purchases').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
+    if (!p) throw new HttpError(404, 'Purchase not found.');
+    if (stageOf(p) !== 'acheck') throw new HttpError(409, `${p.number} is not waiting for the Assistant Accountant.`);
+    if (p.created_by === req.user.id) throw new HttpError(403, 'Nobody checks their own buying.');
+    if (!approve) return finish(trx, req, p, { approve: false, note });
+    await trx('purchases').where({ id: p.id }).update({ acheck_by: req.user.id, acheck_at: trx.fn.now(), acheck_note: note });
+    await signStamp(trx, req, p.id, 'acheck');
+    await audit(req, 'purchase.acheck', `${p.number} (${p.supplier}, ${money(p.total)}) checked by the Assistant Accountant (${req.user.full_name})${note ? `: ${note}` : ''}. Waiting for the Manager or the Finance Manager`,
+      { detail: { purchaseId: p.id, userId: p.created_by } }, trx);
+  });
+  res.json({ purchase: await one(req.params.id, req.user) });
+});
+
+// Step 3b: the Manager (or the Finance Manager) approves what was really bought. The Cashier then writes the payment voucher.
+router.post('/:id/approve', requirePage('purchases', 'f'), async (req, res) => {
+  if (!req.user.canApproveMoney) throw new HttpError(403, 'Only the Manager (or, when he is away, the Assistant Manager or the Finance Manager) approves this buying.');
+  const approve = req.body?.approve === true;
+  const note = clean(req.body?.note, 300) || null;
+  if (!approve && !note) throw new HttpError(400, 'Write why it is rejected, so the buyer knows.');
+  if (approve) await signPre(req, req.params.id, await docs.amountOf('purchase', Number(req.params.id) || 0));
+  await db.transaction(async (trx) => {
+    const p = await trx('purchases').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
+    if (!p) throw new HttpError(404, 'Purchase not found.');
+    if (stageOf(p) !== 'manager') throw new HttpError(409, `${p.number} is not waiting for the ${ROLES[req.user.role].label}.`);
+    if (p.created_by === req.user.id) throw new HttpError(403, 'Nobody approves their own buying.');
+    if (!approve) return finish(trx, req, p, { approve: false, note });
+    await trx('purchases').where({ id: p.id }).update({ mgr_by: req.user.id, mgr_at: trx.fn.now(), mgr_note: note });
+    await signStamp(trx, req, p.id, 'mgrok');
+    await audit(req, 'purchase.approve', `${p.number} (${p.supplier}, ${money(p.total)}) approved by the ${ROLES[req.user.role].label} (${req.user.full_name})${note ? `: ${note}` : ''}. Waiting for the Cashier to write the payment voucher`,
+      { detail: { purchaseId: p.id, userId: p.created_by } }, trx);
+  });
+  res.json({ purchase: await one(req.params.id, req.user) });
+});
 
 // Step 4 (2026-11-21): the store-keeper sends the confirmed goods to the school, with the QR labels. The librarian checks and signs.
 router.post('/:id/send', requirePage('purchases', 'f'), async (req, res) => {

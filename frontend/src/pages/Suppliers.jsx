@@ -71,12 +71,11 @@ function SupplierList() {
       {lists && lists.length > 0 && (
         <Panel title="Latest price lists and proformas" flush>
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>No.</th><th className="stick">Supplier</th><th>Paper</th><th>Date</th><th>Valid until</th><th className="n">Items</th><th>Entered by</th><th /></tr></thead>
+            <thead><tr><th>No.</th><th className="stick">Supplier</th><th>Paper</th><th>Date</th><th>Valid until</th><th className="n">Items</th><th>Entered by</th></tr></thead>
             <tbody>{lists.slice(0, 10).map((l) => (
-              <tr key={l.id}><td className="mono small">{l.number}</td><td className="stick"><b>{l.supplier}</b></td><td>{l.kindLabel}{l.refNo ? ` ${l.refNo}` : ''}</td>
+              <tr key={l.id} onClick={() => setForm({ view: l })} style={{ cursor: 'pointer' }}><td className="mono small">{l.number}</td><td className="stick"><b>{l.supplier}</b></td><td>{l.kindLabel}{l.refNo ? ` ${l.refNo}` : ''}</td>
                 <td className="nowrap">{l.docDate}</td><td className="nowrap">{l.validUntil ? <span className={l.expired ? 'pill bad' : ''}>{l.validUntil}</span> : <span className="muted">—</span>}</td>
-                <td className="n">{l.lines.length}</td><td className="small">{l.by}</td>
-                <td><button className="btn sm" onClick={() => setForm({ view: l })}>Open</button></td></tr>
+                <td className="n">{l.lines.length}</td><td className="small">{l.by}</td></tr>
             ))}</tbody>
           </table></div>
         </Panel>

@@ -49,7 +49,7 @@ async function list(user, { q, category, status, id } = {}) {
     .filter((i) => allSchools(user) || by[i.id]) // school staff: only items sold in their school
     .map((i) => ({
       id: i.id, name: i.name, category: i.category, categoryLabel: LABEL[i.category],
-      genderPriced: i.gender_priced, active: i.active, updatedAt: i.updated_at, prices: by[i.id] || {},
+      genderPriced: i.gender_priced, active: i.active, sellable: i.sellable, updatedAt: i.updated_at, prices: by[i.id] || {},
     }));
 }
 
@@ -123,6 +123,7 @@ router.post('/', requirePage('items', 'f'), async (req, res) => {
   const id = await db.transaction(async (trx) => {
     const [{ id: newId }] = await trx('items').insert({ ...fields, created_by: req.user.id }).returning('id');
     const changes = await savePrices(trx, newId, prices, req.user.id, false);
+    if (Object.values(prices).some(Boolean)) await trx('items').where({ id: newId }).update({ sellable: true });
     const where = changes.length ? changes.map((c) => `${nameOf(schools, c.schoolId)} ${c.to}`).join('; ') : 'not sold anywhere yet';
     await audit(req, 'item.create', `Added item ${fields.name} (${where})`, { detail: { itemId: newId, schoolIds: changes.map((c) => c.schoolId) } }, trx);
     tellSchools(changes.map((c) => c.schoolId), trx);
@@ -143,6 +144,8 @@ router.patch('/:id', requirePage('items', 'f'), async (req, res) => {
     if (genderChanged) edits.push(fields.gender_priced ? 'now priced by gender' : 'same price for boys and girls');
     if (edits.length) await trx('items').where({ id: item.id }).update({ ...fields, updated_at: trx.fn.now() });
     const changes = await savePrices(trx, item.id, prices, req.user.id, genderChanged);
+    // An item the store-keeper registered (no price, not for sale) becomes a thing for sale when the finance office gives it a price.
+    if (!item.sellable && Object.values(prices).some(Boolean)) await trx('items').where({ id: item.id }).update({ sellable: true });
     for (const c of changes) {
       await audit(req, 'item.price', `Price of ${fields.name} at ${nameOf(schools, c.schoolId)}: ${c.from} → ${c.to}`,
         { schoolId: c.schoolId, detail: { itemId: item.id } }, trx);
@@ -154,6 +157,57 @@ router.patch('/:id', requirePage('items', 'f'), async (req, res) => {
     }
   });
   res.json({ item: (await list(req.user, { id: item.id, status: 'all' }))[0] });
+});
+
+// Delete an item that was never used (2026-11-25): never bought, sold, counted or sent. The finance office registers it again and prices it.
+// An item with any history cannot be deleted (the books must stay true): stop selling it instead.
+// Where is each item used? Read from the database itself: every table that points to an item (bought, sold, counted, sent, issued...).
+// Returns Map itemId -> [{ table, n }]. The current prices are not "use"; the price HISTORY is (the database never lets history be deleted).
+async function usageMap() {
+  const { rows: refs } = await db.raw(`SELECT c.conrelid::regclass::text AS tbl, a.attname AS col FROM pg_constraint c
+    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+    WHERE c.contype = 'f' AND c.confrelid = 'items'::regclass AND c.conrelid::regclass::text NOT IN ('item_prices')`);
+  const used = new Map();
+  for (const r of refs) {
+    const { rows } = await db.raw('SELECT ?? AS id, count(*)::int AS n FROM ?? WHERE ?? IS NOT NULL GROUP BY ??', [r.col, r.tbl, r.col, r.col]);
+    for (const x of rows) { if (!used.has(x.id)) used.set(x.id, []); used.get(x.id).push({ table: r.tbl.replace(/^public\./, '').replace(/"/g, ''), n: x.n }); }
+  }
+  return used;
+}
+
+router.get('/usage', requirePage('items', 'f'), async (req, res) => {
+  const used = await usageMap();
+  const items = await db('items').orderBy('category').orderBy('name').select('id', 'name', 'active');
+  res.json({ items: items.map((i) => ({ id: i.id, name: i.name, active: i.active, usedIn: used.get(i.id) || [] })) });
+});
+
+async function dropItem(item, req, used) {
+  if ((used || await usageMap()).get(item.id)?.length) return false; // used somewhere: never delete (a cascade would wipe history)
+  try {
+    await db.transaction(async (trx) => {
+      await trx('item_prices').where({ item_id: item.id }).del();
+      await trx('items').where({ id: item.id }).del();
+      await audit(req, 'item.delete', `Deleted item ${item.name} (never used)`, { detail: { itemId: item.id } }, trx);
+    });
+    return true;
+  } catch (e) {
+    if (e.code === '23503' || e.code === 'P0001') return false; // used somewhere (foreign key) or protected history
+    throw e;
+  }
+}
+router.delete('/:id', requirePage('items', 'f'), async (req, res) => {
+  const item = await db('items').where({ id: Number(req.params.id) || 0 }).first();
+  if (!item) throw new HttpError(404, 'Item not found.');
+  if (!(await dropItem(item, req))) throw new HttpError(409, `${item.name} has history (it was priced, bought, sold, counted or sent) and the database keeps history, so it cannot be deleted. Edit it (name, price) or use "Stop selling".`);
+  res.json({ ok: true });
+});
+// Delete every item that was never used, in one go. Used items stay.
+router.post('/delete-unused', requirePage('items', 'f'), async (req, res) => {
+  if (req.body?.confirm !== 'DELETE') throw new HttpError(400, 'Type DELETE to confirm.');
+  let deleted = 0, kept = 0;
+  const used = await usageMap();
+  for (const item of await db('items').orderBy('id')) { if (await dropItem(item, req, used)) deleted += 1; else kept += 1; }
+  res.json({ deleted, kept });
 });
 
 // Stop selling everywhere (kept for history) or sell again.

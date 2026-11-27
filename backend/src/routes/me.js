@@ -112,6 +112,16 @@ router.get('/signature', async (req, res) => {
   res.json({ image: u?.signature_image || null });
 });
 
+// "Away" (2026-11-25): the Manager or the Assistant Manager says he is not in the office. Money approval then goes to the next person:
+// Manager, then Assistant Manager, then Finance Manager (lib/approvers.js).
+router.put('/away', async (req, res) => {
+  if (!req.user.roles.some((r) => ['manager', 'amanager'].includes(r.role))) throw new HttpError(403, 'Only the Manager and the Assistant Manager can say they are away.');
+  const away = req.body?.away === true;
+  await db('users').where({ id: req.user.id }).update({ away });
+  await audit(req, 'user.away', `${req.user.full_name} ${away ? 'is away: money approval goes to the next person' : 'is back in the office'}`);
+  res.json({ ok: true, away });
+});
+
 router.put('/preferences', async (req, res) => {
   const b = req.body || {};
   const prefs = { ...(req.user.preferences || {}) };

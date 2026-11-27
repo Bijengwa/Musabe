@@ -57,15 +57,14 @@ function LpoList() {
           steps={['Procurement prepares an LPO for a supplier.', 'The Head of Accounts certifies it.', 'The Manager authorises it, and the goods can be ordered.', 'When the goods arrive, mark them received.']}
           action={d.canWrite && <Link className="btn p" to="/lpo/new"><Icon name="plus" /> New LPO</Link>} /> : (
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>LPO No.</th><th>Date</th><th className="stick">To (supplier)</th><th>Ship to</th><th>Items</th><th className="n">Total (TSh)</th><th>Terms</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>LPO No.</th><th>Date</th><th className="stick">To (supplier)</th><th>Ship to</th><th>Items</th><th className="n">Total (TSh)</th><th>Terms</th><th>Status</th></tr></thead>
             <tbody>{d.lpos.map((l) => (
               <tr key={l.id} className="clickrow" onClick={() => navigate(`/lpo/${l.id}`)}>
                 <td className="mono small">{l.number}</td><td className="nowrap small">{fmtDate(l.preparedAt).slice(0, 11)}</td>
                 <td className="stick"><b>{l.supplier.name}</b></td><td className="small">{l.shipTo}</td>
                 <td className="small">{l.lines.slice(0, 3).map((x) => `${x.qty} ${x.unit || ''} ${x.description}`).join(', ')}{l.lines.length > 3 ? ` +${l.lines.length - 3}` : ''}</td>
                 <td className="n"><b>{l.total != null ? tsh(l.total) : <span className="muted">rates to fill</span>}</b></td><td>{l.termsLabel}</td>
-                <td><span className={`pill ${TONE[l.status]}`}>{l.statusLabel}</span></td>
-                <td><span className={`btn sm${l.turn ? ' p' : ''}`}>{l.turn ? 'Sign' : 'Open'}</span></td>
+                <td><span className={`pill wrap ${TONE[l.status]}`}>{l.statusLabel}</span>{l.turn && <span className="pill warn sm" style={{ marginLeft: 6 }}>Your turn</span>}</td>
               </tr>
             ))}</tbody>
           </table></div>

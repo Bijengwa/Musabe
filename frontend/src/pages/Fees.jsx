@@ -25,10 +25,11 @@ export default function Fees() {
         {admin && <select value={school} onChange={(e) => setSchool(e.target.value)} aria-label="School">{schools.map((s) => <option key={s.id} value={s.id}>{s.shortName}</option>)}</select>}
         <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ width: 90 }} aria-label="Year" />
       </PageHead>
-      <Tabs tabs={[['structure', 'Fee structure'], ['payments', 'Payments'], ['balances', 'Balances']]} value={tab} onChange={setTab} />
+      <Tabs tabs={[['structure', 'Fee structure'], ['payments', 'Payments'], ['balances', 'Balances'], ['bsmart', 'B-SMART (CRDB)']]} value={tab} onChange={setTab} />
       {school && tab === 'structure' && <Structure school={school} year={year} />}
       {school && tab === 'payments' && <Payments school={school} year={year} />}
       {school && tab === 'balances' && <Balances school={school} year={year} />}
+      {school && tab === 'bsmart' && <Bsmart school={school} year={year} />}
     </>
   );
 }
@@ -182,5 +183,111 @@ function Balances({ school, year }) {
         )}
       </Panel>
     </>
+  );
+}
+
+// B-SMART (CRDB): upload the two B-SMART reports (Fee details, Payments); a second person approves; then see who paid.
+const STATE = { paid: ['ok', 'Paid'], part: ['warn', 'Part paid'], unpaid: ['', 'Not paid'] };
+function Bsmart({ school, year }) {
+  const toast = useToast();
+  const [files, setFiles] = useState(null);
+  const [st, setSt] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState('');
+  const [show, setShow] = useState('all');
+  const [cmp, setCmp] = useState(null);
+  const load = useCallback(() => {
+    api.get(`/bsmart/files?school=${school}`).then(setFiles).catch((e) => setError(e.message));
+    api.get(`/bsmart/status?school=${school}&year=${year}`).then((x) => { setSt(x); setError(''); }).catch((e) => setError(e.message));
+  }, [school, year]);
+  useEffect(() => { load(); }, [load]);
+  useLive(['bsmart'], load);
+  const send = async (file) => {
+    if (!file) return;
+    setBusy(true); setError('');
+    try {
+      const r = await fetch(`/api/bsmart/files?school=${school}&year=${year}`, { method: 'POST', credentials: 'include', headers: { 'X-File-Name': encodeURIComponent(file.name).slice(0, 200) }, body: file });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Upload failed.');
+      toast(`${d.summary.rows} rows are waiting for approval`); load();
+    } catch (e) { setError(e.message); }
+    setBusy(false);
+  };
+  const act = async (fn, msg) => { setError(''); try { const r = await fn(); toast(typeof msg === 'function' ? msg(r) : msg); load(); } catch (e) { setError(e.message); } };
+  const t = st?.totals;
+  const rows = (st?.students || []).filter((s) => (show === 'all' || s.state === show) && (!q || `${s.name} ${s.adm} ${s.cls}`.toLowerCase().includes(q.toLowerCase())));
+  return (
+    <>
+      <ErrorNote error={error} />
+      {t && <div className="kpis"><Kpi label="Students with a number" value={t.students} /><Kpi tone="ok" label="Paid in full" value={t.paid} /><Kpi tone="warn" label="Part paid" value={t.part} /><Kpi label="Not paid" value={t.unpaid} />
+        <Kpi label="Billed (TSh)" value={tsh(t.billed)} /><Kpi tone="ok" label="Received (TSh)" value={tsh(t.received)} /><Kpi tone={t.balance ? 'warn' : 'ok'} label="Balance (TSh)" value={tsh(t.balance)} /></div>}
+      {t && (t.twoNumbers > 0 || t.unlinked > 0 || t.paymentsWithoutBill > 0 || t.overpaid > 0) && <div className="warnnote"><Icon name="alert" /><span>
+        {t.twoNumbers > 0 && <>{t.twoNumbers} students have 2 control numbers (the newest is used). </>}
+        {t.unlinked > 0 && <>{t.unlinked} B-SMART admission numbers do not match any student here. </>}
+        {t.paymentsWithoutBill > 0 && <>{t.paymentsWithoutBill} payments have no fee line. </>}
+        {t.overpaid > 0 && <>{t.overpaid} students paid more than billed.</>}</span></div>}
+      {files && !files.canUpload && <p className="small muted">The school Bursar uploads the B-SMART reports. You approve them here and download the reports.</p>}
+      {files?.canUpload && <Panel title="Upload a B-SMART report (Excel)">
+        <p className="small muted">Order: 1) "Student details", 2) "Fee details" (control numbers), 3) "Payment" (money received, every Friday). The system knows which one it is. The head office must approve before it is saved. Uploading the same file again is safe.</p>
+        <input type="file" accept=".xlsx" disabled={busy} onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
+      </Panel>}
+      {cmp && <CompareModal id={cmp} onClose={() => setCmp(null)} />}
+      <Panel title="Uploads" flush>
+        {!files ? <Loading /> : !files.files.length ? <Empty icon="upload" title="No B-SMART uploads yet">Upload the Fee details report first, then the Payment report.</Empty> : (
+          <div className="tw"><table className="stafftable"><thead><tr><th className="stick">File</th><th>Report</th><th>Rows</th><th>Not matched</th><th>Status</th><th>By</th><th /></tr></thead>
+            <tbody>{files.files.map((f) => (
+              <tr key={f.id}><td className="stick">{f.fileName}<div className="small muted">{f.year}</div></td><td>{{ students: 'Student details', fees: 'Fee details', payments: 'Payments' }[f.kind]}</td>
+                <td>{f.summary.rows}{f.summary.mistakes > 0 && <span className="small" style={{ color: 'var(--bad, #b00020)' }}> · {f.summary.mistakes} bad rows</span>}</td>
+                <td>{f.summary.unmatched}</td><td><span className={`pill ${f.status === 'approved' ? 'ok' : f.status === 'pending' ? 'warn' : ''}`}>{f.status === 'pending' ? 'Waiting' : f.status}</span></td>
+                <td className="small">{f.mine ? 'You' : f.by}</td>
+                <td><div className="row" style={{ gap: 6 }}>
+                  {f.kind === 'students' && f.status !== 'discarded' && <button className="btn sm" onClick={() => setCmp(f.id)}>Compare</button>}
+                  {f.status === 'pending' && <>
+                  {files.canApprove && !f.mine && <button className="btn sm p" onClick={() => act(() => api.post(`/bsmart/files/${f.id}/approve`), (r) => `Saved: ${r.added} new, ${r.same} already there${r.changed ? `, ${r.changed} amounts changed` : ''}`)}>Approve</button>}
+                  {(f.mine || files.canApprove) && <button className="btn sm" onClick={() => act(() => api.post(`/bsmart/files/${f.id}/discard`), 'Discarded')}>Discard</button>}</>}</div></td></tr>
+            ))}</tbody></table></div>)}
+      </Panel>
+      <div className="row" style={{ margin: '8px 0', gap: 8 }}>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, admission no. or class" />
+        <select value={show} onChange={(e) => setShow(e.target.value)} aria-label="Show"><option value="all">All</option><option value="unpaid">Not paid</option><option value="part">Part paid</option><option value="paid">Paid</option></select>
+        <ExcelButton href={`/api/bsmart/status/export.xlsx?school=${school}&year=${year}`} />
+      </div>
+      <Panel flush>
+        {!st ? <Loading /> : !st.students.length ? <Empty icon="receipt" title={`No control numbers for ${year}`}>Upload the Fee details report from B-SMART and have it approved.</Empty> : (
+          <div className="tw"><table className="stafftable"><thead><tr><th className="stick">Student</th><th>Class</th><th>Control number</th><th>Billed</th><th>Paid</th><th>Balance</th><th>State</th><th>Last payment</th></tr></thead>
+            <tbody>{rows.slice(0, 500).map((s) => (
+              <tr key={s.numbers[s.numbers.length - 1]}><td className="stick"><b>{s.name}</b><div className="small muted">{s.adm}{!s.studentId && ' · not matched'}</div></td><td>{s.cls}</td>
+                <td className="small">{s.numbers[s.numbers.length - 1]}{s.twoNumbers && <div className="muted">+{s.numbers.length - 1} old</div>}</td>
+                <td>{tsh(s.billed)}</td><td>{tsh(s.paid)}</td><td><b>{tsh(s.balance)}</b></td><td><span className={`pill ${STATE[s.state][0]}`}>{STATE[s.state][1]}</span></td><td className="small">{s.last || ''}</td></tr>
+            ))}</tbody></table>{rows.length > 500 && <p className="small muted" style={{ padding: 8 }}>Showing 500 of {rows.length}. Search or use Excel to see all.</p>}</div>)}
+      </Panel>
+    </>
+  );
+}
+
+// Student details from B-SMART against our students. Nothing here is changed: it only shows what is different.
+function CompareModal({ id, onClose }) {
+  const [d, setD] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => { api.get(`/bsmart/files/${id}/compare`).then(setD).catch((e) => setError(e.message)); }, [id]);
+  return (
+    <Modal title="B-SMART students and our students" onClose={onClose} wide>
+      <ErrorNote error={error} />
+      {!d ? <Loading /> : (
+        <>
+          <div className="kpis"><Kpi label="In B-SMART" value={d.total} /><Kpi tone="ok" label="Same" value={d.same} /><Kpi tone={d.differCount ? 'warn' : 'ok'} label="Different" value={d.differCount} />
+            <Kpi tone={d.missingCount ? 'warn' : 'ok'} label="In B-SMART only" value={d.missingCount} /><Kpi tone={d.notInBsmartCount ? 'warn' : 'ok'} label="Here only" value={d.notInBsmartCount} /></div>
+          {d.duplicateAdm > 0 && <div className="warnnote"><Icon name="alert" /><span>{d.duplicateAdm} admission numbers are used twice in this B-SMART file.</span></div>}
+          <p className="small muted">B-SMART shows the class of the new year, so the same class or the next class here is counted as correct. Fix the students on the Students page, then open this again.</p>
+          <ExcelButton href={`/api/bsmart/files/${id}/compare.xlsx`} label="Full list in Excel" />
+          {d.differCount > 0 && <><h4>Different ({d.differCount})</h4><div className="tw"><table className="stafftable"><tbody>{d.differ.slice(0, 50).map((x) => (
+            <tr key={x.adm}><td className="stick"><b>{x.name}</b><div className="small muted">{x.adm} · {x.cls}</div></td><td className="small">{x.why.join(' · ')}</td></tr>))}</tbody></table></div></>}
+          {d.missingCount > 0 && <><h4>In B-SMART, not here ({d.missingCount})</h4><div className="tw"><table className="stafftable"><tbody>{d.missing.slice(0, 50).map((x) => (
+            <tr key={x.adm}><td className="stick"><b>{x.name}</b></td><td className="small">{x.adm} · {x.cls}</td></tr>))}</tbody></table></div></>}
+          {d.notInBsmartCount > 0 && <><h4>Here, not in B-SMART ({d.notInBsmartCount})</h4><div className="tw"><table className="stafftable"><tbody>{d.notInBsmart.slice(0, 50).map((x) => (
+            <tr key={x.adm}><td className="stick"><b>{x.name}</b></td><td className="small">{x.adm} · {x.cls}</td></tr>))}</tbody></table></div></>}
+        </>)}
+    </Modal>
   );
 }

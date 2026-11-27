@@ -46,7 +46,7 @@ test('voucher flow: prepare, authorize, pay with payee signature; sealed and fro
   assert.equal((await as('cashier', 'POST', `/api/payments/${v.id}/decide`, { approve: true, payeeImage: PNG, pin: PIN })).status, 409, 'cashier cannot pay before authorization');
   assert.equal((await as('aacc', 'POST', `/api/payments/${v.id}/authorize`, { approve: true, pin: PIN })).status, 403);
   assert.equal((await as('acc', 'POST', `/api/payments/${v.id}/authorize`, { approve: true, pin: PIN })).status, 403, 'the Head Accountant only audits');
-  const a = await as('fm', 'POST', `/api/payments/${v.id}/authorize`, { approve: true, pin: PIN });
+  const a = await as('manager', 'POST', `/api/payments/${v.id}/authorize`, { approve: true, pin: PIN });
   assert.equal(a.status, 200, JSON.stringify(a.json));
   assert.equal(a.json.payment.status, 'pending');
   const bad = await as('cashier', 'POST', `/api/payments/${v.id}/decide`, { approve: true, pin: PIN });
@@ -62,8 +62,8 @@ test('voucher flow: prepare, authorize, pay with payee signature; sealed and fro
 test('FO can reject with a reason; no PIN needed to reject', { skip }, async () => {
   const c = await as('aacc', 'POST', '/api/payments', { payeeName: 'ASHA', purpose: 'Test', lines: [{ detail: 'X item', amount: 5000 }], pin: PIN });
   const id = c.json.payment.id;
-  assert.equal((await as('fm', 'POST', `/api/payments/${id}/authorize`, { approve: false })).status, 400);
-  const r = await as('fm', 'POST', `/api/payments/${id}/authorize`, { approve: false, note: 'Not budgeted' });
+  assert.equal((await as('manager', 'POST', `/api/payments/${id}/authorize`, { approve: false })).status, 400);
+  const r = await as('manager', 'POST', `/api/payments/${id}/authorize`, { approve: false, note: 'Not budgeted' });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   assert.equal(r.json.payment.status, 'rejected');
 });
@@ -75,4 +75,29 @@ test('The Manager also authorizes vouchers (or the Finance Manager when he is aw
   const r = await as('manager', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   assert.equal(r.json.payment.status, 'pending');
+});
+
+test('Money approval order: Manager first; when he is away the Assistant Manager; when both are away the Finance Manager', { skip }, async () => {
+  const asm = await db('users').insert({ full_name: `Test asm ${tag}`, username: `v_asm_${tag}`.toLowerCase(), role: 'amanager', password_hash: await bcrypt.hash(password, 4), must_change_password: false, phone: '0712000000', signature_image: PNG, signing_pin_hash: await bcrypt.hash(PIN, 4) }).returning('id');
+  const login = await request({ port, method: 'POST', path: '/api/auth/login', body: { username: `v_asm_${tag}`.toLowerCase(), password } });
+  P.asm = { id: asm[0].id, cookie: cookie(login) };
+  const others = (await db('users').where({ active: true, away: false }).whereIn('role', ['manager', 'amanager']).whereNotIn('id', [P.manager.id, P.asm.id])).map((u) => u.id);
+  await db('users').whereIn('id', others).update({ away: true });
+  try {
+    const mk = async () => (await as('aacc', 'POST', '/api/payments', { payeeName: 'ASHA', purpose: 'Order', lines: [{ detail: 'Z item', amount: 9000 }], pin: PIN })).json.payment.id;
+    let id = await mk();
+    assert.equal((await as('asm', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN })).status, 403, 'the Manager is in: the Assistant Manager waits');
+    assert.equal((await as('fm', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN })).status, 403, 'the Manager is in: the Finance Manager waits');
+    assert.equal((await as('manager', 'PUT', '/api/me/away', { away: true })).status, 200);
+    assert.equal((await as('fm', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN })).status, 403, 'the Assistant Manager is in: the Finance Manager waits');
+    assert.equal((await as('asm', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN })).status, 200, 'the Manager is away: the Assistant Manager signs');
+    id = await mk();
+    assert.equal((await as('asm', 'PUT', '/api/me/away', { away: true })).status, 200);
+    assert.equal((await as('fm', 'POST', `/api/payments/${id}/authorize`, { approve: true, pin: PIN })).status, 200, 'both away: the Finance Manager signs');
+    assert.equal((await as('aacc', 'PUT', '/api/me/away', { away: true })).status, 403, 'only the Manager and the Assistant Manager can be away');
+  } finally {
+    await db('users').whereIn('id', others).update({ away: false });
+    await db('users').whereIn('id', [P.manager.id, P.asm.id]).update({ away: false });
+    await db('payment_requests').where({ requested_by: P.aacc.id }).whereIn('status', ['review']).del().catch(() => {});
+  }
 });

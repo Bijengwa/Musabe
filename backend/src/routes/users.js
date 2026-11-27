@@ -7,7 +7,7 @@ const { sendExcel, readRows } = require('../lib/excel');
 const { uploadLimit } = require('../lib/guard');
 const { HttpError, tempPassword, tzPhone, suggestUsername, audit } = require('../lib/util');
 const { requireAuth, requirePage, endAllSessions } = require('../auth/session');
-const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage, clash } = require('../auth/roles');
+const { ROLES, CREATES, isAdminRole, isSchoolRole, canManage, clash, roleLabelFor, titled } = require('../auth/roles');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -15,7 +15,7 @@ router.use(requireAuth);
 // A temporary password works for TEMP_PASSWORD_HOURS (72 by default). After that the administrator gives a new one.
 const tempExpiry = () => new Date(Date.now() + (Number(process.env.TEMP_PASSWORD_HOURS) || 72) * 3600000);
 
-const COLS = ['u.id', 'u.full_name', 'u.username', 'u.phone', 'u.role', 'u.school_id', 'u.active', 'u.must_change_password',
+const COLS = ['u.id', 'u.full_name', 'u.username', 'u.phone', 'u.role', 'u.school_id', 'u.active', 'u.must_change_password', 'u.gender',
   'u.reset_requested_at', 'u.last_login_at', 'u.created_at', 'sc.short_name as school_short', 'cb.full_name as created_by_name'];
 
 const shape = (r, actor) => ({
@@ -24,7 +24,8 @@ const shape = (r, actor) => ({
   username: r.username,
   phone: r.phone,
   role: r.role,
-  roleLabel: ROLES[r.role]?.label,
+  roleLabel: roleLabelFor(r.role, r.gender),
+  gender: r.gender || null,
   schoolId: r.school_id,
   schoolShort: r.school_short,
   active: r.active,
@@ -88,7 +89,9 @@ router.get('/suggest-username', requirePage('staff', 'f'), async (req, res) => {
 
 router.post('/', requirePage('staff', 'f'), async (req, res) => {
   const actor = req.user;
-  const fullName = String(req.body?.fullName || '').trim().replace(/\s+/g, ' ');
+  const gender = ['m', 'f'].includes(req.body?.gender) ? req.body.gender : null;
+  if (req.body?.gender && !gender) throw new HttpError(400, 'Choose male or female.');
+  const fullName = titled(String(req.body?.fullName || '').trim().replace(/\s+/g, ' '), gender);
   const role = String(req.body?.role || '');
   const phone = tzPhone(req.body?.phone);
   let username = String(req.body?.username || '').trim().toLowerCase();
@@ -107,7 +110,7 @@ router.post('/', requirePage('staff', 'f'), async (req, res) => {
     if (!username) username = await suggestUsername(fullName, trx);
     else if (await trx('users').whereRaw('lower(username) = ?', [username]).first()) throw new HttpError(409, `Username "${username}" is taken. Try another.`);
     const [row] = await trx('users').insert({
-      full_name: fullName, username, phone, role, school_id: schoolId,
+      full_name: fullName, username, phone, role, school_id: schoolId, gender,
       password_hash: await bcrypt.hash(temp, 12), must_change_password: true, temp_password_expires_at: tempExpiry(), created_by: actor.id,
     }).returning('id');
     await audit(req, 'user.create', `Created account for ${fullName} (${ROLES[role].label})`, { schoolId, detail: { userId: row.id, role, username } }, trx);
@@ -200,8 +203,13 @@ router.patch('/:id', requirePage('staff', 'f'), async (req, res) => {
   const b = req.body || {};
   const up = {};
   const changes = [];
-  if (b.fullName !== undefined) {
-    const v = String(b.fullName).trim().replace(/\s+/g, ' ');
+  let gender = t.gender;
+  if (b.gender !== undefined) {
+    if (!['m', 'f'].includes(b.gender)) throw new HttpError(400, 'Choose male or female.');
+    if (b.gender !== t.gender) { up.gender = b.gender; gender = b.gender; changes.push('gender'); }
+  }
+  if (b.fullName !== undefined || up.gender) {
+    const v = titled(String(b.fullName ?? t.full_name).trim().replace(/\s+/g, ' '), gender);
     if (v.length < 4) throw new HttpError(400, 'Type the full name.');
     if (v !== t.full_name) { up.full_name = v; changes.push('name'); }
   }
@@ -219,9 +227,8 @@ router.patch('/:id', requirePage('staff', 'f'), async (req, res) => {
   }
   let switched = null;
   if (b.active !== undefined && !!b.active !== t.active) {
-    if (!b.active && t.role === 'super') {
-      const others = await db('users').where({ role: 'super', active: true }).whereNot('id', t.id).count('* as n').first();
-      if (Number(others.n) === 0) throw new HttpError(400, 'This is the last active Super Admin. It cannot be switched off.');
+    if (!b.active && (t.role === 'super' || await hasExtraSuper(t.id))) {
+      if ((await otherSupers(t.id)) === 0) throw new HttpError(400, 'This is the last active Super Admin. It cannot be switched off. Give the Super Admin role to somebody else first.');
     }
     up.active = !!b.active; switched = up.active ? 'on' : 'off';
   }
@@ -267,6 +274,15 @@ router.post('/:id/reset-password', requirePage('staff', 'f'), async (req, res) =
 });
 
 // ---- One person, many roles (2026-11-20) ----
+// Super Admins (2026-11-25): a person can be Super Admin as his main role OR as an extra role (for example the Finance Manager).
+// The system must never be left without an active Super Admin.
+const hasExtraSuper = async (id) => !!(await db('user_roles').where({ user_id: id, role: 'super', active: true }).first('id'));
+async function otherSupers(exceptId) {
+  const main = await db('users').where({ role: 'super', active: true }).whereNot('id', exceptId).count('* as n').first();
+  const extra = await db('user_roles as r').join('users as u', 'u.id', 'r.user_id').where({ 'r.role': 'super', 'r.active': true, 'u.active': true }).whereNot('u.id', exceptId).countDistinct('u.id as n').first();
+  return Number(main.n) + Number(extra.n);
+}
+
 // Extra roles of a person. The main role stays on the account; extra roles are added or switched off here.
 async function extraRoles(ids) {
   if (!ids.length) return {};
@@ -280,14 +296,14 @@ async function extraRoles(ids) {
 router.get('/:id/roles', requirePage('staff'), async (req, res) => {
   const t = await loadTarget(req);
   res.json({ main: { role: t.role, label: ROLES[t.role].label }, extra: ((await extraRoles([t.id]))[t.id] || []).map((x) => ({ id: x.id, role: x.role, label: ROLES[x.role].label, schoolId: x.school_id, school: x.school_short })),
-    canAdd: (CREATES[req.user.role] || []).filter((r) => r !== 'super').map((r) => ({ role: r, label: ROLES[r].label, needsSchool: isSchoolRole(r) })) });
+    canAdd: (CREATES[req.user.role] || []).map((r) => ({ role: r, label: ROLES[r].label, needsSchool: isSchoolRole(r) })) });
 });
 
 router.post('/:id/roles', requirePage('staff', 'f'), async (req, res) => {
   const t = await loadTarget(req);
   const role = String(req.body?.role || '');
   let schoolId = req.body?.schoolId ? Number(req.body.schoolId) : null;
-  if (!(CREATES[req.user.role] || []).includes(role) || role === 'super') throw new HttpError(403, `You cannot give the role ${ROLES[role]?.label || role}.`);
+  if (!(CREATES[req.user.role] || []).includes(role)) throw new HttpError(403, `You cannot give the role ${ROLES[role]?.label || role}.`);
   if (req.user.role === 'sadmin') schoolId = req.user.school_id;
   if (isAdminRole(role)) schoolId = null;
   if (isSchoolRole(role) && !schoolId) throw new HttpError(400, `Choose the school for the ${ROLES[role].label} role.`);
@@ -309,6 +325,7 @@ router.post('/:id/roles/:rid/remove', requirePage('staff', 'f'), async (req, res
   const x = await db('user_roles').where({ id: Number(req.params.rid) || 0, user_id: t.id, active: true }).first();
   if (!x) throw new HttpError(404, 'That role was not found.');
   if (!(CREATES[req.user.role] || []).includes(x.role)) throw new HttpError(403, 'You cannot remove this role.');
+  if (x.role === 'super' && t.role !== 'super' && (await otherSupers(t.id)) === 0 && t.id !== req.user.id) throw new HttpError(400, 'He is the last active Super Admin. Give the role to somebody else first.');
   await db.transaction(async (trx) => {
     await trx('user_roles').where({ id: x.id }).update({ active: false, removed_by: req.user.id, removed_at: trx.fn.now() });
     await trx('sessions').where({ user_id: t.id, active_role: x.role }).update({ active_role: null });   // back to the main role

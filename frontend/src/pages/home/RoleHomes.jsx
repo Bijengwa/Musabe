@@ -313,32 +313,52 @@ export function LibrarianHome({ d }) {
 }
 
 const PSTATUS = { pending: ['warn', 'To count'], checked: ['info', 'With the accountant'], confirmed: ['ok', 'Confirmed'], rejected: ['bad', 'Rejected'] };
+// Store-keeper / Assistant Manager: what needs me now, what is moving, and the latest buying.
+function Todo({ n, text, sub, to, tone = 'warn' }) {
+  return (
+    <Link to={to} className="li libtn">
+      <span className={`pill ${n ? tone : 'ok'}`} style={{ minWidth: 34, justifyContent: 'center' }}>{n}</span>
+      <div className="grow"><b>{text}</b>{sub && <span>{sub}</span>}</div>
+    </Link>
+  );
+}
+
 export function StoreHome({ d }) {
   const s = d.store;
+  const now = s.orders + s.toBuy;
   return (
     <>
       <div className="filters">
-        <Link className="btn p" to="/orders"><Icon name="inbox" /> Order Book</Link>
+        <Link className="btn p" to="/purchases"><Icon name="cart" /> Buy or order</Link>
         <Link className="btn" to="/requisitions/new"><Icon name="file" /> New requisition</Link>
-        <Link className="btn" to="/purchases"><Icon name="cart" /> Buy or order</Link>
+        <Link className="btn" to="/orders"><Icon name="inbox" /> Order Book</Link>
         <Link className="btn" to="/labels"><Icon name="tag" /> QR labels</Link>
         <Link className="btn" to="/store"><Icon name="box" /> Items to issue</Link>
       </div>
-      <div className="kpis">
-        <Kpi tone={s.orders ? 'warn' : 'ok'} label="Orders from the schools to buy for" value={s.orders} sub="write the requisition" />
-        <Kpi tone={s.toApprove ? 'info' : 'ok'} label="My requisitions with the Manager / FM" value={s.toApprove} />
-        <Kpi tone={s.toBuy ? 'warn' : 'ok'} label="Approved: to buy" value={s.toBuy} sub="after the Cashier gives the money" />
-        <Kpi tone={s.ordered ? 'info' : 'ok'} label="Orders: goods not here yet" value={s.ordered} />
-        <Kpi tone={s.toCount ? 'warn' : 'ok'} label="Waiting for Mapokezi to check" value={s.toCount} />
-        <Kpi tone={s.checked ? 'warn' : 'ok'} label="Checked by Mapokezi: with the accountant" value={s.checked} />
-        <Kpi tone={s.onTheWay ? 'info' : 'ok'} label="On the way to libraries" value={s.onTheWay} sub="the librarian signs on arrival" />
-        <Kpi label="Bought this month" value={`TSh ${tsh(s.boughtThisMonth)}`} sub="confirmed" />
+
+      <div className="g-wide">
+        <Panel title="Needs me now" sub={now ? `${now} to do` : 'Nothing is waiting for you'} flush>
+          <div className="list">
+            <Todo n={s.orders} text="Orders from the schools" sub="write the payment requisition" to="/orders" />
+            <Todo n={s.toBuy} text="Approved: go and buy" sub="after the Cashier gives the money" to="/requisitions" />
+            <Todo n={s.toApprove} text="My requisitions with the Manager" sub="waiting for approval" to="/requisitions" tone="info" />
+          </div>
+        </Panel>
+        <Panel title="On the way" sub="Buying that is moving" flush>
+          <div className="list">
+            <Todo n={s.ordered} text="Ordered: goods not here yet" to="/purchases" tone="info" />
+            <Todo n={s.toCount} text="Waiting for Mapokezi to check" to="/purchases" tone="info" />
+            <Todo n={s.checked} text="Checked: with the accountant office" to="/purchases" tone="info" />
+            <Todo n={s.onTheWay} text="On the way to the libraries" sub="the librarian signs on arrival" to="/purchases" tone="info" />
+          </div>
+        </Panel>
       </div>
-      <Panel title="Last purchases and orders" flush right={<Link className="btn sm" to="/purchases">All</Link>}>
+
+      <Panel title="Last purchases and orders" sub={`Bought this month: TSh ${tsh(s.boughtThisMonth)} (confirmed)`} flush right={<Link className="btn sm" to="/purchases">All</Link>}>
         {!s.recent.length ? <Empty>Nothing yet. Buy or order for a school; Mapokezi checks it against the receipts.</Empty> : <div className="list">{s.recent.map((p) => {
           const [tone, label] = p.ordered && p.status === 'pending' ? ['info', 'Ordered'] : PSTATUS[p.status] || ['', p.status];
           return (<Link key={p.id} to="/purchases" className="li libtn"><div className="grow"><b><span className="mono">{p.number}</span> · {p.supplier}</b>
-            <span>{p.school || 'old main store'} · TSh {tsh(p.total)} · {fmtWhen(p.at)}</span></div><span className={`pill ${tone}`}>{label}</span></Link>);
+            <span>{p.school || 'Administration'} · TSh {tsh(p.total)} · {fmtWhen(p.at)}</span></div><span className={`pill ${tone}`}>{label}</span></Link>);
         })}</div>}
       </Panel>
     </>

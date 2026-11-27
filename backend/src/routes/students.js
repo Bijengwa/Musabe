@@ -48,6 +48,14 @@ function sexOf(v) {
   if (/^(f|female|ke|girl|g|msichana)$/.test(s)) return 'F';
   return null;
 }
+// Day scholar or boarder (2026-11-26). Empty = not set. The fees use it (routes/fees.js).
+function residenceOf(v) {
+  const s = String(v ?? '').trim().toLowerCase();
+  if (/^(d|day|day scholar|day scholars|day pupil|mchana|day school)$/.test(s)) return 'day';
+  if (/^(b|boarding|boarder|boarders|boarding school|bweni|wa bweni)$/.test(s)) return 'boarding';
+  return null;
+}
+const RESIDENCE = { day: 'Day scholar', boarding: 'Boarding' };
 const { phoneOf } = G;
 const admOf = (v) => String(v ?? '').trim().replace(/\.0+$/, '').replace(/\s+/g, '').toUpperCase();
 
@@ -64,6 +72,10 @@ function checkStudent(b) {
   if (!data.first_name) errors.push('First name is empty.');
   if (!data.last_name) errors.push('Last name is empty.');
   if (!data.sex) errors.push(String(b.sex ?? '').trim() ? `Sex "${b.sex}" is not known. Use M or F.` : 'Sex is empty (M or F).');
+  // Residence is optional. Only a known value is kept in data, so an empty cell never erases what is saved.
+  const res = residenceOf(b.residence);
+  if (res) data.residence = res;
+  else if (String(b.residence ?? '').trim()) errors.push(`Day or boarding "${b.residence}" is not known. Write Day or Boarding.`);
   for (const k of ['first_name', 'middle_name', 'last_name']) if (data[k] && data[k].length > 40) errors.push('A name is too long.');
   data.full_name = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ');
   return { data, errors, warnings };
@@ -77,7 +89,7 @@ const { levelsFor, levelOf, CURRICULA } = require('../lib/levels');
 const classOut = (c) => ({ id: c.id, schoolId: c.school_id, name: c.name, shortName: c.short_name, stream: c.stream, label: classLabel(c), fullName: classFull(c), active: c.active,
   level: c.level, curriculum: c.curriculum || levelOf(c.level)?.curriculum || null,
   curriculumLabel: CURRICULA[c.curriculum || levelOf(c.level)?.curriculum] || null,
-  students: Number(c.students || 0), boys: Number(c.boys || 0), girls: Number(c.girls || 0) });
+  students: Number(c.students || 0), boys: Number(c.boys || 0), girls: Number(c.girls || 0), boarders: Number(c.boarders || 0), dayScholars: Number(c.day_scholars || 0) });
 
 const schoolCode = async (schoolId) => (await db('schools').where({ id: schoolId }).first('code'))?.code;
 async function classList(schoolId) {
@@ -86,7 +98,8 @@ async function classList(schoolId) {
   const rows = await db('classes as c').where('c.school_id', schoolId)
     .leftJoin('students as s', (j) => j.on('s.class_id', 'c.id').andOn(db.raw("s.status = 'active'")))
     .groupBy('c.id')
-    .select('c.*', db.raw('count(s.id) as students'), db.raw("count(s.id) filter (where s.sex='M') as boys"), db.raw("count(s.id) filter (where s.sex='F') as girls"));
+    .select('c.*', db.raw('count(s.id) as students'), db.raw("count(s.id) filter (where s.sex='M') as boys"), db.raw("count(s.id) filter (where s.sex='F') as girls"),
+      db.raw("count(s.id) filter (where s.residence='boarding') as boarders"), db.raw("count(s.id) filter (where s.residence='day') as day_scholars"));
   return rows.sort((a, b) => rank(a) - rank(b) || byShort(a, b)).map(classOut);
 }
 
@@ -181,7 +194,7 @@ const base = () => db('students as s').leftJoin('classes as c', 'c.id', 's.class
 const out = (s, guardians) => ({
   id: s.id, schoolId: s.school_id, school: s.school_short, schoolCode: s.school_code,
   admissionNo: s.admission_no, firstName: s.first_name, middleName: s.middle_name, lastName: s.last_name,
-  fullName: s.full_name, sex: s.sex, sexLabel: SEX[s.sex], classId: s.class_id,
+  fullName: s.full_name, sex: s.sex, sexLabel: SEX[s.sex], residence: s.residence || null, residenceLabel: RESIDENCE[s.residence] || null, classId: s.class_id,
   className: classLabel({ name: s.class_name, short_name: s.class_short, stream: s.class_stream }), classFullName: classFull({ name: s.class_name, stream: s.class_stream }),
   status: s.status, note: s.note, createdAt: s.created_at, updatedAt: s.updated_at,
   ...(guardians ? { guardians: guardians.map(G.out) } : {}),
@@ -208,13 +221,15 @@ function search(q, text) {
 
 router.get('/', requirePage('students'), async (req, res) => {
   const schoolId = await schoolOf(req);
-  const { q, status = 'active', sex } = req.query;
+  const { q, status = 'active', sex, residence } = req.query;
   const cls = req.query.class;
   const query = base().where('s.school_id', schoolId);
   if (cls === 'none') query.whereNull('s.class_id');
   else if (cls) query.where('s.class_id', Number(cls));
   if (status !== 'all') query.where('s.status', status === 'left' ? 'left' : 'active');
   if (sex === 'M' || sex === 'F') query.where('s.sex', sex);
+  if (residence === 'day' || residence === 'boarding') query.where('s.residence', residence);
+  else if (residence === 'none') query.whereNull('s.residence');
   if (req.query.guardians === 'none') query.whereNotExists(db('student_guardians as gx').whereRaw('gx.student_id = s.id'));
   if (q) search(query, q);
   const rows = await query.orderBy('s.full_name').limit(3000).select(COLS);
@@ -241,7 +256,7 @@ router.get('/search', async (req, res) => {
 const BASE_COLUMNS = [
   { header: 'S/N', key: 'sn', type: 'int', width: 6 }, { header: 'Admission No.', key: 'adm', width: 14 },
   { header: 'First name', key: 'first', width: 16 }, { header: 'Middle name', key: 'middle', width: 16 }, { header: 'Last name', key: 'last', width: 16 },
-  { header: 'Sex', key: 'sex', width: 6 },
+  { header: 'Sex', key: 'sex', width: 6 }, { header: 'Day or Boarding', key: 'residence', width: 16 },
 ];
 const guardianColumns = (n) => Array.from({ length: n }, (_, i) => [
   { header: `Guardian ${i + 1} Name`, key: `g${i + 1}name`, width: 28 },
@@ -250,7 +265,7 @@ const guardianColumns = (n) => Array.from({ length: n }, (_, i) => [
 ]).flat();
 const HOW = [
   'One file for ONE class. On the Students page choose the class, then upload the file.',
-  'Columns: Admission No., First name, Middle name, Last name, Sex, then the guardians. Other columns (fees, PREM number ...) are ignored.',
+  'Columns: Admission No., First name, Middle name, Last name, Sex, Day or Boarding, then the guardians. Other columns (fees, PREM number ...) are ignored.',
   'Guardians: Guardian 1 Name, Guardian 1 Phone, Guardian 1 Relationship, then Guardian 2 ..., Guardian 3 ... For more guardians add Guardian 4, Guardian 5 ... columns the same way. There is no limit.',
   'Every new student needs at least one guardian. Leave the extra guardian columns empty when a student has fewer guardians.',
   'Guardian name: the real names, at least two, e.g. JOHN MATHIAS or GRACE TIBAIJUKA. Not "Mr John", "Mrs Grace", "Mama Simon".',
@@ -259,6 +274,7 @@ const HOW = [
   'One phone is one person: if a guardian has several children at school, write the same name and phone on each child.',
   'Admission No.: needed for every student. It is the student\'s number in the system.',
   'Sex: M or F.',
+  'Day or Boarding: write Day or Boarding (also accepted: Day scholar, Boarder, D, B). Optional. An empty cell never erases what is saved.',
   'A student already in the system (same Admission No.) is updated, or moved to this class. Empty cells never erase what is saved.',
   'If you fill any guardian column for a student already in the system, the whole guardian list of that student is replaced by the list in the file.',
   'Bulk edit with Excel: download the students (one class or the whole school), change anything, then upload with "Many classes". Each row goes to the class in its Class column (e.g. P 1 A). Write Left in the Status column for a student who left school.',
@@ -284,7 +300,7 @@ router.get('/export.xlsx', requirePage('students'), async (req, res) => {
     columns: [...BASE_COLUMNS, ...guardianColumns(n), { header: 'Class', key: 'cls', width: 10 }, { header: 'Status', key: 'status', width: 9 }],
     notes: HOW,
     rows: rows.map((s, i) => {
-      const r = { sn: i + 1, adm: s.admission_no, first: s.first_name, middle: s.middle_name, last: s.last_name, sex: s.sex,
+      const r = { sn: i + 1, adm: s.admission_no, first: s.first_name, middle: s.middle_name, last: s.last_name, sex: s.sex, residence: RESIDENCE[s.residence] || '',
         cls: classLabel({ name: s.class_name, short_name: s.class_short, stream: s.class_stream }), status: s.status === 'left' ? 'Left' : 'Active' };
       (gmap.get(s.id) || []).forEach((g, k) => { r[`g${k + 1}name`] = g.full_name; r[`g${k + 1}phone`] = g.phone; r[`g${k + 1}rel`] = G.LABEL[g.relationship] || g.relationship; });
       return r;
@@ -313,6 +329,7 @@ function columnOf(h) {
   if (/mid+le|^mid\b|second name/.test(t)) return 'middleName';
   if (/last|surname/.test(t)) return 'lastName';
   if (/^(sex|gender|jinsia)$/.test(t)) return 'sex';
+  if (/^(day or boarding|day\/boarding|day boarding|day or boarder|residence|boarding status|boarding|boarder|day scholar|aina ya mwanafunzi)$/.test(t)) return 'residence';
   if (/^(class|darasa|class name|stream|class and stream)$/.test(t)) return 'className';
   if (/^(status|hali)$/.test(t)) return 'status';
   if (/relationship|relation|uhusiano/.test(t)) return 'parentRel';
@@ -373,7 +390,7 @@ async function checkFile(buffer, schoolId, classId, fixes = {}) {
     const fix = fixes[r.row] || null;
     const cell = (k) => (cols[k] === undefined ? '' : r.cells[cols[k]] || '');
     const get = (k) => (fix && !fix.skip && fix[k] !== undefined ? String(fix[k] ?? '') : cell(k));
-    const input = { admissionNo: get('admissionNo'), sex: get('sex') };
+    const input = { admissionNo: get('admissionNo'), sex: get('sex'), residence: get('residence') };
     const eraseMiddle = String(get('middleName')).trim() === '-' || (fix && !fix.skip && fix.middleName === '' && !!cell('middleName'));
     if (fix && !fix.skip) Object.assign(input, { firstName: get('firstName'), middleName: get('middleName'), lastName: get('lastName') });
     else if (cols.fullName !== undefined && cols.firstName === undefined) {
@@ -407,7 +424,7 @@ async function checkFile(buffer, schoolId, classId, fixes = {}) {
     const gc = G.check(typed);
     errors.push(...gc.errors);
     const guardians = gc.list;
-    const line = { row: r.row, admissionNo: data.admission_no, fullName: data.full_name, sex: data.sex, className: rowCls ? classLabel(rowCls) : '',
+    const line = { row: r.row, admissionNo: data.admission_no, fullName: data.full_name, sex: data.sex, residence: data.residence || '', className: rowCls ? classLabel(rowCls) : '',
       guardians: guardians.map((g) => ({ fullName: g.full_name, phone: g.phone, relationship: g.relationship, relationshipLabel: G.LABEL[g.relationship] })),
       change: '', from: '', errors, warnings, data, fixed: !!fix, input: typedIn };
     if (data.admission_no) {
@@ -442,7 +459,7 @@ async function checkFile(buffer, schoolId, classId, fixes = {}) {
         if (twin) warnings.push(`${data.full_name} is already in the system with Admission No. ${twin.admission_no}. Is this the same student?`);
       } else {
         // Empty cells never erase what is saved.
-        const diff = ['first_name', 'middle_name', 'last_name', 'sex'].filter((k) => data[k] && String(data[k]) !== String(old[k] ?? ''));
+        const diff = ['first_name', 'middle_name', 'last_name', 'sex', 'residence'].filter((k) => data[k] && String(data[k]) !== String(old[k] ?? ''));
         if (eraseMiddle && old.middle_name) { data.middle_name = null; diff.push('middle_name'); }
         const before = savedG.get(old.id) || [];
         const gChanged = guardians.length > 0 && !G.same(before, guardians);
@@ -586,7 +603,7 @@ router.put('/imports/:id/rows/:row', requirePage('students', 'f'), async (req, r
   else {
     if (b.guardians !== undefined && !Array.isArray(b.guardians)) throw new HttpError(400, 'Guardians must be a list.');
     fixes[row] = { admissionNo: str(b.admissionNo, 30), firstName: str(b.firstName, 60), middleName: str(b.middleName, 60), lastName: str(b.lastName, 60),
-      sex: str(b.sex, 10), className: str(b.className, 40), status: str(b.status, 20),
+      sex: str(b.sex, 10), residence: str(b.residence, 20), className: str(b.className, 40), status: str(b.status, 20),
       guardians: (b.guardians || []).slice(0, G.MAX).map((g) => ({ fullName: str(g.fullName, 120), phone: str(g.phone, 20), relationship: str(g.relationship, 20) })) };
   }
   await db('student_imports').where({ id: m.id, status: 'pending' }).update({ fixes: JSON.stringify(fixes) });
@@ -609,7 +626,7 @@ router.get('/imports/:id/left-out.xlsx', requirePage('students'), async (req, re
     notes: HOW,
     rows: rows.map((r, i) => {
       const x = r.input || {};
-      const o = { sn: i + 1, adm: x.admissionNo, first: x.firstName, middle: x.middleName, last: x.lastName, sex: x.sex,
+      const o = { sn: i + 1, adm: x.admissionNo, first: x.firstName, middle: x.middleName, last: x.lastName, sex: x.sex, residence: x.residence || '',
         cls: x.className || (m.class_id ? importOut(m, req.user).className : ''), status: x.status, why: `Row ${r.row}: ${r.reason}` };
       (x.guardians || []).forEach((g, k) => { o[`g${k + 1}name`] = g.fullName; o[`g${k + 1}phone`] = g.phone; o[`g${k + 1}rel`] = g.relationship; });
       return o;
@@ -676,7 +693,7 @@ router.post('/bulk', requirePage('students', 'f'), async (req, res) => {
     const errors = [];
     const { data, errors: e1 } = checkStudent({
       admissionNo: r.admissionNo ?? s.admission_no, firstName: r.firstName ?? s.first_name,
-      middleName: r.middleName !== undefined ? r.middleName : s.middle_name, lastName: r.lastName ?? s.last_name, sex: r.sex ?? s.sex, note: s.note,
+      middleName: r.middleName !== undefined ? r.middleName : s.middle_name, lastName: r.lastName ?? s.last_name, sex: r.sex ?? s.sex, residence: r.residence !== undefined ? r.residence : s.residence, note: s.note,
     });
     errors.push(...e1);
     if (r.classId !== undefined && r.classId !== null && r.classId !== '') {
@@ -696,7 +713,7 @@ router.post('/bulk', requirePage('students', 'f'), async (req, res) => {
     if (admSeen.has(key)) errors.push(`Admission No. ${data.admission_no} is also given to ${admSeen.get(key)}.`);
     admSeen.set(key, data.full_name);
     if (errors.length) { problems.push({ id: s.id, name: s.full_name, errors }); continue; }
-    const changed = ['admission_no', 'first_name', 'middle_name', 'last_name', 'sex', 'class_id'].filter((k) => k in data && String(data[k] ?? '') !== String(s[k] ?? ''));
+    const changed = ['admission_no', 'first_name', 'middle_name', 'last_name', 'sex', 'residence', 'class_id'].filter((k) => k in data && String(data[k] ?? '') !== String(s[k] ?? ''));
     const gChanged = list && !G.same(oldG.get(s.id) || [], list);
     if (changed.length || gChanged) work.push({ s, data, changed, list: gChanged ? list : null });
   }
@@ -819,7 +836,7 @@ router.post('/', requirePage('students', 'f'), async (req, res) => {
 });
 
 const FIELD_LABEL = { admission_no: 'admission no.', first_name: 'first name', middle_name: 'middle name', last_name: 'last name',
-  sex: 'sex', note: 'note', class_id: 'class', status: 'status' };
+  sex: 'sex', residence: 'day or boarding', note: 'note', class_id: 'class', status: 'status' };
 
 router.patch('/:id/guardians/:guardianId/verify', async (req, res) => {
   if (!['sadmin', 'head', 'acad', 'teacher', 'super'].includes(req.user.role)) throw new HttpError(403, 'Only school staff can verify guardians.');
@@ -843,7 +860,7 @@ router.patch('/:id', requirePage('students', 'f'), async (req, res) => {
   const merged = {
     admissionNo: b.admissionNo ?? s.admission_no,
     firstName: b.firstName ?? s.first_name, middleName: b.middleName !== undefined ? b.middleName : s.middle_name, lastName: b.lastName ?? s.last_name,
-    sex: b.sex ?? s.sex, note: b.note !== undefined ? b.note : s.note,
+    sex: b.sex ?? s.sex, residence: b.residence !== undefined ? b.residence : s.residence, note: b.note !== undefined ? b.note : s.note,
   };
   const { data, errors } = checkStudent(merged);
   if (errors.length) throw new HttpError(400, errors[0]);

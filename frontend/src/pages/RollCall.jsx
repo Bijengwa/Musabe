@@ -76,7 +76,7 @@ function Overview() {
       <Panel title="Classes" flush>
         {!ready ? <SkeletonTable rows={8} columns={6} /> : !d.classes.length ? <Empty icon="grid" title="No classes yet">The Academic Master adds the class streams in Students → Classes.</Empty> : (
           <div className="tw tw-full"><table className="stafftable">
-            <thead><tr><th>Class</th><th className="n">Students</th><th>Roll call</th>{MARKS.map(([k, l]) => <th key={k} className="n" title={l}>{k}</th>)}<th /></tr></thead>
+            <thead><tr><th>Class</th><th className="n">Students</th><th>Roll call</th>{MARKS.map(([k, l]) => <th key={k} className="n" title={l}>{k}</th>)}</tr></thead>
             <tbody>{d.classes.map((c) => (
               <tr key={c.id} className="clickrow" tabIndex={0} onClick={() => navigate(`class/${c.id}?day=${day}&session=${session}`)}
                 onKeyDown={(e) => { if (e.key === 'Enter') navigate(`class/${c.id}?day=${day}&session=${session}`); }}>
@@ -84,7 +84,6 @@ function Overview() {
                 <td className="n">{c.students}</td>
                 <td>{c.taken ? <span className="pill sm ok">Done · {c.takenBy} {fmtTime(c.takenAt)}</span> : c.students ? <span className="pill sm warn">Not taken</span> : <span className="muted">No students</span>}</td>
                 {MARKS.map(([k]) => <td key={k} className="n">{c.counts ? (c.counts[k] || <span className="muted">0</span>) : ''}</td>)}
-                <td className="acts-cell"><span className="btn sm">{c.taken ? 'Open' : d.canTake ? 'Take roll call' : 'Open'}</span></td>
               </tr>
             ))}</tbody>
           </table></div>

@@ -2,7 +2,7 @@
 // S/NO | DETAIL | AMOUNT, TOTAL (with what it is for), Total in words, Prepared by / Signature of payee / Authorized by.
 // Internal payment: Assistant Accountant prepares -> Manager or Finance Manager authorizes -> Cashier pays, the payee signs here on the screen.
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLive } from '../live';
 import { ErrorNote, tsh, useToast, DetailSkeleton } from '../components/ui';
@@ -50,6 +50,8 @@ export default function Voucher() {
 
   if (id && !v) return <div className="rq-wrap"><Link to="/payments" className="btn sm">← All vouchers</Link><ErrorNote error={error} />{!error && <DetailSkeleton />}</div>;
 
+  // Money for a requisition is given on the Payment Requisition Form itself (the requisition page), not on this voucher.
+  if (v?.kind === 'float' && v.requisition) return <Navigate to={`/requisitions/${v.requisition.id}`} replace />;
   const canPay = v?.canDecide;
   const canAuth = v?.canAuthorize;
   const submitNew = async ({ pin, smsCode }) => {

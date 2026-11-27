@@ -20,8 +20,7 @@ const money = (n) => `TSh ${Number(n).toLocaleString('en-GB')}`;
 const STATUS = { review: 'Waiting for the Manager / Finance Manager', pending: 'Authorized: waiting for the Cashier to pay', paid: 'Paid', rejected: 'Rejected' };
 const WRITERS = ['aacc'];       // prepares a voucher (internal payments desk)
 // Money going out is authorized by the Manager, or the Finance Manager when the Manager is away (2026-11-20). Never their own.
-const { MONEY_APPROVERS, ROLES } = require('../auth/roles');
-const DECIDERS = MONEY_APPROVERS;
+const { ROLES } = require('../auth/roles');
 const PAYERS = ['cashier'];     // pays it out
 const intAmount = (v, what) => {
   const n = Number(String(v ?? '').replace(/[,\s]/g, ''));
@@ -45,7 +44,7 @@ const out = (p, user, lines, sigs, sealed) => {
     requisition: p.requisition_id ? { id: p.requisition_id, number: p.requisition_no, school: p.school, status: p.requisition_status } : null,
     requestedBy: p.requested_by_name, requestedAt: p.requested_at, status: p.status, statusLabel: STATUS[p.status],
     authorizedBy: p.authorized_by_name, authorizedAt: p.authorized_at, authorizeNote: p.authorize_note, paidBy: p.paid_by_name, paidAt: p.paid_at, payNote: p.pay_note,
-    canAuthorize: p.status === 'review' && DECIDERS.includes(user.role), canDecide: p.status === 'pending' && PAYERS.includes(user.role),
+    canAuthorize: p.status === 'review' && user.canApproveMoney, canDecide: p.status === 'pending' && PAYERS.includes(user.role),
     ...(lines ? { lines: lines.map((l) => ({ sn: l.sn, detail: l.detail, amount: Number(l.amount) })) } : {}),
     ...(sigs ? { signs: { prepared: sg('prepared'), authorized: sg('authorized'), paid: sg('paid'), payee: sg('payee') } } : {}),
     ...(sealed ? { seal: sealed } : {}),
@@ -57,7 +56,7 @@ async function full(user, id) {
   const [lines, sigs, sealed] = await Promise.all([db('payment_lines').where({ payment_id: p.id }).orderBy('sn'), seal.signaturesOf(db, 'voucher', [p.id]), docs.voucher(db, p.id).then((c) => seal.seal(db, 'voucher', p.id, c))]);
   return out(p, user, lines, sigs, sealed);
 }
-const signPre = async (req, id) => seal.checkSigning(req.user, { pin: req.body?.pin, smsCode: req.body?.smsCode, type: 'voucher', id: Number(id) || 0, amount: id ? await docs.amountOf('voucher', Number(id)) : 0 });
+const signPre = async (req, id, over) => seal.checkSigning(req.user, { pin: req.body?.pin, smsCode: req.body?.smsCode, type: 'voucher', id: Number(id) || 0, amount: Math.max(Number(over) || 0, id ? await docs.amountOf('voucher', Number(id)) : 0) });
 const signStamp = async (trx, req, id, step, o) => seal.stamp(trx, req, 'voucher', id, step, await docs.voucher(trx, id), o);
 
 router.get('/', requirePage('payments'), async (req, res) => {
@@ -65,7 +64,7 @@ router.get('/', requirePage('payments'), async (req, res) => {
   const [c] = await db('payment_requests').select(db.raw(`(count(*) filter (where status = 'pending'))::int as pending, (count(*) filter (where status = 'review'))::int as review,
     coalesce(sum(amount) filter (where status = 'paid' and date_trunc('month', paid_at AT TIME ZONE '${TZ}') = date_trunc('month', (now() AT TIME ZONE '${TZ}'))), 0)::bigint as month`));
   res.json({ payments: rows.map((p) => out(p, req.user)), pending: c.pending, review: c.review, paidThisMonth: Number(c.month),
-    canWrite: WRITERS.includes(req.user.role), canPay: PAYERS.includes(req.user.role), canAuthorize: DECIDERS.includes(req.user.role) });
+    canWrite: WRITERS.includes(req.user.role), canPay: PAYERS.includes(req.user.role), canAuthorize: req.user.canApproveMoney });
 });
 
 router.get('/:id', requirePage('payments'), async (req, res) => {
@@ -102,7 +101,7 @@ router.post('/', requirePage('payments', 'f'), async (req, res) => {
 
 // 2. The Manager or the Finance Manager authorizes (or rejects) an internal payment.
 router.post('/:id/authorize', requirePage('payments', 'f'), async (req, res) => {
-  if (!DECIDERS.includes(req.user.role)) throw new HttpError(403, 'Only the Manager or the Finance Manager authorizes a payment.');
+  if (!req.user.canApproveMoney) throw new HttpError(403, 'Only the person who approves money now (Manager, or when he is away the Assistant Manager, then the Finance Manager) authorizes a payment.');
   const approve = req.body?.approve === true;
   const note = clean(req.body?.note, 300) || null;
   if (!approve && !note) throw new HttpError(400, 'Write why it is rejected.');
@@ -133,27 +132,34 @@ router.post('/:id/decide', requirePage('payments', 'f'), async (req, res) => {
   const note = clean(b.note, 300) || null;
   if (!approve && !note) throw new HttpError(400, 'Write why it cannot be paid.');
   const payeeImage = pngOrNull(b.payeeImage);
-  const payeeName = clean(b.payeeName, 120) || (await db('payment_requests').where({ id: Number(req.params.id) || 0 }).first('payee_name'))?.payee_name || '';
+  const pre = await db('payment_requests').where({ id: Number(req.params.id) || 0 }).first('payee_name', 'kind');
+  const payeeName = clean(b.payeeName, 120) || pre?.payee_name || '';
   if (approve) {
     if (payeeName.length < 3) throw new HttpError(400, 'Write the name of the person who receives the money.');
-    if (!payeeImage) throw new HttpError(400, 'The payee must sign in the box before the money is given.');
-    await signPre(req, req.params.id);
+    // Money for a requisition (2026-11-25): the Cashier's own signature is enough. Only an internal payout voucher needs the payee to sign.
+    if (!payeeImage && pre?.kind !== 'float') throw new HttpError(400, 'The payee must sign in the box before the money is given.');
+    await signPre(req, req.params.id, String(b.amountGiven ?? '').replace(/[,\s]/g, ''));   // a bigger amount given needs the SMS code too
   }
   await db.transaction(async (trx) => {
     const p = await trx('payment_requests').where({ id: Number(req.params.id) || 0 }).forUpdate().first();
     if (!p) throw new HttpError(404, 'Voucher not found.');
     if (p.status !== 'pending') throw new HttpError(409, `${p.number} is ${STATUS[p.status].toLowerCase()}.`);
-    const amount = Number(p.amount);
-    if (approve && p.kind === 'float' && !(amount > 0)) throw new HttpError(409, 'No amount was settled for this one. Reject it with a reason: the Manager must settle the cost first.');
-    await trx('payment_requests').where({ id: p.id }).update({ status: approve ? 'paid' : 'rejected', paid_by: req.user.id, paid_at: trx.fn.now(), pay_note: note });
+    // Money for a requisition (2026-11-25): the Cashier writes the amount GIVEN on the Payment Requisition Form. It may be equal to, more or
+    // less than the total written (the total is only an estimate). What the goods really cost is settled later, on the payment voucher.
+    let amount = Number(p.amount);
+    if (approve && p.kind === 'float') {
+      amount = b.amountGiven === undefined || b.amountGiven === '' ? amount : intAmount(b.amountGiven, 'Amount given');
+      if (!(amount > 0)) throw new HttpError(400, 'Write the amount given: a whole number of shillings above 0.');
+    }
+    await trx('payment_requests').where({ id: p.id }).update({ status: approve ? 'paid' : 'rejected', paid_by: req.user.id, paid_at: trx.fn.now(), pay_note: note, ...(approve && p.kind === 'float' ? { amount, payee_name: payeeName } : {}) });
     if (approve) {
       await signStamp(trx, req, p.id, 'paid');
-      await signStamp(trx, req, p.id, 'payee', { user: { id: null, full_name: payeeName, role: null }, image: payeeImage, name: payeeName, role: null });
+      if (payeeImage) await signStamp(trx, req, p.id, 'payee', { user: { id: null, full_name: payeeName, role: null }, image: payeeImage, name: payeeName, role: null });
     }
     if (p.kind === 'float') {
       const rq = await trx('requisitions').where({ id: p.requisition_id }).first('number', 'school_id', 'requested_by');
       await audit(req, approve ? 'payment.floatpaid' : 'payment.reject',
-        approve ? `${rq.number}: the Cashier gave ${money(amount)} to ${payeeName} to buy it. Goods will come to be checked by Mapokezi` : `${p.number} (money for ${rq.number}) rejected by the Cashier: ${note}`,
+        approve ? `${rq.number}: the Cashier gave ${money(amount)} to ${payeeName} to buy it${amount !== Number(p.est_amount ?? p.amount) ? ` (approved ${money(p.est_amount ?? p.amount)})` : ''}. Goods will come to be checked by Mapokezi` : `${p.number} (money for ${rq.number}) rejected by the Cashier: ${note}`,
         { schoolId: rq.school_id, detail: { paymentId: p.id, requisitionId: p.requisition_id, userId: p.requested_by } }, trx);
       return;
     }

@@ -25,11 +25,11 @@ export default function Grn() {
       <Tabs tabs={[['todo', 'Not approved'], ['all', 'All GRNs']]} value={tab} onChange={setTab} />
       <Panel flush>
         {!d ? <Loading /> : !d.grns.length ? <Empty icon="file" title="No GRN here" steps={['A GRN is written when every line of a delivery is confirmed.', 'The Bursar checks it.', 'The Head Master approves it.']} /> : (
-          <div className="tw"><table className="stafftable"><thead><tr><th className="stick">GRN</th><th>School</th><th>Delivery</th><th>Status</th><th>Written</th><th /></tr></thead>
+          <div className="tw"><table className="stafftable"><thead><tr><th className="stick">GRN</th><th>School</th><th>Delivery</th><th>Status</th><th>Written</th></tr></thead>
             <tbody>{d.grns.map((g) => (
               <tr key={g.id} onClick={() => setOpen(g.id)} style={{ cursor: 'pointer' }}>
                 <td className="stick nowrap"><b className="mono">{g.number}</b><div className="small muted">{g.placeLabel}</div></td><td>{g.school}</td><td className="mono">{g.delivery}</td>
-                <td><span className={`pill ${TONE[g.status]}`}>{g.statusLabel}</span></td><td className="small nowrap">{fmtWhen(g.preparedAt)}</td><td><button className="btn sm">Open</button></td>
+                <td><span className={`pill ${TONE[g.status]}`}>{g.statusLabel}</span></td><td className="small nowrap">{fmtWhen(g.preparedAt)}</td>
               </tr>
             ))}</tbody></table></div>
         )}

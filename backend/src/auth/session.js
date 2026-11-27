@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 const db = require('../db');
 const { sha256, HttpError } = require('../lib/util');
-const { pageAccess, ROLES } = require('./roles');
+const { pageAccess, ROLES, roleLabelFor } = require('./roles');
 const { publish } = require('../realtime');
 
 const SHORT = 12 * 60 * 60 * 1000;      // 12 hours
@@ -80,6 +80,8 @@ async function loadUser(req, _res, next) {
   row.roles = [{ role: row.role, school_id: row.school_id, school_name: row.school_name, school_short: row.school_short, school_code: row.school_code }, ...extra.filter((e) => e.role !== row.role)];
   const use = row.active_role && row.roles.find((r) => r.role === row.active_role);
   if (use) Object.assign(row, { role: use.role, school_id: use.school_id, school_name: use.school_name, school_short: use.school_short, school_code: use.school_code });
+  // May he approve money now? Manager first; when he is away the Assistant Manager; then the Finance Manager (lib/approvers.js).
+  row.canApproveMoney = await require('../lib/approvers').canApproveMoney(row);
   req.user = row;
   next();
 }
@@ -128,15 +130,18 @@ function publicUser(u) {
     phone: u.phone,
     email: u.email || null,
     role: u.role,
-    roleLabel: ROLES[u.role]?.label,
+    roleLabel: roleLabelFor(u.role, u.gender),
+    gender: u.gender || null,
     scope: ROLES[u.role]?.scope,
     school: u.school_id ? { id: u.school_id, name: u.school_name, shortName: u.school_short, code: u.school_code } : null,
     mustChangePassword: u.must_change_password,
     preferences: u.preferences || {},
     hasSignature: !!u.signature_image,
     hasPin: !!u.signing_pin_hash,
+    away: !!u.away,
+    canBeAway: (u.roles || [{ role: u.role }]).some((r) => ['manager', 'amanager'].includes(r.role)),
     // All the roles this person holds; the one in use is "role" above.
-    roles: (u.roles || [{ role: u.role, school_id: u.school_id, school_short: u.school_short }]).map((r) => ({ role: r.role, label: ROLES[r.role]?.label, school: r.school_short || null, main: r.role === (u.main_role || u.role) })),
+    roles: (u.roles || [{ role: u.role, school_id: u.school_id, school_short: u.school_short }]).map((r) => ({ role: r.role, label: roleLabelFor(r.role, u.gender), school: r.school_short || null, main: r.role === (u.main_role || u.role) })),
   };
 }
 

@@ -157,11 +157,11 @@ export function TeacherHome({ compact }) {
         <>
           <Panel title="My classes and subjects" sub={`Term ${d.term.term}, ${d.term.year} — my own progress`}>
             {!d.assignments.length ? <Empty>No subject has been given to you yet. The Academic Master gives subjects to teachers.</Empty> : (
-              <div className="tw"><table><thead><tr><th>Class</th><th>Subject</th><th className="n">Students</th><th>Syllabus done</th><th>Last lesson</th><th /></tr></thead>
+              <div className="tw"><table><thead><tr><th>Class</th><th>Subject</th><th className="n">Students</th><th>Syllabus done</th><th>Last lesson</th></tr></thead>
                 <tbody>{d.assignments.map((a) => (
-                  <tr key={`${a.classId}:${a.subjectId}`}><td>{a.className}</td><td>{a.subject}</td><td className="n">{a.students}</td>
+                  <tr key={`${a.classId}:${a.subjectId}`} onClick={() => setOpen(a)} style={{ cursor: 'pointer' }}><td>{a.className}</td><td>{a.subject}</td><td className="n">{a.students}</td>
                     <td><div className="row" style={{ gap: 8 }}><Bar pct={a.percent} /><span className="small">{a.topicsDone}/{a.topics}</span></div></td>
-                    <td>{dayText(a.lastLesson)}</td><td><button className="btn sm" onClick={() => setOpen(a)}>Open</button></td></tr>
+                    <td>{dayText(a.lastLesson)}</td></tr>
                 ))}</tbody></table></div>
             )}
           </Panel>

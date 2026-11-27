@@ -203,15 +203,14 @@ function Cards({ initialKind }) {
             <thead><tr>
               {canIssue && <th className="ck"><input type="checkbox" aria-label="Tick all not issued" checked={allTicked}
                 onChange={(e) => setTick(Object.fromEntries(shown.filter((c) => !c.issued).map((c) => [c.code, e.target.checked])))} /></th>}
-              <th className="stick">Name</th><th>{kind === 'student' ? 'Class' : 'Role'}</th>{kind === 'student' && <th>Admission No.</th>}<th>School</th><th>ID code</th><th>ID card</th><th />
+              <th className="stick">Name</th><th>{kind === 'student' ? 'Class' : 'Role'}</th>{kind === 'student' && <th>Admission No.</th>}<th>School</th><th>ID code</th><th>ID card</th>
             </tr></thead>
             <tbody>{shown.slice(0, 300).map((c) => (
-              <tr key={c.code}>
-                {canIssue && <td className="ck">{!c.issued && <input type="checkbox" checked={!!tick[c.code]} onChange={(e) => setTick((t) => ({ ...t, [c.code]: e.target.checked }))} aria-label={`${c.name} received the card`} />}</td>}
+              <tr key={c.code} onClick={() => setOpen(c)} style={{ cursor: 'pointer' }}>
+                {canIssue && <td className="ck" onClick={(e) => e.stopPropagation()}>{!c.issued && <input type="checkbox" checked={!!tick[c.code]} onChange={(e) => setTick((t) => ({ ...t, [c.code]: e.target.checked }))} aria-label={`${c.name} received the card`} />}</td>}
                 <td className="stick"><b>{c.name}</b></td><td>{c.detail}</td>{kind === 'student' && <td>{c.admissionNo}</td>}<td className="small">{c.school}</td>
                 <td className="mono small">{c.code}</td>
                 <td>{c.issued ? <span className="pill ok" title={`Given ${fmtWhen(c.issued.at)}`}>Issued{c.issued.no > 1 ? ` (card ${c.issued.no})` : ''}</span> : <span className="pill warn">Not issued</span>}</td>
-                <td><button className="btn sm" onClick={() => setOpen(c)}>Open</button></td>
               </tr>
             ))}</tbody>
           </table></div>

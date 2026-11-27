@@ -59,7 +59,7 @@ test('Academic Master order → store-keeper writes the requisition → Finance 
   assert.equal((await as('keeper', 'GET', `/api/orders/${o.id}`)).json.order.status, 'requisition');
   assert.equal((await as('keeper', 'POST', '/api/requisitions', { schoolId: em.id, orderId: o.id, lines: [{ name: 'Chalk', total: 1000 }] })).status, 409, 'one requisition per order');
   assert.equal((await as('keeper', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true })).status, 403, 'nobody approves his own');
-  r = await as('fm', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true });
+  r = await as('manager', 'POST', `/api/requisitions/${q.id}/manager`, { approve: true });
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.requisition.status, 'approved');
   const money = await db('payment_requests').where({ requisition_id: q.id, kind: 'float' }).first();
   assert.equal(Number(money.amount), 38000); assert.match(money.approved_by_name, /Finance Manager/);

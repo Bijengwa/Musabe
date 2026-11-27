@@ -11,9 +11,9 @@ import { classOption, useClasses, useStudentSchool } from './shared';
 import { GuardiansEditor } from './guardians';
 import { fromServer, guardianProblems, guardiansBody } from './guardianRules';
 
-const FIELDS = ['admissionNo', 'firstName', 'middleName', 'lastName', 'sex', 'classId'];
+const FIELDS = ['admissionNo', 'firstName', 'middleName', 'lastName', 'sex', 'residence', 'classId'];
 const rowOf = (s) => ({ id: s.id, admissionNo: s.admissionNo, firstName: s.firstName, middleName: s.middleName || '', lastName: s.lastName,
-  sex: s.sex, classId: String(s.classId || ''), guardians: fromServer(s.guardians) });
+  sex: s.sex, residence: s.residence || '', classId: String(s.classId || ''), guardians: fromServer(s.guardians) });
 const gKey = (list) => JSON.stringify(guardiansBody(list).map((g) => [g.fullName.trim().toUpperCase().replace(/\s+/g, ' '), g.phone, g.relationship]));
 const isChanged = (a, b) => FIELDS.some((k) => String(a[k] ?? '').trim().toUpperCase() !== String(b[k] ?? '').trim().toUpperCase()) || gKey(a.guardians) !== gKey(b.guardians);
 
@@ -73,7 +73,7 @@ export default function BulkEdit() {
     setBusy(true);
     try {
       const body = changed.map((r) => ({ id: r.id, admissionNo: r.admissionNo, firstName: r.firstName, middleName: r.middleName, lastName: r.lastName,
-        sex: r.sex, classId: r.classId ? Number(r.classId) : null, guardians: guardiansBody(r.guardians) }));
+        sex: r.sex, residence: r.residence || undefined, classId: r.classId ? Number(r.classId) : null, guardians: guardiansBody(r.guardians) }));
       const x = await api.post('/students/bulk', { rows: body });
       toast(`${x.saved} student${x.saved === 1 ? '' : 's'} saved${x.warnings?.length ? `. Check: ${x.warnings[0]}` : ''}`);
       setBusy(false); load();
@@ -89,7 +89,7 @@ export default function BulkEdit() {
   return (
     <>
       <div className="crumbs"><Link to="/students">← Students</Link></div>
-      <PageHead title="Edit many students" sub="Change names, admission numbers, sex, class and guardians for a whole class here, then save once. Or do it in Excel (below).">
+      <PageHead title="Edit many students" sub="Change names, admission numbers, sex, Day or Boarding, class and guardians for a whole class here, then save once. Or do it in Excel (below).">
       </PageHead>
       <ErrorNote error={cErr} />
       <ExcelEdit school={school} cls={cls} label={current?.label} />
@@ -113,7 +113,7 @@ export default function BulkEdit() {
           <Panel flush>
             {!rows.length ? <Empty>No students in {current?.label}.</Empty> : (
               <div className="tw"><table className="stafftable bulkgrid">
-                <thead><tr><th className="sn">S/N</th><th>Adm. No.</th><th>First name</th><th>Middle name</th><th>Last name</th><th>Sex</th><th>Class</th><th>Guardians (full names · phone · relationship)</th></tr></thead>
+                <thead><tr><th className="sn">S/N</th><th>Adm. No.</th><th>First name</th><th>Middle name</th><th>Last name</th><th>Sex</th><th>Day / Boarding</th><th>Class</th><th>Guardians (full names · phone · relationship)</th></tr></thead>
                 <tbody>
                   {shown.map((r, i) => {
                     const was = before.get(r.id);
@@ -127,6 +127,7 @@ export default function BulkEdit() {
                         <td><input className="nm" value={r.middleName} onChange={(e) => set(r.id, 'middleName', e.target.value)} aria-label="Middle name" /></td>
                         <td><input className="nm" value={r.lastName} onChange={(e) => set(r.id, 'lastName', e.target.value)} aria-label="Last name" /></td>
                         <td><select className="sx" value={r.sex} onChange={(e) => set(r.id, 'sex', e.target.value)} aria-label="Sex"><option value="M">Boy</option><option value="F">Girl</option></select></td>
+                        <td><select className="sx" value={r.residence} onChange={(e) => set(r.id, 'residence', e.target.value)} aria-label="Day or boarding"><option value="">Not set</option><option value="day">Day</option><option value="boarding">Boarding</option></select></td>
                         <td><select className="cl" value={r.classId} onChange={(e) => set(r.id, 'classId', e.target.value)} aria-label="Class">{classes.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></td>
                         <td>
                           <GuardiansEditor compact value={r.guardians} onChange={(v) => set(r.id, 'guardians', v)} />
@@ -174,7 +175,7 @@ function ExcelEdit({ school, cls, label }) {
         {cls && <ExcelButton href={`/api/students/export.xlsx?school=${school}&class=${cls}`} label={`Download ${label || 'this class'}`} />}
         <ExcelButton href={`/api/students/export.xlsx?school=${school}`} label="Download all classes" />
         <ExcelButton href={`/api/students/export.xlsx?school=${school}&status=left`} label="Download students who left" />
-        <span className="small muted">2. Change names, sex, class (Class column), status (Active / Left) or guardians in Excel.</span>
+        <span className="small muted">2. In Excel you can change names, sex, Day or Boarding, class (Class column), status (Active / Left) and guardians. Leave a cell empty to keep what is saved.</span>
         <span className="small muted">3.</span>
         <label className={`btn${busy ? ' off' : ''}`} style={{ flexDirection: 'row' }}>
           <input type="file" hidden disabled={busy} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => send(e.target.files[0])} />

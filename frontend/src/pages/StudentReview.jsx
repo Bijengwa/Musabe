@@ -90,7 +90,7 @@ export default function StudentReview() {
           <Panel flush>
             {!rows.length ? <Empty>Nothing here.</Empty> : (
               <div className="tw"><table className="reviewtable">
-                <thead><tr><th>Row</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th>{s.many && <th>Class</th>}<th>Guardians</th><th>What happens</th>{edit && <th />}</tr></thead>
+                <thead><tr><th>Row</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th><th>Day / Boarding</th>{s.many && <th>Class</th>}<th>Guardians</th><th>What happens</th>{edit && <th />}</tr></thead>
                 <tbody>{rows.map((l) => (
                   <tr key={l.row} className={l.errors.length ? 'bad' : l.change === 'No change' || l.skipped ? 'same' : ''}>
                     <td data-l="Row">{l.row}</td>
@@ -98,6 +98,7 @@ export default function StudentReview() {
                       {[...l.errors.map((t) => ['err-t', t]), ...l.warnings.map((t) => ['warn-t', t])].map(([c, t], i) => <div key={i} className={`small ${c}`}>{t}</div>)}</td>
                     <td data-l="Adm. No." className="mono">{l.admissionNo}</td>
                     <td data-l="Sex">{l.sex === 'M' ? 'Boy' : l.sex === 'F' ? 'Girl' : <span className="err-t">?</span>}</td>
+                    <td data-l="Day / Boarding">{l.residence === 'day' ? 'Day' : l.residence === 'boarding' ? 'Boarding' : <span className="muted">—</span>}</td>
                     {s.many && <td data-l="Class" className="nowrap">{l.className || <span className="muted">—</span>}</td>}
                     <td data-l="Guardians" className={l.shifted ? 'warn-t' : ''}>{l.guardians?.length ? (
                       <div className="glines">{l.guardians.map((g, i) => <div key={i}><b>{g.fullName}</b> <span className="muted small">{g.relationshipLabel}</span> <span className="mono small nowrap">{fmtPhone(g.phone)}</span></div>)}</div>
@@ -132,6 +133,7 @@ function FixRow({ line, many, schoolId, onClose, onSave }) {
   const [f, setF] = useState({
     admissionNo: x.admissionNo || '', firstName: x.firstName || '', middleName: x.middleName || '', lastName: x.lastName || '',
     sex: /^(m|male|boy)$/i.test(String(x.sex).trim()) ? 'M' : /^(f|female|girl)$/i.test(String(x.sex).trim()) ? 'F' : '',
+    residence: /^(d|day|mchana)/i.test(String(x.residence || '').trim()) ? 'day' : /^(b|boarding|boarder|bweni)/i.test(String(x.residence || '').trim()) ? 'boarding' : '',
     className: line.className || x.className || '', status: /left/i.test(x.status || '') ? 'Left' : x.status ? 'Active' : '',
     guardians: (x.guardians?.length ? x.guardians : [{}]).map((g) => ({ ...emptyGuardian(), fullName: g.fullName || '', phone: String(g.phone || '').replace(/\D/g, '').replace(/^255(?=\d{9}$)/, '0').replace(/^(?=[67]\d{8}$)/, '0'), relationship: String(g.relationship || '').toLowerCase() })),
   });
@@ -158,6 +160,7 @@ function FixRow({ line, many, schoolId, onClose, onSave }) {
         <div className="fg">
           <label>Admission No.<input className="mono" value={f.admissionNo} onChange={(e) => set('admissionNo', e.target.value)} /></label>
           <div className="lab">Sex<div className="seg">{[['M', 'Boy'], ['F', 'Girl']].map(([k, t]) => <button type="button" key={k} className={f.sex === k ? 'on' : ''} onClick={() => set('sex', k)}>{t}</button>)}</div></div>
+          <div className="lab">Day or boarding<div className="seg">{[['day', 'Day scholar'], ['boarding', 'Boarding']].map(([k, t]) => <button type="button" key={k} className={f.residence === k ? 'on' : ''} onClick={() => set('residence', f.residence === k ? '' : k)}>{t}</button>)}</div></div>
           {many && <label>Class<select value={f.className} onChange={(e) => set('className', e.target.value)}>
             <option value="">Choose class</option>{(classes || []).filter((c) => c.active).map((c) => <option key={c.id} value={c.label}>{c.label}</option>)}</select></label>}
           {many && <label>Status<select value={f.status} onChange={(e) => set('status', e.target.value)}><option value="">As now</option><option>Active</option><option>Left</option></select></label>}

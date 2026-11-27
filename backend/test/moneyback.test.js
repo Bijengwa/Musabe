@@ -53,14 +53,29 @@ async function paidRequisition(lines) {
   return { q, o, item };
 }
 
-test('Spent exactly the office money: Mapokezi accepts and it closes by itself (no Cashier step)', { skip }, async () => {
+// 2026-11-25: after Mapokezi accepts the goods: the Assistant Accountant checks -> the Manager approves -> the Cashier writes the
+// Cheque / Cash Payment Voucher (real amounts) and takes the change. Only then is the buying confirmed.
+async function afterMapokezi(pid, returnedAmount, extra = {}) {
+  let r = await as('aacc', 'POST', `/api/purchases/${pid}/acheck`, { approve: true });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  r = await as('manager', 'POST', `/api/purchases/${pid}/approve`, { approve: true });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  return as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, method: 'cash', returnedAmount, ...extra });
+}
+
+test('Spent exactly the office money: Mapokezi, Assistant Accountant, Manager, then the Cashier writes the voucher (no change)', { skip }, async () => {
   const { q, o, item } = await paidRequisition([{ name: 'Bags', qty: 20, estCost: 1000 }]);
   let r = await as('keeper', 'POST', '/api/purchases', { requisitionId: q.id, supplier: 'Nyanza', lines: [{ itemId: item.id, qty: 20, unitCost: 1000 }] });
   assert.equal(r.status, 201, JSON.stringify(r.json));
   r = await as('mapokezi', 'POST', `/api/purchases/${r.json.purchase.id}/check`, {});
   assert.equal(r.status, 200, JSON.stringify(r.json));
-  assert.equal(r.json.purchase.status, 'confirmed', 'nothing to give back: closed when Mapokezi accepted');
-  assert.equal((await as('keeper', 'POST', `/api/purchases/${r.json.purchase.id}/send`, {})).status, 200, 'the store-keeper sends it');
+  assert.equal(r.json.purchase.status, 'checked', 'no longer closes by itself');
+  assert.equal(r.json.purchase.stage, 'acheck');
+  const spentId = r.json.purchase.id;
+  r = await afterMapokezi(spentId, 0);
+  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.purchase.status, 'confirmed');
+  assert.equal(r.json.purchase.payMethod, 'cash'); assert.equal(r.json.purchase.actualAmount, 20000);
+  assert.equal((await as('keeper', 'POST', `/api/purchases/${spentId}/send`, {})).status, 200, 'the store-keeper sends it');
   r = await as('keeper', 'GET', `/api/requisitions/${q.id}`);
   assert.equal(r.json.requisition.status, 'sent'); assert.ok(r.json.requisition.delivery);
   assert.equal((await as('acad', 'GET', `/api/orders/${o.id}`)).json.order.statusLabel, 'Sent to the school');
@@ -79,7 +94,7 @@ test('Mapokezi rejects: buyer goes back to the market, then the Cashier still ta
   assert.equal(r.json.purchase.status, 'checked', '2,000 left: the Cashier takes it back');
   r = await as('keeper', 'GET', `/api/requisitions/${q.id}`);
   assert.equal(r.json.requisition.canAskMoneyBack, false, 'something is being bought now');
-  r = await as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, returnedAmount: 2000 });
+  r = await afterMapokezi(pid, 2000);
   assert.equal(r.status, 200, JSON.stringify(r.json));
 });
 
@@ -115,5 +130,7 @@ test('Store-keeper and Assistant Manager go to the market together: both sign be
   r = await as('amanager', 'POST', `/api/purchases/${pid}/went-with`, {});
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.ok(r.json.purchase.signs.wentWith);
   r = await as('mapokezi', 'POST', `/api/purchases/${pid}/check`, {});
-  assert.equal(r.status, 200); assert.equal(r.json.purchase.status, 'confirmed', 'spent exactly: closes by itself');
+  assert.equal(r.status, 200); assert.equal(r.json.purchase.status, 'checked', 'spent exactly: still goes through the Assistant Accountant, the Manager and the Cashier voucher');
+  r = await afterMapokezi(pid, 0);
+  assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.purchase.status, 'confirmed');
 });

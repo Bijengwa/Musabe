@@ -43,5 +43,5 @@ async function amountOf(type, id, k = db) {
 }
 
 const STEP = { applicant: 'Applicant', acad: 'First school signer', head: 'Head Master', store: 'Store-keeper', check: 'Assistant Accountant', manager: 'Manager', certified: 'Certified by', authorised: 'Authorised by',
-  prepared: 'Prepared by', authorized: 'Authorized by', payee: 'Payee', paid: 'Cashier', bought: 'Buyer', checked: 'Mapokezi', settled: 'Cashier (money back)', confirmed: 'Accountant office' };
+  prepared: 'Prepared by', authorized: 'Authorized by', payee: 'Payee', paid: 'Cashier', bought: 'Buyer', checked: 'Mapokezi', settled: 'Cashier (payment voucher)', confirmed: 'Accountant office', acheck: 'Assistant Accountant', mgrok: 'Manager / Finance Manager' };
 module.exports = { contentOf, amountOf, STEP, requisition, voucher, purchase, lpo };

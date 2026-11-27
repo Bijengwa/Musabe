@@ -62,14 +62,14 @@ const RULES = [
   { actions: ['purchase.confirm'], roles: ['storekeeper'], why: 'Confirmed purchases to send to the schools' },
   // Money going out: the Cashier is told when there is money to give; Mapokezi and the store-keeper when it was given
   // (goods will come to be checked); the person who wrote a request hears how it ended.
-  { actions: ['payment.create'], roles: ['manager', 'fm'], why: 'A payment voucher to authorize' },
+  { actions: ['payment.create'], roles: ['manager', 'amanager', 'fm'], why: 'A payment voucher to authorize' },
   { actions: ['payment.authorized', 'payment.float'], roles: ['cashier'], why: 'Money to give out' },
   { actions: ['payment.floatpaid'], roles: ['mapokezi', 'storekeeper', 'amanager'], why: 'Money given to buy: goods to check soon' },
   { actions: ['payment.pay', 'payment.reject'], roles: ['aacc', 'fm', 'manager'], why: 'Your payment vouchers', own: true },
   // School requisitions: each signer is told when it is their turn; the Academic Master follows their own.
   // Since 2026-11-20 the buyer (Assistant Manager / store-keeper) writes it: the Manager and the Finance Manager approve the money.
   { actions: ['requisition.create', 'requisition.store', 'requisition.fixed_check'], roles: ['aacc'], why: 'Requisitions to check' },
-  { actions: ['requisition.check', 'requisition.fixed_manager'], roles: ['manager', 'fm'], why: 'Requisitions to approve' },
+  { actions: ['requisition.check', 'requisition.fixed_manager'], roles: ['manager', 'amanager', 'fm'], why: 'Requisitions to approve' },
   { actions: ['requisition.check'], roles: ['amanager', 'storekeeper'], why: 'Your requisitions', own: true },
   { actions: ['requisition.manager', 'requisition.reject', 'requisition.return', 'requisition.moneyback'], roles: ['amanager', 'storekeeper'], why: 'Your requisitions', own: true },
   { actions: ['requisition.moneyback_ask'], roles: ['cashier'], why: 'Money to receive back' },

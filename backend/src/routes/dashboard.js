@@ -274,13 +274,15 @@ async function todo(user, school) {
   }
   // Main store, issuing and the weekly check (2026-11-16).
   if (PURCHASE_CONFIRMERS.includes(user.role)) {
-    add(await cnt(db('purchases').where('status', 'checked').whereNot('created_by', user.id).where((w) => w.whereNull('checked_by').orWhereNot('checked_by', user.id))),
+    add(await cnt(db('purchases').where('status', 'checked').whereNull('float_id').whereNot('created_by', user.id).where((w) => w.whereNull('checked_by').orWhereNot('checked_by', user.id))),
       'purchases counted by the store-keeper: confirm them', '/purchases');
+    if (user.role === 'aacc') add(await cnt(db('purchases').where('status', 'checked').whereNotNull('float_id').whereNull('acheck_at').whereNot('created_by', user.id)),
+      'things bought with office money, accepted by Mapokezi: check them', '/purchases');
     add(await cnt(db('purchases').where('status', 'pending')), 'purchases waiting to be counted (go with the store-keeper)', '/purchases', 'info');
     add(await cnt(db('stock_counts').where('status', 'pending').whereNot('counted_by', user.id)), 'weekly stock checks to confirm', '/counts');
   } else if (user.role === 'storekeeper') {
     add(await cnt(db('purchases').where({ status: 'pending', ordered: false })), 'purchases waiting for Mapokezi to check', '/purchases', 'info');
-    add(await cnt(db('purchases').where({ status: 'checked' })), 'checked by Mapokezi: waiting for the accountant office to confirm', '/purchases', 'info');
+    add(await cnt(db('purchases').where({ status: 'checked' })), 'checked by Mapokezi: waiting for the accountant office, the Manager and the Cashier', '/purchases', 'info');
     add(await cnt(db('purchases').where({ status: 'pending', ordered: true })), 'orders waiting for the goods (Mapokezi checks them when they arrive)', '/purchases', 'info');
   } else if (user.role === 'mapokezi') {
     add(await cnt(db('purchases').where('status', 'pending')), 'purchases waiting for you to check against the receipts', '/purchases');
@@ -289,6 +291,7 @@ async function todo(user, school) {
     'requisitions with money given: goods will come to check soon', '/requisitions', 'info');
   } else if (user.role === 'cashier') {
     add(await cnt(db('payment_requests').where('status', 'pending')), 'payments waiting for you to give out', '/payments');
+    add(await cnt(db('purchases').where('status', 'checked').whereNotNull('float_id').whereNotNull('mgr_at')), 'approved buying: write the Cheque / Cash Payment Voucher', '/purchases');
   }
   // Order Book (2026-11-20).
   if (pageAccess(user.role, 'orders')) {
@@ -314,17 +317,18 @@ async function todo(user, school) {
       add(await cnt(sign().where('status', 'store')), 'old school requisitions to sign', '/requisitions');
       add(await cnt(rq().where('status', 'approved')), 'approved requisitions to buy or order', '/requisitions');
     }
+    if (user.canApproveMoney) add(await cnt(db('purchases').where('status', 'checked').whereNotNull('float_id').whereNotNull('acheck_at').whereNull('mgr_at')), 'things bought with office money, checked by the Assistant Accountant: approve them', '/purchases');
     if (user.role === 'cashier') add(await cnt(rq().whereIn('status', ['approved', 'buying']).whereNotNull('money_back_asked_at')), 'buyers bringing office money back: receive it', '/requisitions');
     if (user.role === 'amanager') add(await cnt(rq().where({ status: 'approved', requested_by: user.id })), 'of your requisitions are approved: to buy', '/requisitions');
     // Office buying (2026-11-21): LPOs to sign, confirmed goods to send to the schools.
     if (user.role === 'acc') add(await cnt(db('lpos').where('status', 'certify').whereNot('prepared_by', user.id)), 'LPOs to certify (Head of Accounts)', '/lpo');
-    if (['manager', 'fm'].includes(user.role)) add(await cnt(db('lpos').where('status', 'authorise').whereNot('prepared_by', user.id).where((w) => w.whereNull('certified_by').orWhereNot('certified_by', user.id))), 'LPOs to authorise', '/lpo');
+    if (user.canApproveMoney) add(await cnt(db('lpos').where('status', 'authorise').whereNot('prepared_by', user.id).where((w) => w.whereNull('certified_by').orWhereNot('certified_by', user.id))), 'LPOs to authorise', '/lpo');
     if (user.role === 'storekeeper') add(await cnt(db('purchases as p').where('p.status', 'confirmed').whereNotNull('p.school_id').whereNull('p.delivery_id')
       .whereExists(db('purchase_lines as l').whereRaw('l.purchase_id = p.id').whereRaw('coalesce(l.confirmed_qty, l.qty) > 0').select(db.raw('1')))), 'confirmed purchases to send to the schools (with QR labels)', '/purchases');
     if (user.role === 'acc') add(await cnt(db('contracts').whereNull('checked_at').whereNot('created_by', user.id)), 'work agreements to check', '/contracts', 'info');
     if (user.role === 'aacc') add(await cnt(sign().where('status', 'check').whereNot('requested_by', user.id)), 'requisitions to check (prices) before the Manager', '/requisitions');
-    if (['manager', 'fm'].includes(user.role)) add(await cnt(sign().where('status', 'manager').whereNot('requested_by', user.id)), 'requisitions to approve (money)', '/requisitions');
-    if (['manager', 'fm'].includes(user.role)) add(await cnt(db('payment_requests').where('status', 'review').whereNot('requested_by', user.id)), 'payout vouchers to authorize (money)', '/payments');
+    if (user.canApproveMoney) add(await cnt(sign().where('status', 'manager').whereNot('requested_by', user.id)), 'requisitions to approve (money)', '/requisitions');
+    if (user.canApproveMoney) add(await cnt(db('payment_requests').where('status', 'review').whereNot('requested_by', user.id)), 'payout vouchers to authorize (money)', '/payments');
     if (['amanager', 'storekeeper'].includes(user.role)) add(await cnt(db('purchases').where({ went_with: user.id, status: 'pending' }).whereNull('went_with_signed_at')), 'buying forms to sign: you went to the market too', '/purchases');
     if (['amanager', 'storekeeper'].includes(user.role)) {
       add(await cnt(rq().where({ requested_by: user.id, returned: true }).whereIn('status', ['check', 'manager'])), 'of your requisitions were sent back: please correct them', '/requisitions');
@@ -469,7 +473,7 @@ router.get('/', async (req, res) => {
       const [pu] = await db('purchases').select(db.raw(`(count(*) filter (where status = 'pending'))::int as toCheck, (count(*) filter (where status = 'checked'))::int as checked`));
       const recent = await db('purchases as p').leftJoin('schools as s', 's.id', 'p.school_id').where('p.status', 'pending').orderBy('p.id', 'desc').limit(8)
         .select('p.id', 'p.number', 'p.supplier', 'p.total', 'p.created_at', 's.short_name as school');
-      const given = await db('requisitions as r').join('schools as s', 's.id', 'r.school_id').join('payment_requests as pr', 'pr.requisition_id', 'r.id')
+      const given = await db('requisitions as r').leftJoin('schools as s', 's.id', 'r.school_id').join('payment_requests as pr', 'pr.requisition_id', 'r.id')
         .where('pr.kind', 'float').where('pr.status', 'paid').whereIn('r.status', ['approved', 'buying', 'arrived']).orderBy('pr.paid_at', 'desc').limit(8)
         .select('r.id', 'r.number', 'r.purpose', 'r.status', 's.short_name as school', 'pr.amount', 'pr.paid_at');
       Object.assign(d, { mapokezi: { toCheck: pu.toCheck, checked: pu.checked,

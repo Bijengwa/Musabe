@@ -41,15 +41,14 @@ function Checks() {
       <Panel flush>
         {!data ? <Loading /> : !data.counts.length ? <Empty>No checks yet.</Empty> : (
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>No.</th><th>Week of</th><th className="stick">Store</th><th>What</th><th className="n">Items</th><th className="n">Different</th><th>Counted by</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>No.</th><th>Week of</th><th className="stick">Store</th><th>What</th><th className="n">Items</th><th className="n">Different</th><th>Counted by</th><th>Status</th></tr></thead>
             <tbody>{data.counts.map((c) => (
-              <tr key={c.id}>
+              <tr key={c.id} onClick={() => setOpen(c)} style={{ cursor: 'pointer' }}>
                 <td className="mono small">{c.number}</td><td className="small">{c.week}</td>
                 <td className="stick">{c.code ? <SchoolPill code={c.code} name={c.store} /> : <b>Old main store</b>}</td><td>{c.categoryLabel}</td><td className="n">{c.items}</td>
                 <td className="n">{c.differences == null ? <span className="muted">—</span> : c.differences ? <span className="pill bad">{c.differences}</span> : <span className="pill ok">0</span>}</td>
                 <td className="small">{c.by}<div className="muted">{fmtWhen(c.countedAt)}</div></td>
-                <td><span className={`pill ${TONE[c.status]}`}>{c.statusLabel}</span>{c.decidedBy && <div className="small muted">{c.decidedBy}</div>}</td>
-                <td><button className={`btn sm${c.canDecide ? ' p' : ''}`} onClick={() => setOpen(c)}>{c.canDecide ? 'Check' : 'Open'}</button></td>
+                <td><span className={`pill ${TONE[c.status]}`}>{c.statusLabel}</span>{c.canDecide && <span className="pill warn sm" style={{ marginLeft: 6 }}>To check</span>}{c.decidedBy && <div className="small muted">{c.decidedBy}</div>}</td>
               </tr>
             ))}</tbody>
           </table></div>

@@ -42,7 +42,7 @@ const base = () => db('lpos as l').join('suppliers as s', 's.id', 'l.supplier_id
 
 function turn(user, l) {
   if (l.status === 'certify' && CERTIFIERS.includes(user.role) && l.prepared_by !== user.id) return 'certify';
-  if (l.status === 'authorise' && AUTHORISERS.includes(user.role) && l.prepared_by !== user.id && l.certified_by !== user.id) return 'authorise';
+  if (l.status === 'authorise' && user.canApproveMoney && l.prepared_by !== user.id && l.certified_by !== user.id) return 'authorise';
   return null;
 }
 async function withLines(rows, user) {

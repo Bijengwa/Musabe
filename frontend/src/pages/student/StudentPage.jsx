@@ -69,7 +69,7 @@ export default function StudentPage() {
           <h1>{s.fullName}</h1>
           <div className="row">
             {s.className ? <span className="pill info" title={s.classFullName}>{s.className}</span> : <span className="pill">No class</span>}
-            <span className="pill">{s.sexLabel}</span>
+            <span className="pill">{s.sexLabel}</span>{s.residenceLabel && <span className="pill">{s.residenceLabel}</span>}
             <span className="pill mono">Adm. {s.admissionNo}</span>
             {s.status === 'left' ? <span className="pill bad">Left school</span> : <span className="pill ok">At school</span>}
           </div>

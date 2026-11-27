@@ -97,6 +97,13 @@ export const MY_PAGES = [
 ];
 
 export const ADMIN_ROLES = ['super', 'director', 'adirector', 'manager', 'amanager', 'fm', 'afm', 'acc', 'aacc', 'storekeeper', 'cashier', 'mapokezi', 'secretary', 'hr'];
+// The post name follows the person: "Head Master" for a man, "Head Mistress" for a woman (gender m / f).
+export const roleLabelFor = (role, gender) => {
+  const l = ROLE_LABELS[role];
+  if (!l || !gender) return l;
+  return l.replace('Master / Mistress', gender === 'f' ? 'Mistress' : 'Master').replace('Patron / Matron', gender === 'f' ? 'Matron' : 'Patron');
+};
+
 export const ROLE_LABELS = {
   patron: 'Patron / Matron',
   super: 'Super Admin', director: 'Director', adirector: 'Assistant Director', manager: 'Manager', amanager: 'Assistant Manager',

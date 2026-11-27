@@ -49,6 +49,7 @@ function SigningPanel({ user, refresh }) {
       <div className="stack">
         <div className="row"><span className={`pill ${user.hasSignature ? 'ok' : 'warn'}`}>{user.hasSignature ? 'Signature saved' : 'No signature yet'}</span>
           <span className={`pill ${user.hasPin ? 'ok' : 'warn'}`}>{user.hasPin ? 'PIN set' : 'No PIN yet'}</span></div>
+        <h4 style={{ margin: '6px 0 0' }}>1. Signature</h4>
         {current && <img src={current} alt="My saved signature" style={{ maxHeight: 70, alignSelf: 'flex-start', border: '1px dashed var(--line)', borderRadius: 8, background: '#fff' }} />}
         <div className="seg" role="tablist">
           <button type="button" className={how === 'photo' ? 'on' : ''} onClick={() => { setHow('photo'); setImage(null); }}>Photo of my signature on paper</button>
@@ -67,12 +68,34 @@ function SigningPanel({ user, refresh }) {
         )}
         {image && <div className="stack" style={{ gap: 4 }}><span className="small muted">It will look like this on the papers:</span>
           <div style={{ background: '#fff', border: '1px dashed var(--line)', borderRadius: 8, padding: '10px 16px', alignSelf: 'flex-start' }}><div className="rq-sigline" style={{ width: 240 }}><img className="rq-sigimg" src={image} alt="New signature" /></div></div></div>}
+        <h4 style={{ margin: '10px 0 0' }}>2. Signing PIN</h4>
         <label>{user.hasPin ? 'New signing PIN (leave empty to keep it)' : 'Signing PIN (4 to 6 digits, not 1234)'}
           <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} /></label>
+        <h4 style={{ margin: '10px 0 0' }}>3. Confirm</h4>
         <label>Your account password (to confirm)
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
         <ErrorNote error={error} />
         <button className="btn p" disabled={busy || !password || (!image && !pin)} onClick={save}>Save</button>
+      </div>
+    </Panel>
+  );
+}
+
+// The Manager and the Assistant Manager: "I am away". Money approval then goes to the next person (Manager, Assistant Manager, Finance Manager).
+function AwayPanel({ user, refresh }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const flip = async () => {
+    setBusy(true); setError('');
+    try { await api.put('/me/away', { away: !user.away }); toast(user.away ? 'You are back in the office' : 'Marked away: money approval goes to the next person'); await refresh(); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  return (
+    <Panel title="Am I in the office?" sub="Who approves money: the Manager first, then the Assistant Manager, then the Finance Manager">
+      <div className="stack">
+        <div className="row"><span className={`pill ${user.away ? 'warn' : 'ok'}`}>{user.away ? 'Away: the next person approves' : 'In the office'}</span></div>
+        <ErrorNote error={error} />
+        <button className={`btn ${user.away ? 'p' : ''}`} disabled={busy} onClick={flip}>{user.away ? 'I am back' : 'I am away'}</button>
       </div>
     </Panel>
   );
@@ -135,9 +158,7 @@ export default function Profile() {
               </div>
             )}
           </Panel>
-        </div>
 
-        <div className="stack">
           <Panel title="Account">
             {!info ? <Loading /> : (
               <div className="stack kvlist">
@@ -149,23 +170,26 @@ export default function Profile() {
               </div>
             )}
           </Panel>
+        </div>
 
+        <div className="stack">
+          {user.canBeAway && <AwayPanel user={user} refresh={refresh} />}
           <SigningPanel user={user} refresh={refresh} />
-
-          <Panel title="My recent activity" flush>
-            {!info ? <Loading /> : !info.activity.length ? <Empty>Nothing yet.</Empty> : (
-              <div className="list">
-                {info.activity.map((a) => (
-                  <div className="li" key={a.id}>
-                    <Icon name="clock" />
-                    <div className="grow"><b className="fw5">{a.summary}</b><span>{fmtWhen(a.at)}</span></div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
         </div>
       </div>
+
+        <Panel title="My recent activity" flush>
+          {!info ? <Loading /> : !info.activity.length ? <Empty>Nothing yet.</Empty> : (
+            <div className="list">
+              {info.activity.map((a) => (
+                <div className="li" key={a.id}>
+                  <Icon name="clock" />
+                  <div className="grow"><b className="fw5">{a.summary}</b><span>{fmtWhen(a.at)}</span></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
     </>
   );
 }

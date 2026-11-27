@@ -18,6 +18,7 @@ export default function StudentList() {
   const [cls, setCls] = useState(() => { try { return sessionStorage.getItem('musabe-class') || ''; } catch { return ''; } });
   const [status, setStatus] = useState('active');
   const [sex, setSex] = useState('');
+  const [residence, setResidence] = useState('');
   const [noGuardian, setNoGuardian] = useState(false);
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(null);
@@ -29,10 +30,11 @@ export default function StudentList() {
     const p = new URLSearchParams({ school, status });
     if (validCls) p.set('class', validCls);
     if (sex) p.set('sex', sex);
+    if (residence) p.set('residence', residence);
     if (noGuardian) p.set('guardians', 'none');
     if (q.trim()) p.set('q', q.trim());
     return p.toString();
-  }, [school, status, validCls, sex, q, noGuardian]);
+  }, [school, status, validCls, sex, residence, q, noGuardian]);
   const load = useCallback(() => { if (school) api.get(`/students?${qs}`).then((d) => { setRows({ qs, list: d.students }); setError(''); }).catch((e) => setError(e.message)); }, [qs, school]);
   useEffect(() => { const t = setTimeout(load, q ? 250 : 0); return () => clearTimeout(t); }, [load, q]);
   useLive(['student', 'studentimport'], load);
@@ -72,18 +74,19 @@ export default function StudentList() {
           <div className="filters">
             <div className="searchbox"><Icon name="search" /><input placeholder="Name, admission no. or guardian phone" value={q} onChange={(e) => setQ(e.target.value)} /></div>
             <select aria-label="Sex" value={sex} onChange={(e) => setSex(e.target.value)}><option value="">Boys and girls</option><option value="M">Boys</option><option value="F">Girls</option></select>
+            <select aria-label="Day or boarding" value={residence} onChange={(e) => setResidence(e.target.value)}><option value="">Day and boarding</option><option value="day">Day scholars</option><option value="boarding">Boarding</option><option value="none">Not set</option></select>
             <div className="seg">{[['active', 'At school'], ['left', 'Left']].map(([k, t]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{t}</button>)}</div>
             <label className="chk"><input type="checkbox" checked={noGuardian} onChange={(e) => setNoGuardian(e.target.checked)} /> No guardian</label>
             {list && <span className="muted small">{list.length} student{list.length === 1 ? '' : 's'}</span>}
           </div>
           <Panel flush>
-            {!list ? <SkeletonTable rows={9} columns={validCls ? 5 : 6} /> : !list.length ? (q || noGuardian || sex
+            {!list ? <SkeletonTable rows={9} columns={validCls ? 6 : 7} /> : !list.length ? (q || noGuardian || sex
               ? <Empty icon="search" title="No student matches">Try a different name, admission number or phone, or clear the filters above.</Empty>
               : <Empty icon="users" title={current ? `No students in ${current.label} yet` : 'No students yet'}
                 steps={['Press "Add student" to type one child with their guardians.', 'Or upload a class list from Excel: it is checked first, and nothing is saved until you approve it.']}
                 action={<><Link className="btn p" to="/students/new"><Icon name="plus" /> Add student</Link><Link className="btn" to="/students/upload"><Icon name="upload" /> Upload class list</Link></>} />) : (
               <div className="tw"><table className="stafftable">
-                <thead><tr><th className="sn">S/N</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th>{!validCls && <th>Class</th>}<th>Guardians</th></tr></thead>
+                <thead><tr><th className="sn">S/N</th><th className="stick">Name</th><th>Adm. No.</th><th>Sex</th><th>Day / Boarding</th>{!validCls && <th>Class</th>}<th>Guardians</th></tr></thead>
                 <tbody>
                   {list.map((s, i) => (
                     <tr key={s.id} className="clickrow" tabIndex={0} onClick={() => navigate(`/students/${s.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/students/${s.id}`); }}>
@@ -91,6 +94,7 @@ export default function StudentList() {
                       <td className="stick"><b>{s.fullName}</b>{s.status === 'left' && <span className="pill bad sm">Left</span>}</td>
                       <td data-l="Adm. No." className="mono">{s.admissionNo}</td>
                       <td data-l="Sex">{s.sexLabel}</td>
+                      <td data-l="Day / Boarding">{s.residenceLabel || <span className="muted">Not set</span>}</td>
                       {!validCls && <td data-l="Class">{s.className || <span className="muted">No class</span>}</td>}
                       <td data-l="Guardians"><GuardianLines list={s.guardians} /></td>
                     </tr>

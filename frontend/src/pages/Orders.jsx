@@ -59,15 +59,14 @@ function OList() {
       <Panel flush>
         {!data ? <Loading /> : !rows.length ? <Empty>Nothing here.</Empty> : (
           <div className="tw"><table className="stafftable">
-            <thead><tr><th>No.</th><th>School</th><th className="stick">Particulars</th><th>Ordered by</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>No.</th><th>School</th><th className="stick">Particulars</th><th>Ordered by</th><th>Status</th></tr></thead>
             <tbody>{rows.map((o) => (
               <tr key={o.id} onClick={() => navigate(`/orders/${o.id}`)} style={{ cursor: 'pointer' }}>
                 <td className="mono small">{o.number}<div className="muted">{fmtWhen(o.writtenAt)}</div></td>
                 <td><SchoolPill code={o.code} name={o.school} /><div className="small muted">{o.placeLabel}</div></td>
                 <td className="stick small" style={{ maxWidth: 260 }}>{o.lines.slice(0, 3).map((l) => `${qtyText(l)} ${l.particulars}`.trim()).join(', ')}{o.lines.length > 3 ? ` +${o.lines.length - 3}` : ''}</td>
                 <td className="small">{o.writer}<div className="muted">{o.writerRole}</div></td>
-                <td><span className={`pill ${TONE[o.status]}`}>{o.statusLabel}</span>{o.requisition && <div className="small muted">{o.requisition.number}</div>}</td>
-                <td><Link className={`btn sm${o.turn && o.turn !== 'withdraw' ? ' p' : ''}`} to={`/orders/${o.id}`} onClick={(e) => e.stopPropagation()}>{o.turn && o.turn !== 'withdraw' ? 'Answer' : 'Open'}</Link></td>
+                <td><span className={`pill wrap ${TONE[o.status]}`}>{o.statusLabel}</span>{o.turn && o.turn !== 'withdraw' && <span className="pill warn sm" style={{ marginLeft: 6 }}>Your turn</span>}{o.requisition && <div className="small muted">{o.requisition.number}</div>}</td>
               </tr>
             ))}</tbody>
           </table></div>

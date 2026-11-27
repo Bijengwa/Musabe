@@ -114,7 +114,11 @@ test('Requisition (2026-11-20): store-keeper writes → Manager → Cashier floa
   assert.equal((await as('manager', 'GET', `/api/requisitions/${q.id}`)).json.requisition.status, 'buying');
   assert.equal((await as('mapokezi', 'POST', `/api/purchases/${pid}/check`, {})).status, 200);
   assert.equal((await as('acc', 'POST', `/api/purchases/${pid}/decide`, { approve: true, returnedAmount: 6000 })).status, 403, 'the Head Accountant only audits');
-  r = await as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, returnedAmount: 6000 });
+  assert.equal((await as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, method: 'cash', returnedAmount: 6000 })).status, 409, 'the Assistant Accountant and the Manager approve first (2026-11-25)');
+  assert.equal((await as('aacc', 'POST', `/api/purchases/${pid}/acheck`, { approve: true })).status, 200);
+  assert.equal((await as('manager', 'POST', `/api/purchases/${pid}/approve`, { approve: true })).status, 200);
+  assert.equal((await as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, returnedAmount: 6000 })).status, 400, 'the voucher says cash or cheque');
+  r = await as('cashier', 'POST', `/api/purchases/${pid}/decide`, { approve: true, method: 'cash', returnedAmount: 6000 });
   assert.equal(r.status, 200, JSON.stringify(r.json)); assert.equal(r.json.purchase.toSend, true, 'confirming does not send (2026-11-21)');
   assert.equal((await as('manager', 'GET', `/api/requisitions/${q.id}`)).json.requisition.status, 'arrived');
   assert.equal((await as('cashier', 'POST', `/api/purchases/${pid}/send`, {})).status, 403, 'only the store-keeper sends');

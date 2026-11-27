@@ -53,7 +53,7 @@ export default function UploadList() {
               </label>
               <ErrorNote error={error} />
               <ol className="steps">
-                <li>Columns are found by their names: Admission No., first / middle / last name, Sex, then Guardian 1 Name, Guardian 1 Phone, Guardian 1 Relationship, Guardian 2 … (as many guardians as needed). Guardian names: the real names, at least two (JOHN MATHIAS, not Mr John). Other columns (fees, PREM number …) are ignored. Only the first sheet is read.</li>
+                <li>Columns are found by their names: Admission No., first / middle / last name, Sex, Day or Boarding (optional), then Guardian 1 Name, Guardian 1 Phone, Guardian 1 Relationship, Guardian 2 … (as many guardians as needed). Guardian names: the real names, at least two (JOHN MATHIAS, not Mr John). Other columns (fees, PREM number …) are ignored. Only the first sheet is read.</li>
                 <li>Every student needs an Admission No., first and last name, and Sex (M or F). <a className="linkbtn" href="/api/students/template.xlsx" download>Empty template</a></li>
                 <li>A review page opens. Mistakes are red with the row number. A wrong row does not stop the list: press <b>Fix</b> to correct it there, <b>Skip</b> it, or save the good rows and download the left-out rows as Excel. Nothing is saved until you press <b>Approve</b>.</li>
                 <li>Uploading a class again updates it: new phones and names are saved, students from another class are moved here. Empty cells never erase anything (write - in Middle name to erase it).</li>
